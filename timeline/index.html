@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>16号螺旋酒馆 · 时间线</title>
+    <style>
+        :root {
+            --ink: #eadcc0;
+            --muted: #a08d72;
+            --gold: #d6a85d;
+            --line: #5d483b;
+            --panel: #1a1513;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #0c0806;
+            color: var(--ink);
+            font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+            padding: 40px 20px 60px;
+            min-height: 100vh;
+        }
+
+        .wrap {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        /* 页眉 */
+        .header {
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            font-size: clamp(30px, 5vw, 48px);
+            font-weight: 400;
+            color: var(--gold);
+            letter-spacing: 0.06em;
+        }
+        .header .back {
+            display: inline-block;
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 14px;
+            text-decoration: none;
+            border-bottom: 1px dotted transparent;
+            transition: 0.3s;
+        }
+        .header .back:hover {
+            border-bottom-color: var(--gold);
+            color: var(--gold);
+        }
+
+        /* 时间线 */
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+        .timeline::before {
+            content: "";
+            position: absolute;
+            left: 12px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(214, 168, 93, 0.15);
+        }
+
+        .event {
+            position: relative;
+            margin-bottom: 32px;
+            padding: 18px 22px;
+            background: rgba(26, 21, 19, 0.6);
+            border: 1px solid rgba(90, 72, 59, 0.25);
+            border-radius: 6px;
+            transition: 0.3s;
+        }
+        .event:hover {
+            border-color: rgba(214, 168, 93, 0.2);
+            background: rgba(26, 21, 19, 0.85);
+        }
+
+        /* 时间轴圆点 */
+        .event::before {
+            content: "";
+            position: absolute;
+            left: -34px;
+            top: 22px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--gold);
+            border: 2px solid #0c0806;
+            box-shadow: 0 0 0 3px rgba(214, 168, 93, 0.15);
+        }
+
+        .event .date {
+            font-size: 13px;
+            color: var(--gold);
+            letter-spacing: 0.04em;
+            font-weight: 700;
+            font-family: "Arial Narrow", sans-serif;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .event .title {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--ink);
+            margin-bottom: 4px;
+        }
+
+        .event .desc {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .event .tags {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .event .tags span {
+            background: rgba(214, 168, 93, 0.08);
+            border: 1px solid rgba(214, 168, 93, 0.1);
+            color: var(--muted);
+            font-size: 10px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            letter-spacing: 0.04em;
+        }
+
+        /* 空状态 */
+        .empty-timeline {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+            border: 1px dashed rgba(90,72,59,0.3);
+            border-radius: 8px;
+        }
+
+        /* 页脚 */
+        .footer {
+            margin-top: 48px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(90,72,59,0.15);
+            color: var(--muted);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 24px 16px 40px; }
+            .timeline { padding-left: 28px; }
+            .event::before { left: -22px; width: 10px; height: 10px; }
+            .event .title { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrap">
+    <!-- 页眉 -->
+    <div class="header">
+        <h1>🕰️ 时间线</h1>
+        <a class="back" href="../">← 返回酒馆</a>
+    </div>
+
+    <!-- 时间线 -->
+    <div class="timeline" id="timeline">
+        <!-- 由 JavaScript 动态渲染 -->
+    </div>
+
+    <!-- 页脚 -->
+    <div class="footer">16号螺旋酒馆 · 档案室 · 时间线</div>
+</div>
+
+<script>
+    // ============================================
+    // 📅 时间线数据（手动维护）
+    // ============================================
+
+    const events = [
+        {
+            date: "2026-08-15",
+            title: "酒馆开门",
+            desc: "16号螺旋酒馆在迷雾中第一次亮起灯火。第一个推开门的旅客是举。",
+            tags: ["酒馆", "开业"]
+        },
+        {
+            date: "2026-08-17",
+            title: "初璃到来",
+            desc: "初璃被带进酒馆，带着行李和一封信。她在角落坐了很久才开口说话。",
+            tags: ["旅客", "初璃"]
+        },
+        {
+            date: "2026-08-19",
+            title: "举的第一次委托",
+            desc: "举接下了酒馆的第一份委托，出发前在吧台上留了一枚硬币。",
+            tags: ["委托", "举"]
+        },
+        {
+            date: "2026-08-22",
+            title: "泠钰的档案归档",
+            desc: "泠钰的档案完成录入，编号 TAV-003。备注栏写着：‘注意：此人在酒馆内有多个化名。’",
+            tags: ["档案", "泠钰"]
+        },
+        {
+            date: "2026-08-24",
+            title: "荒泊与白鸢的相遇",
+            desc: "荒泊在酒馆门口捡到了白鸢。他把它带进酒馆，放在壁炉边。",
+            tags: ["旅客", "荒泊", "白鸢"]
+        },
+        {
+            date: "2026-08-26",
+            title: "第一次满座",
+            desc: "酒馆第一次坐满了人。吧台上摆了十六只杯子，每一只都空了。",
+            tags: ["酒馆", "满座"]
+        },
+        {
+            date: "2026-08-27",
+            title: "档案室扩建",
+            desc: "档案室新增了三个文件柜，用于存放旅客的原始卡片。",
+            tags: ["档案", "扩建"]
+        }
+    ];
+
+    // ============================================
+    // 📜 渲染时间线
+    // ============================================
+
+    function renderTimeline() {
+        const container = document.getElementById('timeline');
+
+        if (events.length === 0) {
+            container.innerHTML = `
+                <div class="empty-timeline">
+                    <div style="font-size:32px;margin-bottom:12px;">📭</div>
+                    时间线上还没有记录。<br>
+                    <span style="font-size:12px;">第一件事还在路上。</span>
+                </div>
+            `;
+            return;
+        }
+
+        // 按日期排序（从旧到新）
+        const sorted = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        container.innerHTML = sorted.map(event => `
+            <div class="event">
+                <div class="date">${formatDate(event.date)}</div>
+                <div class="title">${escapeHtml(event.title)}</div>
+                <div class="desc">${escapeHtml(event.desc)}</div>
+                ${event.tags && event.tags.length > 0 ? `
+                    <div class="tags">
+                        ${event.tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
+    }
+
+    function formatDate(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00');
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year} · ${month}/${day}`;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ============================================
+    // 🚀 启动
+    // ============================================
+
+    renderTimeline();
+</script>
+
+</body>
+</html>

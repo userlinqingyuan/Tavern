@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>16号螺旋酒馆 · 旅客档案</title>
+<title>16号螺旋酒馆 · 酒客档案</title>
 <style>
 :root{
 	--ink:#eee7d8;
@@ -141,7 +141,7 @@ body{margin:0;color:var(--ink);
   box-shadow: 0 0 20px rgba(214, 168, 93, 0.15), var(--shadow);
 }
 
-.card.is-fav::after {
+.card.is-fav .card-front::after {
   border-color: rgba(214, 168, 93, 0.5);
 }
 
@@ -179,7 +179,8 @@ body{margin:0;color:var(--ink);
     border: 1px solid #614b3d;
     box-shadow: var(--shadow);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+    perspective: 800px;
     opacity: 0;
     transform: perspective(600px) rotateY(8deg) translateX(-20px);
     animation-name: flipIn;
@@ -207,12 +208,135 @@ body{margin:0;color:var(--ink);
   100% { opacity: 0.9; transform: scale(1.1); }
 }
 
-.card:after {
+/* ============================================
+   🎴 卡片翻转
+   ============================================ */
+
+/* 卡片内部翻转容器 */
+.card-inner {
+    position: relative;
+    width: 100%;
+    min-height: 420px;
+    transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    transform-style: preserve-3d;
+}
+
+/* 悬停时翻转 */
+.card:hover .card-inner {
+    transform: rotateY(180deg);
+}
+
+/* 正面和背面 */
+.card-face {
+    position: relative;
+    width: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* 正面（数据） */
+.card-front {
+    z-index: 2;
+}
+
+/* 背面（语录） */
+.card-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotateY(180deg);
+    background: linear-gradient(160deg, #1e1814, #120e0c);
+    border: 1px solid rgba(214, 168, 93, 0.08);
+    border-radius: 8px;
+    padding: 30px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    min-height: 420px;
+}
+
+/* 背面装饰 */
+.card-back::before {
+    content: "✧";
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    color: rgba(214, 168, 93, 0.12);
+    font-size: 20px;
+}
+.card-back::after {
+    content: "✧";
+    position: absolute;
+    bottom: 16px;
+    left: 20px;
+    color: rgba(214, 168, 93, 0.12);
+    font-size: 20px;
+}
+
+/* 背面语录 */
+.card-back .quote-mark {
+    font-size: 48px;
+    color: rgba(214, 168, 93, 0.08);
+    font-family: Georgia, serif;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+.card-back .quote-text {
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--ink);
+    font-style: italic;
+    max-width: 90%;
+    padding: 6px 0;
+}
+
+.card-back .quote-source {
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    font-style: normal;
+}
+
+/* 翻转提示（小标签） */
+.card-flip-hint {
+    position: absolute;
+    bottom: 10px;
+    right: 14px;
+    font-size: 10px;
+    color: rgba(160, 141, 114, 0.25);
+    letter-spacing: 0.04em;
+    z-index: 3;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.card:hover .card-flip-hint {
+    opacity: 0;
+}
+
+/* 卡片内边框（调整到内层，避免挡住翻转） */
+.card .card-inner .card-front::after {
     content: "";
     position: absolute;
     inset: 10px;
     border: 1px solid #d6a85d24;
     pointer-events: none;
+    border-radius: 4px;
+}
+
+/* 移动端：点击翻转而非悬停 */
+@media (hover: none) {
+    .card.is-flipped .card-inner {
+        transform: rotateY(180deg);
+    }
 }
 
 /* 页面边缘墨迹 */
@@ -627,6 +751,7 @@ footer {
 	border-radius:50%;cursor:pointer;font-size:22px;backdrop-filter:blur(4px);
 	box-shadow:0 4px 20px rgba(0,0,0,.4);transition:.3s}
 #graphBtn:hover{background:var(--gold);color:#171311}
+#fragment-trigger:hover{background:var(--gold);color:#171311;border-color:var(--gold)}
 .graph-modal{display:none;position:fixed;z-index:20;inset:0;
 	background:rgba(5,3,2,.88);backdrop-filter:blur(6px);
 	align-items:center;justify-content:center;padding:24px}
@@ -653,13 +778,19 @@ footer {
 	.graph-modal-content{padding:16px}
 	#graphBtn{bottom:16px;right:16px;width:52px;height:52px}
 }
+/* 今日特供呼吸动画 */
+#todays-special{animation:specialBreathe 3s ease-in-out infinite}
+@keyframes specialBreathe{
+	0%,100%{opacity:.7}
+	50%{opacity:1}
+}
 </style>
 </head>
 <body>
 <div class="ink-corner ink-corner--tl" aria-hidden="true"></div>
 <div class="ink-corner ink-corner--br" aria-hidden="true"></div>
-<header class="masthead"><div class="wrap"><div class="kicker">16th Spiral Tavern · Archive 01</div><h1>16号螺旋酒馆</h1><div id="loadingIndicator" style="font-size:12px;color:var(--muted);margin-top:4px;">📂 正在加载档案...</div><p>异世界旅客登记簿。每一张档案都保留了原始人物卡作为底稿；页面文字仅做结构化摘录，姓名、数值、涂改与留白均按原件呈现。</p><div class="seal">旅客录</div></div></header>
-<main class="wrap"><div class="toolbar"><input id="search" type="search" placeholder="搜索姓名、能力、关系……"><select id="seat"><option value="">全部座位</option><option value="A">A 区</option><option value="B">B 区</option><option value="?">未登记</option></select><button id="randomBtn" style="background: #171311d9; border: 1px solid var(--gold); color: var(--gold); padding: 11px 18px; border-radius: 2px; cursor: pointer; font: inherit; transition: 0.3s;">🎲 随机</button><span class="count" id="count"></span></div><div class="note"><strong>档案说明：</strong>红色涂改、问号和空白信息没有被推测或补写。点击人物图可查看对应的原始卡片大图。</div><section class="grid" id="cards"></section></main>
+<header class="masthead"><div class="wrap"><div class="kicker">16th Spiral Tavern · Archive 01</div><!-- 今日特供 --><div id="todays-special" style="display:inline-block;margin-top:6px;padding:4px 14px;background:rgba(214,168,93,.12);border:1px solid rgba(214,168,93,.25);border-radius:20px;font-size:12px;color:var(--gold);letter-spacing:.08em;font-family:'Arial Narrow',sans-serif;text-transform:uppercase;">🍺 今日特供 · 深岩麦酒</div><h1>16号螺旋酒馆</h1><div id="loadingIndicator" style="font-size:12px;color:var(--muted);margin-top:4px;">📂 正在加载档案...</div><p>异世界旅客登记簿。每一张档案都保留了原始人物卡作为底稿；页面文字仅做结构化摘录，姓名、数值、涂改与留白均按原件呈现。</p><div class="seal">旅客录</div></div></header>
+<main class="wrap"><div class="toolbar"><input id="search" type="search" placeholder="搜索姓名、能力、关系……"><select id="seat"><option value="">全部座位</option><option value="A">A 区</option><option value="B">B 区</option><option value="?">未登记</option></select><button id="randomBtn" style="background: #171311d9; border: 1px solid var(--gold); color: var(--gold); padding: 11px 18px; border-radius: 2px; cursor: pointer; font: inherit; transition: 0.3s;">🎲 随机</button><a href="../timeline/" style="background:#171311d9;border:1px solid var(--line);color:var(--gold);padding:11px 14px;border-radius:2px;font:inherit;text-decoration:none;white-space:nowrap;transition:0.3s;">🕰️ 时间线</a><span class="count" id="count"></span></div><div class="note"><strong>档案说明：</strong>红色涂改、问号和空白信息没有被推测或补写。点击人物图可查看对应的原始卡片大图。</div><section class="grid" id="cards"></section></main>
 <div id="changelog" style="margin:40px auto 20px;padding:20px 24px;max-width:1380px;width:calc(100% - 40px);background:#1a1513;border-left:3px solid var(--gold);border-radius:4px;">
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
     <h3 style="margin:0;color:var(--gold);font-weight:400;letter-spacing:.1em;font-size:16px;">📜 档案更新记录</h3>
@@ -667,7 +798,7 @@ footer {
   </div>
   <div id="changelogEntries" style="margin-top:10px;color:var(--muted);font-size:13px;line-height:1.7;"></div>
 </div>
-<footer><div class="wrap">资料来源：16号文件夹内人物卡图片与《1泠钰 设定卡.docx》；页面排版为归档展示用途。</div></footer>
+<footer><div class="wrap" style="display:flex;gap:20px;justify-content:center;align-items:center;flex-wrap:wrap;">资料来源：16号文件夹内人物卡图片与《1泠钰 设定卡.docx》；页面排版为归档展示用途。<a href="../timeline/" style="color:var(--muted);text-decoration:underline;text-underline-offset:4px;">🕰️ 时间线</a></div></footer>
 <div class="lightbox" id="lightbox"><span class="close">×</span><img id="lightboxImg" alt="原始人物卡"></div>
 <div class="note-modal" id="noteModal"><div class="note-modal-box"><button class="note-close" aria-label="关闭">×</button><div class="note-modal-head"><h3>BACKGROUND NOTE</h3><span class="who" id="noteModalName"></span></div><div class="note-modal-body" id="noteModalBody"></div></div></div>
 <button id="graphBtn" aria-label="打开人物关系图" title="人物关系图">🔗</button>
@@ -684,6 +815,89 @@ footer {
         </div>
         <canvas id="graphCanvas"></canvas>
         <div class="graph-tip">点击人物节点可跳转到对应档案</div>
+    </div>
+</div>
+<!-- 随机碎片触发器 -->
+<button id="fragment-trigger" style="
+    position: fixed;
+    bottom: 80px;
+    left: 24px;
+    z-index: 10;
+    background: rgba(20, 12, 8, 0.65);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(214, 168, 93, 0.5);
+    color: var(--gold);
+    padding: 10px 14px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    transition: 0.3s;
+    font-family: inherit;
+">📜 随机碎片</button>
+
+<!-- 碎片弹窗 -->
+<div id="fragment-modal" style="
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: rgba(5, 3, 2, 0.7);
+    backdrop-filter: blur(6px);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    cursor: pointer;
+">
+    <div id="fragment-card" style="
+        max-width: 480px;
+        width: 100%;
+        background: linear-gradient(160deg, #1e1814, #120e0c);
+        border: 1px solid rgba(214, 168, 93, 0.15);
+        border-radius: 12px;
+        padding: 30px 32px 26px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        cursor: default;
+        position: relative;
+        transition: opacity 0.3s ease;
+    ">
+        <!-- 装饰线 -->
+        <div style="
+            width: 40px;
+            height: 2px;
+            background: rgba(214, 168, 93, 0.3);
+            margin-bottom: 16px;
+        "></div>
+
+        <!-- 碎片来源 -->
+        <div id="fragment-source" style="
+            color: var(--gold);
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            margin-bottom: 10px;
+            font-family: 'Arial Narrow', sans-serif;
+            text-transform: uppercase;
+        ">✦ 档案碎片</div>
+
+        <!-- 碎片正文 -->
+        <div id="fragment-text" style="
+            color: var(--ink);
+            font-size: 17px;
+            line-height: 1.7;
+            font-style: italic;
+            min-height: 60px;
+        "></div>
+
+        <!-- 底部关闭提示 -->
+        <div style="
+            margin-top: 20px;
+            color: var(--muted);
+            font-size: 11px;
+            opacity: 0.4;
+            text-align: right;
+            border-top: 1px solid rgba(160,141,114,0.08);
+            padding-top: 14px;
+        ">点击任意处关闭</div>
     </div>
 </div>
 <script>
@@ -816,6 +1030,50 @@ function renderSections(person) {
     .join('');
 }
 
+// ============================================
+// 💬 角色语录提取
+// ============================================
+
+function getCharacterQuote(person) {
+  // 优先从 detail 中提取（如果有）
+  if (person.detail && person.detail.length > 10) {
+    // 尝试找引号内的内容
+    const quoteMatch = person.detail.match(/["“『]([^"”』]+)["”』]/);
+    if (quoteMatch) {
+      return { text: quoteMatch[1], source: person.name + ' · 自述' };
+    }
+    // 取 detail 的前 60 个字符作为语录
+    const short = person.detail.replace(/[，。、；：\n]/g, ' ').slice(0, 60);
+    if (short.length > 8) {
+      return { text: short.trim() + '…', source: person.name + ' · 背景档案' };
+    }
+  }
+
+  // 从 con 中取
+  if (person.con && person.con.length > 4 && person.con !== '未登记') {
+    return { text: person.con, source: person.name + ' · 结语' };
+  }
+
+  // 从 syn 中取
+  if (person.syn && person.syn.length > 4 && person.syn !== '未登记') {
+    return { text: person.syn, source: person.name + ' · 综合评价' };
+  }
+
+  // 从 intro 中取第一句
+  if (person.intro && person.intro.length > 6) {
+    const first = person.intro.split(/[，。、；：\n]/).filter(s => s.trim().length > 0)[0];
+    if (first && first.length > 4) {
+      return { text: first.trim(), source: person.name + ' · 档案摘要' };
+    }
+  }
+
+  // 默认回退
+  return {
+    text: '“这个人还没有留下任何语录。”',
+    source: '档案室 · 空白'
+  };
+}
+
 function card(person, index) {
   const image = `${CHARACTER_ROOT}${encodeURI(person.file)}`;
   const portraitSrc = person.portrait ? `${ID_ROOT}${encodeURI(person.portrait)}` : '';
@@ -824,6 +1082,8 @@ function card(person, index) {
   const archiveLabel = archiveNum
     ? `<span style="color:var(--gold);font-weight:700;font-size:14px;">#${String(archiveNum).padStart(3, '0')}</span>`
     : `<span style="color:var(--muted);font-size:12px;font-style:italic;">尚未归档</span>`;
+  // 获取语录（优先从 intro 或 con 或 syn 中提取）
+  const quote = getCharacterQuote(person);
   const portrait = portraitSrc
     ? `<img class="portrait" src="${portraitSrc}" data-full="${image}" alt="${esc(person.name)}证件照">`
     : '<div class="portrait portrait-placeholder">证件照<br>未登记</div>';
@@ -846,29 +1106,43 @@ function card(person, index) {
     </div>`;
 
   return `<article class="card" data-text="${esc(Object.values(person).join(' '))}" data-seat="${esc(person.seat)}" data-name="${esc(person.name)}" style="animation-delay:${index * 40}ms">
-    <div class="ink-dot" aria-hidden="true"></div>
-    <div class="card-head">
-      ${portrait}
-      <div>
-        <h2>${esc(person.name)}</h2>
-        <div class="alias" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
-          <span>16号螺旋酒馆 · 旅客档案</span>
-          ${archiveLabel}
-          <button class="fav-btn" type="button" data-name="${esc(person.name)}" aria-label="收藏${esc(person.name)}">☆</button>
+    <div class="card-inner">
+      <!-- 正面 -->
+      <div class="card-face card-front">
+        <div class="ink-dot" aria-hidden="true"></div>
+        <div class="card-head">
+          ${portrait}
+          <div>
+            <h2>${esc(person.name)}</h2>
+            <div class="alias" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+              <span>16号螺旋酒馆 · 旅客档案</span>
+              ${archiveLabel}
+              <button class="fav-btn" type="button" data-name="${esc(person.name)}" aria-label="收藏${esc(person.name)}">☆</button>
+            </div>
+            <div class="facts">
+              <span>AGE<b>${esc(person.age)}</b></span>
+              <span>HEIGHT<b>${esc(person.height)}</b></span>
+              <span>WEIGHT<b>${esc(person.weight)}</b></span>
+              <span>SEAT<b class="seat">${esc(person.seat)}</b></span>
+            </div>
+          </div>
         </div>
-        <div class="facts">
-          <span>AGE<b>${esc(person.age)}</b></span>
-          <span>HEIGHT<b>${esc(person.height)}</b></span>
-          <span>WEIGHT<b>${esc(person.weight)}</b></span>
-          <span>SEAT<b class="seat">${esc(person.seat)}</b></span>
+        <div class="card-body">
+          <p class="intro">${esc(person.intro)}</p>
+          <div class="sections">${renderSections(person)}</div>
+          ${background}
+          <a class="source" href="${image}" target="_blank" rel="noreferrer">查看原始卡片 ↗</a>
         </div>
+        <!-- 翻转提示 -->
+        <div class="card-flip-hint">↻ 翻转查看语录</div>
       </div>
-    </div>
-    <div class="card-body">
-      <p class="intro">${esc(person.intro)}</p>
-      <div class="sections">${renderSections(person)}</div>
-      ${background}
-      <a class="source" href="${image}" target="_blank" rel="noreferrer">查看原始卡片 ↗</a>
+
+      <!-- 背面 -->
+      <div class="card-face card-back">
+        <div class="quote-mark">"</div>
+        <div class="quote-text">${esc(quote.text)}</div>
+        <div class="quote-source">— ${esc(quote.source)}</div>
+      </div>
     </div>
   </article>`;
 }
@@ -1023,6 +1297,7 @@ document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
   noteModal.classList.remove('open');
   document.getElementById('graphModal').classList.remove('open');
+  closeFragmentModal();
 });
 // ============================================
 // 🔗 人物关系图（Canvas 力导向）
@@ -1300,7 +1575,9 @@ function drawGraph() {
 function sizeGraphCanvas() {
   const canvas = document.getElementById('graphCanvas');
   const container = canvas.parentElement;
-  const cssW = Math.max(container.clientWidth - 4, 320);
+  const cs = getComputedStyle(container);
+  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  const cssW = Math.max(Math.floor(container.clientWidth - padX - 2), 200);
   const cssH = window.innerWidth <= 600 ? 340 : 500;
   canvas.style.width = cssW + 'px';
   canvas.style.height = cssH + 'px';
@@ -1377,7 +1654,7 @@ function handleGraphClick(e) {
 }
 
 const graphCanvas = document.getElementById('graphCanvas');
-graphCanvas.addEventListener('mousedown', e => {
+graphCanvas.addEventListener('pointerdown', e => {
   const pos = graphMousePos(e);
   const node = graphNodeAt(pos);
   isDraggingGraph = true;
@@ -1394,9 +1671,10 @@ graphCanvas.addEventListener('mousedown', e => {
     dragStartY = e.clientY - graphOffsetY;
   }
   graphCanvas.style.cursor = 'grabbing';
+  try { graphCanvas.setPointerCapture(e.pointerId); } catch (err) {}
   e.preventDefault();
 });
-document.addEventListener('mousemove', e => {
+graphCanvas.addEventListener('pointermove', e => {
   if (!isDraggingGraph) {
     handleGraphMove(e);
     return;
@@ -1413,13 +1691,17 @@ document.addEventListener('mousemove', e => {
   }
   drawGraph();
 });
-document.addEventListener('mouseup', () => {
-  if (isDraggingGraph) {
-    isDraggingGraph = false;
-    draggingNode = null;
-    graphCanvas.style.cursor = hoveredNode ? 'move' : 'grab';
+function endGraphDrag(e) {
+  if (!isDraggingGraph) return;
+  isDraggingGraph = false;
+  draggingNode = null;
+  graphCanvas.style.cursor = hoveredNode ? 'move' : 'grab';
+  if (e && e.pointerId != null) {
+    try { graphCanvas.releasePointerCapture(e.pointerId); } catch (err) {}
   }
-});
+}
+graphCanvas.addEventListener('pointerup', endGraphDrag);
+graphCanvas.addEventListener('pointercancel', endGraphDrag);
 graphCanvas.addEventListener('wheel', e => {
   e.preventDefault();
   const rect = graphCanvas.getBoundingClientRect();
@@ -1454,6 +1736,177 @@ window.addEventListener('resize', () => {
 });
 loadPeople();
 renderChangelog();
+// ============================================
+// 🍺 今日特供
+// ============================================
+const specials = [
+  "深岩麦酒",
+  "烟熏黑啤",
+  "蜜酒·秋收",
+  "月光白兰地",
+  "矮人烈酒",
+  "精灵果酿",
+  "龙息火焰酒",
+  "暗影橡木陈酿",
+  "冰原伏特加",
+  "沼泽草药酒",
+  "金盏花利口酒",
+  "旅者之憩麦酒",
+  "午夜玫瑰红酒",
+  "铜壶威士忌",
+  "琥珀蜜酒"
+];
+
+// 基于日期取模，每天固定一款
+function getTodaysSpecial() {
+  const today = new Date();
+  const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+  const index = dayOfYear % specials.length;
+  return specials[index];
+}
+
+// 显示今日特供
+function displaySpecial() {
+  const el = document.getElementById('todays-special');
+  if (!el) return;
+  const special = getTodaysSpecial();
+  el.textContent = `🍺 今日特供 · ${special}`;
+}
+
+document.addEventListener('DOMContentLoaded', displaySpecial);
+// ============================================
+// 📜 随机档案碎片
+// ============================================
+
+// 从人物数据中提取碎片文本
+function extractFragments(peopleData) {
+  const fragments = [];
+
+  peopleData.forEach(person => {
+    // 跳过占位人物
+    if (person.name === '？？？' || person.name === '未登记') return;
+
+    // 从 intro 中取第一句
+    if (person.intro && person.intro.length > 0) {
+      const firstSentence = person.intro.split(/[，。、；,;]/).filter(s => s.trim().length > 0)[0];
+      if (firstSentence && firstSentence.length > 6) {
+        fragments.push({
+          text: firstSentence.trim(),
+          source: person.name
+        });
+      }
+    }
+
+    // 从 syn 中取
+    if (person.syn && person.syn.length > 0 && person.syn !== '未登记') {
+      if (person.syn.length > 4) {
+        fragments.push({
+          text: person.syn,
+          source: person.name + ' · 综合评价'
+        });
+      }
+    }
+
+    // 从 con 中取（如果不同于 syn）
+    if (person.con && person.con.length > 0 && person.con !== '未登记' && person.con !== person.syn) {
+      if (person.con.length > 4) {
+        fragments.push({
+          text: person.con,
+          source: person.name + ' · 结语'
+        });
+      }
+    }
+  });
+
+  // 额外加一些酒馆通用碎片
+  const genericFragments = [
+    { text: "烛火摇曳时，墙上的影子在讲自己的故事。", source: "酒馆的角落" },
+    { text: "每一张档案背后，都有一扇不知通向何处的门。", source: "档案室" },
+    { text: "有人在这里等了很久，却忘了自己在等谁。", source: "吧台" },
+    { text: "窗外的雾散不开，像某些人的记忆。", source: "酒馆的窗" },
+    { text: "麦酒凉了，但故事还是热的。", source: "吧台" },
+    { text: "你听到的每一个名字，都曾是某个世界的中心。", source: "档案室" },
+    { text: "酒馆的墙会说话，只要你安静下来听。", source: "酒馆的墙" }
+  ];
+
+  return [...fragments, ...genericFragments];
+}
+
+// 获取当前碎片列表（在 people 加载后调用）
+function getFragments() {
+  if (people && people.length > 0) {
+    return extractFragments(people);
+  }
+  // 否则返回通用碎片
+  return [
+    { text: "酒馆的门永远为你敞开。", source: "门牌" },
+    { text: "每一杯酒里都泡着一个秘密。", source: "吧台" },
+    { text: "你选择坐下的位置，会决定你听到什么故事。", source: "酒馆的规则" }
+  ];
+}
+
+// 显示随机碎片
+function showRandomFragment() {
+  const fragments = getFragments();
+  if (fragments.length === 0) {
+    document.getElementById('fragment-text').textContent = '暂无碎片可显示。';
+    document.getElementById('fragment-source').textContent = '✦ 档案室';
+    return;
+  }
+
+  const randomIndex = Math.floor(Math.random() * fragments.length);
+  const fragment = fragments[randomIndex];
+
+  document.getElementById('fragment-text').textContent = fragment.text;
+  document.getElementById('fragment-source').textContent = `✦ ${fragment.source}`;
+
+  // 打开弹窗
+  const modal = document.getElementById('fragment-modal');
+  modal.style.display = 'flex';
+  // 加一个小淡入
+  const card = document.getElementById('fragment-card');
+  card.style.opacity = '0';
+  requestAnimationFrame(() => {
+    card.style.transition = 'opacity 0.3s ease';
+    card.style.opacity = '1';
+  });
+}
+
+// 关闭弹窗
+function closeFragmentModal() {
+  const modal = document.getElementById('fragment-modal');
+  if (!modal || modal.style.display !== 'flex') return;
+  const card = document.getElementById('fragment-card');
+  card.style.opacity = '0';
+  setTimeout(() => {
+    modal.style.display = 'none';
+    card.style.opacity = '1';
+    card.style.transition = '';
+  }, 300);
+}
+
+// 绑定事件
+document.getElementById('fragment-trigger').addEventListener('click', showRandomFragment);
+document.getElementById('fragment-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeFragmentModal();
+});
+document.getElementById('fragment-card').addEventListener('click', e => {
+  e.stopPropagation();
+});
+// ============================================
+// 📱 移动端点击翻转
+// ============================================
+
+// 检测是否支持悬停（触摸设备不支持）
+if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+  document.addEventListener('click', function(e) {
+    const card = e.target.closest('.card');
+    if (!card) return;
+    // 如果点击的是链接、按钮或头像，不触发翻转
+    if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.portrait')) return;
+    card.classList.toggle('is-flipped');
+  });
+}
 </script>
 </body>
 </html>
