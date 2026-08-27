@@ -215,6 +215,48 @@ body{margin:0;color:var(--ink);
     pointer-events: none;
 }
 
+/* 页面边缘墨迹 */
+.ink-corner {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.06;
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+.ink-corner--tl {
+  top: -80px;
+  left: -80px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle at 30% 40%, #2a1a0a, transparent 70%);
+  transform: rotate(-15deg);
+}
+
+.ink-corner--br {
+  right: -60px;
+  bottom: -60px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle at 70% 60%, #1a1008, transparent 70%);
+  transform: rotate(20deg);
+}
+
+/* 卡片右上角墨点 */
+.ink-dot {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 60% 30%, rgba(30, 20, 10, 0.06), transparent 70%);
+  filter: blur(3px);
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* 卡片高亮动画 */
 .card.highlight {
   border-color: var(--gold);
@@ -568,21 +610,82 @@ footer {
 .note-modal-head h3{margin:0;color:var(--gold);
 	font:700 12px/1 "Arial Narrow",sans-serif;letter-spacing:.16em}
 .note-modal-head .who{color:var(--ink);font-size:20px}
-.note-modal-body{padding:20px 22px 26px;overflow-y:auto;color:#e4d9c6;
-	font-size:14px;line-height:1.9;white-space:pre-wrap;word-break:break-word}
+.note-modal-body{flex:1;min-height:0;max-height:calc(82vh - 76px);padding:20px 22px 26px;overflow-y:scroll;
+  color:#e4d9c6;font-size:14px;line-height:1.9;white-space:pre-wrap;word-break:break-word;
+  scrollbar-color:#5d483b transparent;scrollbar-width:thin}
 .note-modal-body::-webkit-scrollbar{width:8px}
 .note-modal-body::-webkit-scrollbar-thumb{background:#5d483b;border-radius:4px}
 .note-close{position:absolute;right:10px;top:8px;color:var(--gold);font-size:26px;
 	line-height:1;cursor:pointer;background:none;border:none;padding:4px;z-index:1}
 .note-close:hover{color:#fff}
+/* ============================================
+   🔗 人物关系图
+   ============================================ */
+#graphBtn{position:fixed;bottom:24px;right:24px;z-index:10;width:60px;height:60px;
+	display:flex;align-items:center;justify-content:center;
+	background:#171311d9;border:1px solid var(--gold);color:var(--gold);
+	border-radius:50%;cursor:pointer;font-size:22px;backdrop-filter:blur(4px);
+	box-shadow:0 4px 20px rgba(0,0,0,.4);transition:.3s}
+#graphBtn:hover{background:var(--gold);color:#171311}
+.graph-modal{display:none;position:fixed;z-index:20;inset:0;
+	background:rgba(5,3,2,.88);backdrop-filter:blur(6px);
+	align-items:center;justify-content:center;padding:24px}
+.graph-modal.open{display:flex}
+.graph-modal-content{background:#1a1513;border:1px solid var(--line);border-radius:12px;
+	padding:24px;max-width:900px;width:100%;max-height:92vh;display:flex;
+	flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.7)}
+.graph-modal-header{display:flex;justify-content:space-between;align-items:center;
+	border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:12px}
+.graph-modal-header h2{margin:0;font-size:20px;color:var(--gold);
+	font-weight:400;letter-spacing:.1em}
+.graph-close{background:none;border:none;color:var(--muted);font-size:28px;
+	cursor:pointer;padding:0 8px;transition:.3s}
+.graph-close:hover{color:var(--gold);transform:rotate(90deg)}
+.graph-legend{display:flex;gap:20px;font-size:12px;color:var(--muted);
+	margin-bottom:12px;flex-wrap:wrap}
+#graphCanvas{width:100%;height:500px;background:#0f0c0a;border-radius:8px;
+	border:1px solid var(--line);cursor:grab;touch-action:none}
+#graphCanvas:active{cursor:grabbing}
+.graph-tip{text-align:center;color:var(--muted);font-size:11px;
+	margin-top:10px;letter-spacing:.05em}
+@media(max-width:600px){
+	#graphCanvas{height:340px}
+	.graph-modal-content{padding:16px}
+	#graphBtn{bottom:16px;right:16px;width:52px;height:52px}
+}
 </style>
 </head>
 <body>
+<div class="ink-corner ink-corner--tl" aria-hidden="true"></div>
+<div class="ink-corner ink-corner--br" aria-hidden="true"></div>
 <header class="masthead"><div class="wrap"><div class="kicker">16th Spiral Tavern · Archive 01</div><h1>16号螺旋酒馆</h1><div id="loadingIndicator" style="font-size:12px;color:var(--muted);margin-top:4px;">📂 正在加载档案...</div><p>异世界旅客登记簿。每一张档案都保留了原始人物卡作为底稿；页面文字仅做结构化摘录，姓名、数值、涂改与留白均按原件呈现。</p><div class="seal">旅客录</div></div></header>
 <main class="wrap"><div class="toolbar"><input id="search" type="search" placeholder="搜索姓名、能力、关系……"><select id="seat"><option value="">全部座位</option><option value="A">A 区</option><option value="B">B 区</option><option value="?">未登记</option></select><button id="randomBtn" style="background: #171311d9; border: 1px solid var(--gold); color: var(--gold); padding: 11px 18px; border-radius: 2px; cursor: pointer; font: inherit; transition: 0.3s;">🎲 随机</button><span class="count" id="count"></span></div><div class="note"><strong>档案说明：</strong>红色涂改、问号和空白信息没有被推测或补写。点击人物图可查看对应的原始卡片大图。</div><section class="grid" id="cards"></section></main>
+<div id="changelog" style="margin:40px auto 20px;padding:20px 24px;max-width:1380px;width:calc(100% - 40px);background:#1a1513;border-left:3px solid var(--gold);border-radius:4px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <h3 style="margin:0;color:var(--gold);font-weight:400;letter-spacing:.1em;font-size:16px;">📜 档案更新记录</h3>
+    <span id="changelogVersion" style="color:var(--muted);font-size:12px;"></span>
+  </div>
+  <div id="changelogEntries" style="margin-top:10px;color:var(--muted);font-size:13px;line-height:1.7;"></div>
+</div>
 <footer><div class="wrap">资料来源：16号文件夹内人物卡图片与《1泠钰 设定卡.docx》；页面排版为归档展示用途。</div></footer>
 <div class="lightbox" id="lightbox"><span class="close">×</span><img id="lightboxImg" alt="原始人物卡"></div>
 <div class="note-modal" id="noteModal"><div class="note-modal-box"><button class="note-close" aria-label="关闭">×</button><div class="note-modal-head"><h3>BACKGROUND NOTE</h3><span class="who" id="noteModalName"></span></div><div class="note-modal-body" id="noteModalBody"></div></div></div>
+<button id="graphBtn" aria-label="打开人物关系图" title="人物关系图">🔗</button>
+<div class="graph-modal" id="graphModal">
+    <div class="graph-modal-content">
+        <div class="graph-modal-header">
+            <h2>🔗 人物关系网</h2>
+            <button class="graph-close" id="graphClose" aria-label="关闭">×</button>
+        </div>
+        <div class="graph-legend">
+            <span><span style="color:var(--gold);">●</span> 人物</span>
+            <span><span style="color:var(--wine);">━</span> 关联</span>
+            <span style="color:var(--muted);font-size:11px;">拖动节点 · 拖拽空白平移 · 滚轮缩放</span>
+        </div>
+        <canvas id="graphCanvas"></canvas>
+        <div class="graph-tip">点击人物节点可跳转到对应档案</div>
+    </div>
+</div>
 <script>
 const CHARACTER_ROOT = '../images/character/';
 const ID_ROOT = '../images/ID/';
@@ -596,6 +699,14 @@ async function loadPeople() {
     const response = await fetch('../data/people.json');
     if (!response.ok) throw new Error('网络请求失败');
     people = await response.json();
+    people.sort((a, b) => {
+      const archiveA = getArchiveNumber(a.name);
+      const archiveB = getArchiveNumber(b.name);
+      if (archiveA === null && archiveB === null) return 0;
+      if (archiveA === null) return 1;
+      if (archiveB === null) return -1;
+      return archiveA - archiveB;
+    });
     isLoading = false;
     document.getElementById('loadingIndicator').textContent = '📂 档案已就绪';
     document.getElementById('loadingIndicator').style.color = 'var(--gold)';
@@ -611,6 +722,67 @@ async function loadPeople() {
     document.getElementById('count').textContent = '加载失败';
     document.getElementById('loadingIndicator').textContent = '📂 档案加载失败';
   }
+}
+
+// ============================================
+// 档案编号映射表
+// ============================================
+
+const ARCHIVE_NUMBERS = {
+  '举': 1,
+  '菈提菩': 2,
+  '泠钰': 3,
+  '荒泊': 4,
+  '蝶祈': 5,
+  '初璃': 6,
+  '屠苏': 7,
+  '苏陇客': 8,
+  '竺囹': 9,
+  '桃逸佑': 10,
+  '阮无常': 11,
+  '芝葵': 12,
+  '陈南恕': 13
+};
+
+// 获取人物的档案编号
+function getArchiveNumber(name) {
+  return ARCHIVE_NUMBERS[name] || null;
+}
+
+async function loadChangelog() {
+  try {
+    const response = await fetch('../data/update_log.json');
+    if (!response.ok) throw new Error('日志加载失败');
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+async function renderChangelog() {
+  const log = await loadChangelog();
+  const container = document.getElementById('changelogEntries');
+  const versionEl = document.getElementById('changelogVersion');
+
+  if (!log || log.length === 0) {
+    container.textContent = '暂无更新记录。';
+    return;
+  }
+
+  const recent = log.slice(0, 5);
+  const latest = log[0];
+  versionEl.textContent = `最新：${esc(latest.version)} · ${esc(latest.date)}`;
+  container.innerHTML = recent.map(item => `
+    <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(90,72,59,.25);">
+      <div style="display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;">
+        <span style="color:var(--gold);font-size:12px;font-weight:700;">${esc(item.version)}</span>
+        <span style="color:#8a7a6a;font-size:11px;">${esc(item.date)}</span>
+      </div>
+      <ul style="margin:4px 0 0 18px;padding:0;list-style:none;">
+        ${item.entries.map(entry => `<li style="padding:2px 0;font-size:13px;color:#c8bcaa;">• ${esc(entry)}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
 }
 
 // 用户可见文字统一转义，避免人物资料中的符号影响 HTML 结构。
@@ -647,6 +819,11 @@ function renderSections(person) {
 function card(person, index) {
   const image = `${CHARACTER_ROOT}${encodeURI(person.file)}`;
   const portraitSrc = person.portrait ? `${ID_ROOT}${encodeURI(person.portrait)}` : '';
+  // 档案编号
+  const archiveNum = getArchiveNumber(person.name);
+  const archiveLabel = archiveNum
+    ? `<span style="color:var(--gold);font-weight:700;font-size:14px;">#${String(archiveNum).padStart(3, '0')}</span>`
+    : `<span style="color:var(--muted);font-size:12px;font-style:italic;">尚未归档</span>`;
   const portrait = portraitSrc
     ? `<img class="portrait" src="${portraitSrc}" data-full="${image}" alt="${esc(person.name)}证件照">`
     : '<div class="portrait portrait-placeholder">证件照<br>未登记</div>';
@@ -669,12 +846,14 @@ function card(person, index) {
     </div>`;
 
   return `<article class="card" data-text="${esc(Object.values(person).join(' '))}" data-seat="${esc(person.seat)}" data-name="${esc(person.name)}" style="animation-delay:${index * 40}ms">
+    <div class="ink-dot" aria-hidden="true"></div>
     <div class="card-head">
       ${portrait}
       <div>
         <h2>${esc(person.name)}</h2>
-        <div class="alias">
-          16号螺旋酒馆 · 旅客档案
+        <div class="alias" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+          <span>16号螺旋酒馆 · 旅客档案</span>
+          ${archiveLabel}
           <button class="fav-btn" type="button" data-name="${esc(person.name)}" aria-label="收藏${esc(person.name)}">☆</button>
         </div>
         <div class="facts">
@@ -841,9 +1020,412 @@ noteModal.addEventListener('click', event => {
   }
 });
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape') noteModal.classList.remove('open');
+  if (event.key !== 'Escape') return;
+  noteModal.classList.remove('open');
+  document.getElementById('graphModal').classList.remove('open');
+});
+// ============================================
+// 🔗 人物关系图（Canvas 力导向）
+// ============================================
+
+// roundRect 兼容（部分旧浏览器不支持）
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (r > w / 2) r = w / 2;
+    if (r > h / 2) r = h / 2;
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r);
+    return this;
+  };
+}
+
+// 已知别名/错字映射，让关系解析更准（可继续补充）
+const NAME_ALIASES = { '冷钰': '泠钰', '桃子': '桃逸佑', '拉提菩': '菈提菩' };
+
+let graphNodes = [];
+let graphEdges = [];
+let graphScale = 1;
+let graphOffsetX = 0;
+let graphOffsetY = 0;
+let graphW = 800;
+let graphH = 500;
+let graphDpr = 1;
+let isDraggingGraph = false;
+let graphDragMoved = false;
+let downX = 0;
+let downY = 0;
+let dragStartX = 0;
+let dragStartY = 0;
+let hoveredNode = null;
+let draggingNode = null;
+let nodeDragStartX = 0;
+let nodeDragStartY = 0;
+
+function normalizeName(raw) {
+  const name = String(raw).replace(/^([^（(]+)/, '$1').trim();
+  return NAME_ALIASES[name] || name;
+}
+
+function buildGraph() {
+  const nodeMap = new Map();
+  const edges = [];
+  const validPeople = people.filter(p => p.name !== '？？？' && p.name !== '未登记');
+
+  validPeople.forEach(p => {
+    nodeMap.set(p.name, { id: p.name, label: p.name, x: 0, y: 0, vx: 0, vy: 0 });
+  });
+
+  validPeople.forEach(p => {
+    if (!p.related || /未登记|暂无登记|暂时没有/.test(p.related)) return;
+    const names = p.related
+      .split(/[，、,;；和与]/)
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(normalizeName)
+      .filter(name => nodeMap.has(name) && name !== p.name);
+
+    names.forEach(target => {
+      const key = [p.name, target].sort().join('|');
+      if (!edges.some(e => e.key === key)) {
+        edges.push({ source: p.name, target: target, key: key });
+      }
+    });
+  });
+
+  graphNodes = Array.from(nodeMap.values());
+  graphEdges = edges;
+}
+
+function layoutGraph(iterations = 150) {
+  const nodes = graphNodes;
+  const edges = graphEdges;
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const centerX = graphW / 2;
+  const centerY = graphH / 2;
+  const spread = Math.min(graphW, graphH);
+
+  nodes.forEach((n, i) => {
+    const angle = (i / Math.max(nodes.length, 1)) * Math.PI * 2;
+    const radius = spread * 0.16 + Math.random() * spread * 0.22;
+    n.x = centerX + Math.cos(angle) * radius;
+    n.y = centerY + Math.sin(angle) * radius;
+    n.vx = 0;
+    n.vy = 0;
+  });
+
+  if (nodes.length <= 2) {
+    nodes.forEach((n, i) => {
+      n.x = centerX + (i - 0.5) * 160;
+      n.y = centerY;
+    });
+    return;
+  }
+
+  const repulsion = spread * 0.38;
+  const attraction = 0.01;
+  const damping = 0.85;
+  const maxSpeed = 4;
+
+  for (let iter = 0; iter < iterations; iter++) {
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i];
+        const b = nodes[j];
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) + 1;
+        const force = repulsion / (dist * dist + 20);
+        const fx = (dx / dist) * force;
+        const fy = (dy / dist) * force;
+        a.vx += fx; a.vy += fy;
+        b.vx -= fx; b.vy -= fy;
+      }
+    }
+
+    edges.forEach(edge => {
+      const a = nodeMap.get(edge.source);
+      const b = nodeMap.get(edge.target);
+      if (!a || !b) return;
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) + 1;
+      const force = dist * attraction;
+      a.vx -= (dx / dist) * force; a.vy -= (dy / dist) * force;
+      b.vx += (dx / dist) * force; b.vy += (dy / dist) * force;
+    });
+
+    nodes.forEach(n => {
+      n.vx += (centerX - n.x) * 0.002;
+      n.vy += (centerY - n.y) * 0.002;
+      const speed = Math.sqrt(n.vx * n.vx + n.vy * n.vy);
+      if (speed > maxSpeed) {
+        n.vx = (n.vx / speed) * maxSpeed;
+        n.vy = (n.vy / speed) * maxSpeed;
+      }
+      n.x += n.vx;
+      n.y += n.vy;
+      n.vx *= damping;
+      n.vy *= damping;
+    });
+  }
+}
+
+function drawGraph() {
+  const canvas = document.getElementById('graphCanvas');
+  const ctx = canvas.getContext('2d');
+  const nodes = graphNodes;
+  const edges = graphEdges;
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+  ctx.setTransform(graphDpr, 0, 0, graphDpr, 0, 0);
+  ctx.clearRect(0, 0, graphW, graphH);
+
+  const grad = ctx.createRadialGradient(graphW / 2, graphH / 2, 50, graphW / 2, graphH / 2, Math.max(graphW, graphH) * 0.7);
+  grad.addColorStop(0, '#1e1814');
+  grad.addColorStop(1, '#0a0806');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, graphW, graphH);
+
+  ctx.save();
+  ctx.translate(graphOffsetX, graphOffsetY);
+  ctx.scale(graphScale, graphScale);
+  const lw = 1 / graphScale;
+
+  edges.forEach(edge => {
+    const a = nodeMap.get(edge.source);
+    const b = nodeMap.get(edge.target);
+    if (!a || !b) return;
+    const isHovered = hoveredNode && (hoveredNode.id === a.id || hoveredNode.id === b.id);
+    const alpha = isHovered ? 0.9 : 0.35;
+
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = `rgba(143, 57, 68, ${alpha})`;
+    ctx.lineWidth = (isHovered ? 2.5 : 1.2) * lw;
+    ctx.shadowColor = isHovered ? 'rgba(214,168,93,0.3)' : 'transparent';
+    ctx.shadowBlur = isHovered ? 12 : 0;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  });
+
+  nodes.forEach(node => {
+    const isHovered = hoveredNode && hoveredNode.id === node.id;
+    const radius = isHovered ? 28 : 22;
+    const glow = isHovered ? 30 : 0;
+
+    if (glow > 0) {
+      const glowGrad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glow);
+      glowGrad.addColorStop(0, 'rgba(214,168,93,0.2)');
+      glowGrad.addColorStop(1, 'rgba(214,168,93,0)');
+      ctx.fillStyle = glowGrad;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, glow, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const grad2 = ctx.createRadialGradient(
+      node.x - radius * 0.25, node.y - radius * 0.25, 0,
+      node.x, node.y, radius
+    );
+    grad2.addColorStop(0, isHovered ? '#f2d795' : '#e3bf7e');
+    grad2.addColorStop(0.6, isHovered ? '#e0b257' : '#c3943f');
+    grad2.addColorStop(1, isHovered ? '#b97f2e' : '#8f6527');
+
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = grad2;
+    ctx.shadowColor = isHovered ? 'rgba(214,168,93,0.5)' : 'rgba(0,0,0,0.3)';
+    ctx.shadowBlur = isHovered ? 20 : 8;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.strokeStyle = isHovered ? 'rgba(214,168,93,0.8)' : 'rgba(160,130,80,0.3)';
+    ctx.lineWidth = (isHovered ? 2 : 1) * lw;
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#3e2410';
+    ctx.font = `${isHovered ? 'bold 13px' : '12px'} "Noto Serif SC",serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(255,238,205,0.5)';
+    ctx.shadowBlur = 2;
+    ctx.fillText(node.label, node.x, node.y + 1);
+    ctx.shadowBlur = 0;
+  });
+
+  if (nodes.length <= 1) {
+    ctx.fillStyle = 'rgba(160,140,120,0.4)';
+    ctx.font = '14px "Noto Serif SC",serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('暂无足够的关系数据', graphW / 2, graphH / 2);
+  }
+  ctx.restore();
+}
+
+function sizeGraphCanvas() {
+  const canvas = document.getElementById('graphCanvas');
+  const container = canvas.parentElement;
+  const cssW = Math.max(container.clientWidth - 4, 320);
+  const cssH = window.innerWidth <= 600 ? 340 : 500;
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  graphDpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(cssW * graphDpr);
+  canvas.height = Math.round(cssH * graphDpr);
+  graphW = cssW;
+  graphH = cssH;
+}
+
+function openGraph() {
+  if (!people.length) {
+    alert('档案还没加载完，请稍后再试。');
+    return;
+  }
+  document.getElementById('graphModal').classList.add('open');
+  sizeGraphCanvas();
+  graphScale = 1;
+  graphOffsetX = 0;
+  graphOffsetY = 0;
+  hoveredNode = null;
+  draggingNode = null;
+  buildGraph();
+  layoutGraph(150);
+  drawGraph();
+}
+
+function closeGraph() {
+  document.getElementById('graphModal').classList.remove('open');
+  hoveredNode = null;
+}
+
+function graphMousePos(e) {
+  const rect = document.getElementById('graphCanvas').getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left - graphOffsetX) / graphScale,
+    y: (e.clientY - rect.top - graphOffsetY) / graphScale
+  };
+}
+function graphNodeAt(pos) {
+  for (let i = graphNodes.length - 1; i >= 0; i--) {
+    const node = graphNodes[i];
+    const dx = pos.x - node.x;
+    const dy = pos.y - node.y;
+    if (dx * dx + dy * dy <= 28 * 28) return node;
+  }
+  return null;
+}
+
+function handleGraphMove(e) {
+  if (!document.getElementById('graphModal').classList.contains('open') || isDraggingGraph) return;
+  const pos = graphMousePos(e);
+  const found = graphNodeAt(pos);
+  if (found !== hoveredNode) {
+    hoveredNode = found;
+    document.getElementById('graphCanvas').style.cursor = found ? 'move' : 'grab';
+    drawGraph();
+  }
+}
+
+function handleGraphClick(e) {
+  if (graphDragMoved) return;
+  const node = graphNodeAt(graphMousePos(e));
+  if (!node) return;
+  closeGraph();
+  setTimeout(() => {
+    const card = document.querySelector(`.card[data-name="${CSS.escape(node.id)}"]`);
+    if (!card) return;
+    document.querySelectorAll('.card.highlight').forEach(c => c.classList.remove('highlight'));
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.add('highlight');
+    setTimeout(() => card.classList.remove('highlight'), 2000);
+  }, 350);
+}
+
+const graphCanvas = document.getElementById('graphCanvas');
+graphCanvas.addEventListener('mousedown', e => {
+  const pos = graphMousePos(e);
+  const node = graphNodeAt(pos);
+  isDraggingGraph = true;
+  graphDragMoved = false;
+  downX = e.clientX;
+  downY = e.clientY;
+  if (node) {
+    draggingNode = node;
+    nodeDragStartX = node.x;
+    nodeDragStartY = node.y;
+  } else {
+    draggingNode = null;
+    dragStartX = e.clientX - graphOffsetX;
+    dragStartY = e.clientY - graphOffsetY;
+  }
+  graphCanvas.style.cursor = 'grabbing';
+  e.preventDefault();
+});
+document.addEventListener('mousemove', e => {
+  if (!isDraggingGraph) {
+    handleGraphMove(e);
+    return;
+  }
+  if (!graphDragMoved && Math.hypot(e.clientX - downX, e.clientY - downY) > 4) {
+    graphDragMoved = true;
+  }
+  if (draggingNode) {
+    draggingNode.x = nodeDragStartX + (e.clientX - downX) / graphScale;
+    draggingNode.y = nodeDragStartY + (e.clientY - downY) / graphScale;
+  } else {
+    graphOffsetX = e.clientX - dragStartX;
+    graphOffsetY = e.clientY - dragStartY;
+  }
+  drawGraph();
+});
+document.addEventListener('mouseup', () => {
+  if (isDraggingGraph) {
+    isDraggingGraph = false;
+    draggingNode = null;
+    graphCanvas.style.cursor = hoveredNode ? 'move' : 'grab';
+  }
+});
+graphCanvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = graphCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const factor = e.deltaY < 0 ? 1.1 : 0.9;
+  const newScale = Math.min(3, Math.max(0.4, graphScale * factor));
+  const k = newScale / graphScale;
+  graphOffsetX = mx - (mx - graphOffsetX) * k;
+  graphOffsetY = my - (my - graphOffsetY) * k;
+  graphScale = newScale;
+  drawGraph();
+}, { passive: false });
+graphCanvas.addEventListener('mouseleave', () => {
+  if (hoveredNode) {
+    hoveredNode = null;
+    drawGraph();
+  }
+});
+graphCanvas.addEventListener('click', handleGraphClick);
+
+document.getElementById('graphBtn').addEventListener('click', openGraph);
+document.getElementById('graphClose').addEventListener('click', closeGraph);
+document.getElementById('graphModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeGraph();
+});
+window.addEventListener('resize', () => {
+  if (!document.getElementById('graphModal').classList.contains('open')) return;
+  sizeGraphCanvas();
+  layoutGraph(80);
+  drawGraph();
 });
 loadPeople();
+renderChangelog();
 </script>
 </body>
 </html>
