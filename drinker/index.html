@@ -1072,31 +1072,59 @@ function normalizeName(raw) {
 function buildGraph() {
   const nodeMap = new Map();
   const edges = [];
-  const validPeople = people.filter(p => p.name !== '？？？' && p.name !== '未登记');
 
+  // 过滤掉占位人物（名字里带"？"的，以及"未登记"占位）
+  const validPeople = people.filter(p =>
+    p.name !== '？？？' &&
+    p.name !== '未登记' &&
+    !p.name.includes('？')
+  );
+
+  // 如果有效人物太少，直接返回空
+  if (validPeople.length < 2) {
+    graphNodes = [];
+    graphEdges = [];
+    return;
+  }
+
+  // 创建节点
   validPeople.forEach(p => {
-    nodeMap.set(p.name, { id: p.name, label: p.name, x: 0, y: 0, vx: 0, vy: 0 });
+    nodeMap.set(p.name, {
+      id: p.name,
+      label: p.name,
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      mass: 1
+    });
   });
 
+  // 从 links 字段创建边
   validPeople.forEach(p => {
-    if (!p.related || /未登记|暂无登记|暂时没有/.test(p.related)) return;
-    const names = p.related
-      .split(/[，、,;；和与]/)
-      .map(s => s.trim())
-      .filter(Boolean)
-      .map(normalizeName)
-      .filter(name => nodeMap.has(name) && name !== p.name);
+    // 如果 links 不存在或不是数组，跳过
+    if (!p.links || !Array.isArray(p.links) || p.links.length === 0) return;
 
-    names.forEach(target => {
-      const key = [p.name, target].sort().join('|');
-      if (!edges.some(e => e.key === key)) {
-        edges.push({ source: p.name, target: target, key: key });
+    p.links.forEach(target => {
+      // 只保留 nodeMap 里真实存在的名字，且不能是自己
+      if (nodeMap.has(target) && target !== p.name) {
+        const key = [p.name, target].sort().join('|');
+        // 避免重复边
+        if (!edges.some(e => e.key === key)) {
+          edges.push({
+            source: p.name,
+            target: target,
+            key: key
+          });
+        }
       }
     });
   });
 
   graphNodes = Array.from(nodeMap.values());
   graphEdges = edges;
+
+  // 如果没有任何边，保留节点但画布会显示提示
 }
 
 function layoutGraph(iterations = 150) {
