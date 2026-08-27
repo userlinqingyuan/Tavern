@@ -116,6 +116,42 @@ body{margin:0;color:var(--ink);
     flex: 1;
 }
 
+.fav-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 6px;
+  transition: 0.3s;
+  margin-left: 8px;
+}
+
+.fav-btn:hover {
+  color: var(--gold);
+  transform: scale(1.2);
+}
+
+.fav-btn.is-fav {
+  color: var(--gold);
+}
+
+.card.is-fav {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(214, 168, 93, 0.15), var(--shadow);
+}
+
+.card.is-fav::after {
+  border-color: rgba(214, 168, 93, 0.5);
+}
+
+/* 随机按钮悬停效果 */
+#randomBtn:hover {
+  background: var(--gold);
+  color: #171311;
+  border-color: var(--gold);
+}
+
 /* 角色数量 */
 .count {
     margin-left: auto;
@@ -144,16 +180,60 @@ body{margin:0;color:var(--ink);
     box-shadow: var(--shadow);
     position: relative;
     overflow: hidden;
-    animation: rise .55s both;
+    opacity: 0;
+    transform: perspective(600px) rotateY(8deg) translateX(-20px);
+    animation-name: flipIn;
+    animation-duration: 0.5s;
+    animation-timing-function: ease;
+    animation-fill-mode: forwards;
+    /* animation-delay 由行内 style 控制，每个卡片不一样 */
 }
 
 /* 卡片内边框装饰 */
+.card::before {
+  content: "";
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle at 70% 80%, rgba(210, 150, 70, 0.15), transparent 70%);
+  pointer-events: none;
+  animation: candleGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes candleGlow {
+  0% { opacity: 0.4; transform: scale(0.95); }
+  100% { opacity: 0.9; transform: scale(1.1); }
+}
+
 .card:after {
     content: "";
     position: absolute;
     inset: 10px;
     border: 1px solid #d6a85d24;
     pointer-events: none;
+}
+
+/* 卡片高亮动画 */
+.card.highlight {
+  border-color: var(--gold);
+  box-shadow: 0 0 30px rgba(214, 168, 93, 0.3);
+}
+.card.highlight::after {
+  border-color: rgba(214, 168, 93, 0.65);
+  animation: highlightPulse 1.2s ease;
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    border-color: rgba(214, 168, 93, 0.25);
+    box-shadow: inset 0 0 8px rgba(214, 168, 93, 0.15);
+  }
+  50% {
+    border-color: rgba(214, 168, 93, 0.85);
+    box-shadow: inset 0 0 28px rgba(214, 168, 93, 0.35);
+  }
 }
 
 
@@ -336,6 +416,20 @@ footer {
         transform: none;
     }
 }
+@keyframes flipIn {
+    0% {
+        opacity: 0;
+        transform: perspective(600px) rotateY(10deg) translateX(-30px);
+    }
+    60% {
+        opacity: 0.7;
+        transform: perspective(600px) rotateY(-2deg) translateX(4px);
+    }
+    100% {
+        opacity: 1;
+        transform: perspective(600px) rotateY(0deg) translateX(0);
+    }
+}
 
 
 /* ============================================
@@ -446,264 +540,78 @@ footer {
         padding: 0 18px 18px;
     }
 }
+/* ============================================
+   📜 BACKGROUND NOTE（背景备注）
+   ============================================ */
+.note-section{margin-top:10px}
+.note-text{margin:0;color:var(--muted);font-size:12px;line-height:1.7;
+	display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+	word-break:break-word}
+.note-section.expanded .note-text{display:block}
+.note-empty{color:#7a6a56;font-size:12px;margin:0;font-style:italic}
+.note-actions{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+.note-btn{background:#171311;border:1px solid var(--line);color:var(--gold);
+	font:700 10px/1 "Arial Narrow",sans-serif;letter-spacing:.14em;padding:6px 11px;
+	border-radius:2px;cursor:pointer;transition:.25s ease}
+.note-btn:hover{background:#2c211d;border-color:var(--gold)}
+
+/* ---------- 阅读文本框 ---------- */
+.note-modal{display:none;position:fixed;z-index:8;inset:0;background:#090807ee;
+	align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+.note-modal.open{display:flex}
+.note-modal-box{background:linear-gradient(145deg,#2a211e,#171413);
+	border:1px solid #614b3d;box-shadow:0 0 0 1px var(--gold),0 18px 70px #000;
+	width:100%;max-width:min(680px,94vw);max-height:82vh;display:flex;
+	flex-direction:column;position:relative;cursor:default;animation:rise .35s ease both}
+.note-modal-head{padding:18px 22px 14px;border-bottom:1px solid var(--line);
+	display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.note-modal-head h3{margin:0;color:var(--gold);
+	font:700 12px/1 "Arial Narrow",sans-serif;letter-spacing:.16em}
+.note-modal-head .who{color:var(--ink);font-size:20px}
+.note-modal-body{padding:20px 22px 26px;overflow-y:auto;color:#e4d9c6;
+	font-size:14px;line-height:1.9;white-space:pre-wrap;word-break:break-word}
+.note-modal-body::-webkit-scrollbar{width:8px}
+.note-modal-body::-webkit-scrollbar-thumb{background:#5d483b;border-radius:4px}
+.note-close{position:absolute;right:10px;top:8px;color:var(--gold);font-size:26px;
+	line-height:1;cursor:pointer;background:none;border:none;padding:4px;z-index:1}
+.note-close:hover{color:#fff}
 </style>
 </head>
 <body>
-<header class="masthead"><div class="wrap"><div class="kicker">16th Spiral Tavern · Archive 01</div><h1>16号螺旋酒馆</h1><p>异世界旅客登记簿。每一张档案都保留了原始人物卡作为底稿；页面文字仅做结构化摘录，姓名、数值、涂改与留白均按原件呈现。</p><div class="seal">旅客录</div></div></header>
-<main class="wrap"><div class="toolbar"><input id="search" type="search" placeholder="搜索姓名、能力、关系……"><select id="seat"><option value="">全部座位</option><option value="A">A 区</option><option value="B">B 区</option><option value="?">未登记</option></select><span class="count" id="count"></span></div><div class="note"><strong>档案说明：</strong>红色涂改、问号和空白信息没有被推测或补写。点击人物图可查看对应的原始卡片大图。</div><section class="grid" id="cards"></section></main>
+<header class="masthead"><div class="wrap"><div class="kicker">16th Spiral Tavern · Archive 01</div><h1>16号螺旋酒馆</h1><div id="loadingIndicator" style="font-size:12px;color:var(--muted);margin-top:4px;">📂 正在加载档案...</div><p>异世界旅客登记簿。每一张档案都保留了原始人物卡作为底稿；页面文字仅做结构化摘录，姓名、数值、涂改与留白均按原件呈现。</p><div class="seal">旅客录</div></div></header>
+<main class="wrap"><div class="toolbar"><input id="search" type="search" placeholder="搜索姓名、能力、关系……"><select id="seat"><option value="">全部座位</option><option value="A">A 区</option><option value="B">B 区</option><option value="?">未登记</option></select><button id="randomBtn" style="background: #171311d9; border: 1px solid var(--gold); color: var(--gold); padding: 11px 18px; border-radius: 2px; cursor: pointer; font: inherit; transition: 0.3s;">🎲 随机</button><span class="count" id="count"></span></div><div class="note"><strong>档案说明：</strong>红色涂改、问号和空白信息没有被推测或补写。点击人物图可查看对应的原始卡片大图。</div><section class="grid" id="cards"></section></main>
 <footer><div class="wrap">资料来源：16号文件夹内人物卡图片与《1泠钰 设定卡.docx》；页面排版为归档展示用途。</div></footer>
 <div class="lightbox" id="lightbox"><span class="close">×</span><img id="lightboxImg" alt="原始人物卡"></div>
+<div class="note-modal" id="noteModal"><div class="note-modal-box"><button class="note-close" aria-label="关闭">×</button><div class="note-modal-head"><h3>BACKGROUND NOTE</h3><span class="who" id="noteModalName"></span></div><div class="note-modal-body" id="noteModalBody"></div></div></div>
 <script>
 const CHARACTER_ROOT = '../images/character/';
 const ID_ROOT = '../images/ID/';
 
 // 每条档案保留原卡片字段：基础资料、简介、战斗信息、关系和总结。
-const people = [
-  {
-    name: '举',
-    file: '举 hnb.jpeg',
-    age: '39',
-    height: '182',
-    weight: '95kg',
-    seat: 'A-1',
-    intro: '看起来脑子不太正常的奇美拉，但是干事却意外聪慧，疑神疑鬼。酒馆的第一名酒客。',
-    weak: '失眠；急性应激障碍',
-    skill: '飞刀、手枪、拳击、尾击；暗袭、浓烟',
-    related: '屠苏、桃逸佑（医生）、荒泊（收破烂的）',
-    value: '守序邪恶；浪漫高于一切。',
-    syn: '不错的一名主战力，但因心理状态不稳定难以真正依靠。',
-    con: '精神状态颇危的怪异旅人'
-  },
-  {
-    name: '初璃',
-    file: '初璃 初离.jpeg',
-    age: '16',
-    height: '161',
-    weight: '52kg',
-    seat: 'B-6',
-    intro: '遭受不幸的少女，性格依然温柔，坚持自己的道德底线。普通的在上学的16岁少女。',
-    weak: '讨厌看到群体导致的不公对待；讨厌高分贝噪音与吵架辱骂声',
-    skill: '唱歌；安抚情绪；打扫卫生；喜欢游戏、音游以及 RPG',
-    related: '举、桃逸佑（医生）、冷钰、拉提菩、屠苏、蝶祈',
-    value: '守序中立，温和地对待他人，知恩图报，但不好欺负。',
-    syn: '加 buff 的奶辅，无自保。',
-    con: '她曾拥有过幸福，但此刻早已离她而去'
-  },
-  {
-    name: '屠苏',
-    file: '屠苏 木穆.jpeg',
-    age: '23（涂改）',
-    height: '170cm',
-    weight: '已涂改',
-    seat: 'A3',
-    intro: '温柔友善的龙族，似乎经历过很多故事，对身边的每个伙伴都怀着善意。古龙族，体力值上限额外增加。',
-    weak: '灵魂破碎；不曾消泯的过往；绝望；最后一程',
-    skill: '体术；武器技能：精神干扰、属性增幅',
-    related: '白鸢、举、桃逸佑',
-    value: '守序善良，热爱着世间的一切美好。',
-    syn: '较强的输出与抗伤位，灵魂并不稳定以及刚需奶妈外可以放心托付后背。',
-    con: '走过死亡的神棍之人'
-  },
-  {
-    name: '桃逸佑',
-    file: '桃逸佑 悠星.jpeg',
-    age: '28',
-    height: '193',
-    weight: '91kg',
-    seat: 'A-9',
-    intro: '随时可能不知道从什么地方掏出手术刀的收藏家，厨艺已好但是一般懒得做，且不轻易透露。',
-    weak: '懒散怠工；嗜睡；洁癖；身体脆弱',
-    skill: '医疗精通；纯灵无害；收藏家；会做饭',
-    related: '荒泊（从他手上收过好东西）、举（在学校人间的医院有过几面之缘）',
-    value: '混乱守序；冰淇淋重度依赖；偏爱一切美丽的事物并试图收藏。',
-    syn: '不错的战斗辅助，但是比较莽。',
-    con: '奇怪的发什么道德感的“医生”'
-  },
-  {
-    name: '泠钰',
-    file: '泠钰 弗耽.jpg',
-    portrait: '泠钰证件照.png',
-    age: '21',
-    height: '176',
-    weight: '?',
-    seat: 'B-7',
-    intro: '更辅的辅 C。混乱中立，除非工作刚性需求不会乱来，其余严格遵循当下心情，有着灵活的道德底线。',
-    weak: '洁癖（血腥不算，但看见昆虫尤其史莱姆会掉 SAN）；体术一般',
-    skill: '毒药（远程高伤，单场上限5次）；跑图砖家；骇客（对数据体速度、攻击 +20%）',
-    related: '初璃',
-    value: '混乱中立；除非工作的刚性需求不会乱来，其余任何事情严格遵循当下心情。',
-    syn: '更辅的辅 C，我都跑图了，一定还要我亲自上手打吗？',
-    con: '反正不是什么好东西',
-    detail: '来源于三级文明星球。曾参与家族在星系上的残暴殖民扩张，后化名汀钰加入灯塔计划，因计划黑幕与资料泄露开始逃亡，最终跌进 16 号螺旋酒馆。'
-  },
-  {
-    name: '白鸢',
-    file: '白鸢 沈寻.png',
-    age: '11',
-    height: '143cm',
-    weight: '35kg',
-    seat: '未登记',
-    intro: '内向温柔腼腆，喜欢吃甜食和阅读，会做饭，但想要拿起沉重的锅铲还有一点困难。',
-    weak: '孱弱；高敏（五感传达的 debuff 影响增加）',
-    skill: '将时空穿梭时获得的能力注入食物和法杖里；清除负面状态、回复体力、治疗伤口',
-    related: '荒泊、屠苏',
-    value: '守序中立，或许？以自己的朋友为首位，不忍心伤害他人的温柔孩子。',
-    syn: '有一定自保能力，但是孩子，快跑！',
-    con: '好孩子，多夸夸他吧，他会送你糖吃'
-  },
-  {
-    name: '竺囹',
-    file: '竺囹 柏弈.jpeg',
-    age: '17',
-    height: '167cm',
-    weight: '63kg',
-    seat: 'B-3',
-    intro: '不太开朗的东洲人，讨厌符咒作业和药理作业；符阵消耗符咒获得增益，暴力美学消耗符咒获得强大力量。',
-    weak: '行动速度快的近身怪；可以释放火的怪物',
-    skill: '以献祭自身部分血量作为增伤符咒生效的代价；提供小范围群控',
-    related: '学姓没有社交（嗯）',
-    value: '守序混沌，别问，问就是被考试逼得。',
-    syn: '自保能力脆弱的功能型辅助；适合法术伤害的输出。',
-    con: '逃避考试的破防学生；循规蹈矩的规则遵守者'
-  },
-  {
-    name: '芝葵',
-    file: '芝葵 落木.png',
-    age: '16',
-    height: '158',
-    weight: '47.5kg',
-    seat: 'B2',
-    intro: '双丸子头、白耳小狐狸。由于神经系统部分受损，导致右眼瞳色稍浅；与熟人恶趣味爆棚。',
-    weak: '受到惊吓掉 50% 精神状态；会飞的虫类',
-    skill: '攻击：设定触发条件与效果；防御：伤害转移或转移伤害结果',
-    related: '蝶祈和初璃（很温柔的姐姐）；举（好奇）；拉提菩、竺囹',
-    value: '守序混沌，不喜欢规则但会遵守；偏心朋友。',
-    syn: '综合能力有限，攻击技能需要与队友配合；一定程度上可自保。',
-    con: '成熟与幼稚共存的孩子；一个倾诉者兼倾听者'
-  },
-  {
-    name: '苏陇客',
-    file: '苏陇客 沈寻.jpeg',
-    age: '28',
-    height: '183',
-    weight: '86kg',
-    seat: '未登记',
-    intro: '风流成性的旅居艺术家，自称不会爱上任何人，擅长跟人打交道，但更喜欢独处。',
-    weak: '易碎：受到理智、心理攻击伤害增加 30%；真心：心脏受到毁灭性攻击时立刻死亡',
-    skill: '体术优秀；会使用细剑；听演唱和音乐有增益效果',
-    related: '荒泊（被误食过？）；白鸢（治愈好物）',
-    value: '混沌中立，因喜欢酒馆至少现在不会背叛你。',
-    syn: '兄弟兄弟你怎么是坦克；无法抗的厚弱艺术家',
-    con: '心脏这么脆弱，是很难幸福地活下去的。'
-  },
-  {
-    name: '荒泊',
-    file: '荒泊 云朵.jpeg',
-    age: '28',
-    height: '183cm',
-    weight: '89kg',
-    seat: 'A-6',
-    intro: '双亡首使者，开朗到有些没边界的外向男子；自小就在马路边上生存，遇到废弃场所会第一时间探索。',
-    weak: '脑力过载：超过一定攻击次数有概率麻痹自身；怕猫，遇见猫猫失去作战能力。',
-    skill: '野外生存专家；黄金烹饪技巧；dot 男子会赢吗',
-    related: '白鸢、举、桃子',
-    value: '生存第一，快乐第二。',
-    syn: '蜘蛛习性拾荒者',
-    con: '绝望中的牛蝶'
-  },
-  {
-    name: '菈提菩',
-    file: '菈提菩 薯条泡泡.png',
-    age: '17',
-    height: '174',
-    weight: '已涂改',
-    seat: 'A-4',
-    intro: '懒惰贪玩的普通女孩，对强者怀有扭曲的敬意，讨厌肮脏（物理）的打法。',
-    weak: '害怕鼠类；易怒，情绪失控时会暴走',
-    skill: '环境同化：战斗中自动进化，适应任何攻击与环境，并吞噬敌人技能为己用',
-    related: '暂无登记',
-    value: '我就是天理。',
-    syn: '弱点较多，不容易被近身；傲慢自负的性格易被诱导。',
-    con: '超越规则的绝对适应者'
-  },
-  {
-    name: '蝶祈',
-    file: '蝶祈 阿怡.jpeg',
-    age: '17',
-    height: '168',
-    weight: '59kg',
-    seat: 'A-7',
-    intro: '本为技能半改造实验体，受过一定伤害故对生人有较强戒备；本性温柔善良，相熟后较依赖粘人。',
-    weak: '实验芯片副作用概率影响伤害反弹效果；痛感敏锐，血量过低会精神紊乱',
-    skill: '分担队友受击伤害并提供部分回血；可将自身受伤害概率转移给敌方',
-    related: '初璃、举、拉提菩、屠苏',
-    value: '守序中立，对朋友依赖；待人温和，愿意为队友牺牲自己。',
-    syn: '加 buff 的奶辅，自保较弱',
-    con: '有什么不开心的事可以向她倾诉，她会温暖你'
-  },
-  {
-    name: '阮无常',
-    file: '阮无常 蝴蝶.jpeg',
-    age: '23',
-    height: '180',
-    weight: '63kg',
-    seat: 'A-10',
-    intro: '养育到一定程度的公家研究员，对大部分事物都淡淡的很没激情；碰到需要活动很多时会格外暴躁。',
-    weak: '体质硬伤；敏感：蝴蝶触角功能丰富且格外柔弱',
-    skill: '药物精通；社畜的怂态：精神类攻击造成的效果不佳',
-    related: '桃逸佑（该死又不能让他死的前监管对象）',
-    value: '混乱中立；没有上层的地方就是没有限制。你逼急我了我杀你也没办法。',
-    syn: '几乎没有肉搏能力的社畜，但他毒死你的几率绝不是 0',
-    con: '绝望的牛蝶'
-  },
-  {
-    name: '陈南恕',
-    file: '陈南恕 霉菌.jpeg',
-    age: '36',
-    height: '182cm',
-    weight: '70kg',
-    seat: 'B-10',
-    intro: '看上去温柔好接触的佛系男子，靠近却感到无端森冷；一头浅蓝色长发总是半披着，天生灰蓝异瞳。',
-    weak: '每运运身触发厄运事件概率 +75%；极易因外界变化感冒（体力 -20%，防御 -10%）',
-    skill: '将【怨气】实体化，根据所思所想改变形态；使用时攻击 +50%，防御 -50%',
-    related: '拉提菩（每次遇见总有不好的事发生）；芝葵（一面之缘的中学生）',
-    value: '混沌中立，非必要不会主动招惹别人；杀人前“真诚地”为对方送行。',
-    syn: '有不错自保能力的副 C，极强的隐忍能力',
-    con: '怜悯的眼神让人无端悲伤，祝你一路安顺。'
-  },
-  {
-    name: '祈渊',
-    file: '祈渊 菠萝.jpg',
-    portrait: '祈渊证件照.jpg',
-    age: '16',
-    height: '172cm',
-    weight: '133.43',
-    seat: '未登记',
-    intro: '厌世严重，原因只是觉得自己活动太无聊了。从 14 岁后就离开了家，在街上混日子，一天喝多了晃进了酒馆。',
-    weak: '厌世；感知判定下降；厌烦噪声（受声音影响提高 50%）；注意力涣散；懒惰，自身基础攻击力下降',
-    skill: '撕咬，连续进行 4 段攻击，每段造成 150% 攻击伤害；傲视，提升自身攻击 25% 可叠加',
-    related: '来的晚且懒得社交，所以暂时没有',
-    value: '中立混沌，处于想干什么干什么的阶段',
-    syn: '叠自身属性后打核爆，自身防御端薄弱',
-    con: '厌世严重，有时会故意伤害别人，因为觉得这样有意思'
-  },
-  {
-    name: '？？？',
-    file: '空白卡.jpeg',
-    portrait: '空白证件照.jpg',
-    age: '未登记',
-    height: '未登记',
-    weight: '未登记',
-    seat: '未登记',
-    intro: '未补写任何人物信息。',
-    weak: '未登记',
-    skill: '未登记',
-    related: '未登记',
-    value: '未登记',
-    syn: '未登记',
-    con: '等待后续登记...'
+let people = [];
+let isLoading = true;
+
+async function loadPeople() {
+  try {
+    const response = await fetch('../data/people.json');
+    if (!response.ok) throw new Error('网络请求失败');
+    people = await response.json();
+    isLoading = false;
+    document.getElementById('loadingIndicator').textContent = '📂 档案已就绪';
+    document.getElementById('loadingIndicator').style.color = 'var(--gold)';
+    render();
+  } catch (error) {
+    console.error('加载人物数据失败:', error);
+    document.getElementById('cards').innerHTML = `
+      <div class="empty" style="color:#d89878;">
+        ⚠️ 档案加载失败，请刷新重试。<br>
+        <span style="font-size:12px;color:var(--muted);">${esc(error.message)}</span><br>
+        <span style="font-size:12px;color:var(--muted);">提示：请通过本地服务器打开页面（如 VS Code Live Server），直接双击 HTML 会被浏览器拦截本地 JSON 请求。</span>
+      </div>`;
+    document.getElementById('count').textContent = '加载失败';
+    document.getElementById('loadingIndicator').textContent = '📂 档案加载失败';
   }
-];
+}
 
 // 用户可见文字统一转义，避免人物资料中的符号影响 HTML 结构。
 function esc(value) {
@@ -743,18 +651,32 @@ function card(person, index) {
     ? `<img class="portrait" src="${portraitSrc}" data-full="${image}" alt="${esc(person.name)}证件照">`
     : '<div class="portrait portrait-placeholder">证件照<br>未登记</div>';
 
-  const background = person.detail ? `
-    <div class="section full" style="margin-top:10px">
-      <h3>BACKGROUND NOTE</h3>
-      <p>${esc(person.detail)}</p>
+  const detailText = (person.detail || '').trim();
+  const longNote = detailText.length > 100;
+  const noteContent = detailText
+    ? `<p class="note-text">${esc(detailText)}</p>`
+    : '<p class="note-empty">（待补充）</p>';
+  const noteActions = detailText ? `
+    <div class="note-actions">
+      ${longNote ? '<button class="note-btn note-toggle" type="button">展开 ▾</button>' : ''}
+      <button class="note-btn note-read" type="button">阅读原文 ↗</button>
     </div>` : '';
+  const background = `
+    <div class="section full note-section" data-name="${esc(person.name)}">
+      <h3>BACKGROUND NOTE</h3>
+      ${noteContent}
+      ${noteActions}
+    </div>`;
 
-  return `<article class="card" data-text="${esc(Object.values(person).join(' '))}" data-seat="${esc(person.seat)}" style="animation-delay:${index * 35}ms">
+  return `<article class="card" data-text="${esc(Object.values(person).join(' '))}" data-seat="${esc(person.seat)}" data-name="${esc(person.name)}" style="animation-delay:${index * 40}ms">
     <div class="card-head">
       ${portrait}
       <div>
         <h2>${esc(person.name)}</h2>
-        <div class="alias">16号螺旋酒馆 · 旅客档案</div>
+        <div class="alias">
+          16号螺旋酒馆 · 旅客档案
+          <button class="fav-btn" type="button" data-name="${esc(person.name)}" aria-label="收藏${esc(person.name)}">☆</button>
+        </div>
         <div class="facts">
           <span>AGE<b>${esc(person.age)}</b></span>
           <span>HEIGHT<b>${esc(person.height)}</b></span>
@@ -774,23 +696,135 @@ function card(person, index) {
 
 // 搜索与座位筛选共用这一处渲染入口，保持结果数量同步。
 function render() {
+  if (isLoading) return;
+
   const query = document.getElementById('search').value.trim().toLowerCase();
   const seat = document.getElementById('seat').value;
-  const visiblePeople = people.filter(person => {
+  // 第一步：筛选
+const filteredPeople = people.filter(person => {
     const matchesQuery = !query || Object.values(person).join(' ').toLowerCase().includes(query);
     const matchesSeat = !seat || (seat === '?' ? person.seat === '未登记' : person.seat.startsWith(seat));
     return matchesQuery && matchesSeat;
-  });
+});
+
+// 第二步：分离收藏和未收藏
+const favorites = getFavorites(); // 获取收藏列表（按收藏顺序）
+const favoritePeople = [];
+const unfavoritePeople = [];
+
+filteredPeople.forEach(person => {
+    if (favorites.includes(person.name)) {
+        favoritePeople.push(person);
+    } else {
+        unfavoritePeople.push(person);
+    }
+});
+
+// 第三步：收藏卡片按收藏顺序排序（用 favorites 的顺序做索引）
+favoritePeople.sort((a, b) => {
+    return favorites.indexOf(a.name) - favorites.indexOf(b.name);
+});
+
+// 第四步：合并（收藏在前，未收藏在后）
+const visiblePeople = [...favoritePeople, ...unfavoritePeople];
 
   document.getElementById('cards').innerHTML = visiblePeople.length
     ? visiblePeople.map(card).join('')
     : '<div class="empty">没有找到对应的酒客档案。</div>';
   document.getElementById('count').textContent = `${visiblePeople.length} / ${people.length} 位旅客`;
+  updateFavoriteUI();
+}
+
+const STORAGE_KEY = 'tavern_favorites';
+
+function getFavorites() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFavorites(list) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+function toggleFavorite(name) {
+  const list = getFavorites();
+  const index = list.indexOf(name);
+  if (index > -1) {
+    list.splice(index, 1);
+  } else {
+    list.push(name);
+  }
+  saveFavorites(list);
+  updateFavoriteUI();
+}
+
+function updateFavoriteUI() {
+  const favorites = getFavorites();
+  document.querySelectorAll('.card').forEach(cardElement => {
+    const name = cardElement.dataset.name;
+    const isFavorite = favorites.includes(name);
+    cardElement.classList.toggle('is-fav', isFavorite);
+    const button = cardElement.querySelector('.fav-btn');
+    if (button) {
+      button.textContent = isFavorite ? '★' : '☆';
+      button.classList.toggle('is-fav', isFavorite);
+      button.setAttribute('aria-pressed', String(isFavorite));
+    }
+  });
 }
 
 document.getElementById('search').addEventListener('input', render);
 document.getElementById('seat').addEventListener('change', render);
 document.getElementById('cards').addEventListener('click', event => {
+  const button = event.target.closest('.fav-btn');
+  if (!button) return;
+  event.stopPropagation();
+  toggleFavorite(button.dataset.name);
+});
+// 随机酒客按钮
+document.getElementById('randomBtn').addEventListener('click', function() {
+  const visibleCards = Array.from(document.querySelectorAll('.card'));
+
+  if (visibleCards.length === 0) {
+    // 如果没有可见卡片（全部被筛掉了），提示一下
+    alert('当前没有符合条件的酒客。');
+    return;
+  }
+
+  // 随机选一张
+  const randomIndex = Math.floor(Math.random() * visibleCards.length);
+  const targetCard = visibleCards[randomIndex];
+
+  // 移除之前的高亮
+  document.querySelectorAll('.card.highlight').forEach(card => card.classList.remove('highlight'));
+
+  // 滚动到卡片位置
+  targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // 添加高亮
+  targetCard.classList.add('highlight');
+});
+document.getElementById('cards').addEventListener('click', event => {
+  const toggle = event.target.closest('.note-toggle');
+  if (toggle) {
+    const section = toggle.closest('.note-section');
+    const expanded = section.classList.toggle('expanded');
+    toggle.textContent = expanded ? '收起 ▴' : '展开 ▾';
+    return;
+  }
+  const reader = event.target.closest('.note-read');
+  if (reader) {
+    const section = reader.closest('.note-section');
+    const textEl = section.querySelector('.note-text');
+    document.getElementById('noteModalName').textContent = section.dataset.name || '';
+    document.getElementById('noteModalBody').textContent = textEl ? textEl.textContent : '';
+    document.getElementById('noteModal').classList.add('open');
+    return;
+  }
   const target = event.target.closest('.portrait');
   if (!target || !target.dataset.full) return;
 
@@ -800,7 +834,16 @@ document.getElementById('cards').addEventListener('click', event => {
 document.getElementById('lightbox').addEventListener('click', () => {
   document.getElementById('lightbox').classList.remove('open');
 });
-render();
+const noteModal = document.getElementById('noteModal');
+noteModal.addEventListener('click', event => {
+  if (event.target === noteModal || event.target.closest('.note-close')) {
+    noteModal.classList.remove('open');
+  }
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') noteModal.classList.remove('open');
+});
+loadPeople();
 </script>
 </body>
 </html>
