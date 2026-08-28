@@ -18,8 +18,8 @@ Tavern/
 │   └── index.html
 ├── map/                # 酒馆地图展示页
 │   ├── index.html
-│   ├── map-v1.png      # 初版地图
-│   └── map-v2.png      # 扩建后地图
+│   ├── map-v1.png      # 一楼地图
+│   └── map-v2.png      # 二楼地图
 ├── data/
 │   ├── people.json     # 全部旅客档案数据
 │   └── update_log.json # 版本更新日志
@@ -27,7 +27,8 @@ Tavern/
     ├── bar.jpg         # 封面背景
     ├── bar2.jpg        # 档案页背景
     ├── character/      # 原始人物卡图片
-    └── ID/             # 证件照
+    ├── ID/             # 证件照
+    └── sil/            # 立绘（按「姓名 立绘.jpg」命名，当前仅泠钰）
 ```
 
 ---
@@ -49,12 +50,14 @@ Tavern/
 - **搜索与筛选**：按姓名/能力/关系搜索，按座位区筛选
 - **人物卡片**：入场翻页动画；PC 点击翻转看语录，移动端长按 1.3 秒翻转
 - **角色语录**：优先取 `people.json` 的 `quote` 字段，未填时自动从结语/评价/简介提取
+- **证件照/立绘轮播**：点击头像打开大图灯箱，左右滑动切换、可无限循环（后续可扩展服饰图）
+- **翻页阅读**：📖 按钮进入电子书模式，卡片之间用 3D 书页翻转切换，支持点击边缘/滑动/方向键
 - **BACKGROUND NOTE**：超长备注自动折叠，可展开或弹出独立阅读框
 - **收藏**：星标收藏，收藏卡置顶并按收藏顺序排序（localStorage）
 - **随机酒客**：🎲 随机选一张卡并滚动高亮
 - **人物关系网**：右下角 🔗 打开，基于 `links` 字段的 Canvas 力导向图，支持拖节点、拖空白平移、滚轮缩放、点击节点跳转档案
 - **档案借阅记录**：点击头像或「查看原始卡片」自动记录借阅流水
-- **灯箱**：点击证件照放大查看原始卡片
+- **查看原始卡片**：卡片正反两面都有入口，点击在新标签打开原图
 - **版本更新日志**：页脚展示 `update_log.json` 最近 5 条
 
 ### 时间线（`timeline/index.html`）
@@ -83,6 +86,7 @@ Tavern/
 | `intro / weak / skill / related / value / syn / con` | 卡片各栏目文本 |
 | `detail` | 背景长文（BACKGROUND NOTE） |
 | `links` | 关系网边：相关人物名字数组（需与 `name` 完全一致） |
+| `gallery`（可选） | 服饰/场景图数组，自动并入头像轮播；字符串或 `{ src, label }` |
 
 ### `data/update_log.json`
 
@@ -101,7 +105,9 @@ Tavern/
 
 - **加新人物**：`people.json` 加一条 → `images/character/` 放原卡 → （可选）在 `drinker/index.html` 的 `ARCHIVE_NUMBERS` 补编号
 - **写语录**：填对应人物的 `"quote"` 字段即可
-- **加关系**：在人物 `links` 数组里写精确名字；若数据里用错字/昵称，可在 `drinker/index.html` 的 `NAME_ALIASES` 加别名（如 `拉提菩 → 菈提菩`）
+- **加立绘**：图片放 `images/sil/`，命名为「姓名 立绘.jpg」（png/jpeg/webp 均可），点击该人物头像即可轮播查看
+- **加服饰/场景图**：在人物 `gallery` 数组里加图片路径（相对 `drinker/`），自动进入头像轮播
+- **加关系**：在人物 `links` 数组里写精确名字；因为related的识别正确率有点难看,所以现在用links,related留着或者删了都行
 - **加时间线事件**：`timeline/index.html` 的 `events` 数组按格式追加
 - **换/加地图**：`map/` 放图片，改 `map/index.html` 的 `maps` 数组
 - **记版本**：往 `data/update_log.json` 顶部插一条 `{ date, version, entries }`
