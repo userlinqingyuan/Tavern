@@ -819,10 +819,10 @@ footer {
 .book-close{background:none;border:none;color:var(--muted);font-size:26px;cursor:pointer;transition:.3s}
 .book-close:hover{color:var(--gold);transform:rotate(90deg)}
 .book-stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;touch-action:pan-y}
-.book{position:relative;width:min(560px,96vw);perspective:1800px}
-.book-underlay{position:relative}
-.book-overlay{position:absolute;inset:0;transform-origin:left center;
-	backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.book{position:relative;width:min(560px,96vw);max-height:74vh;perspective:1800px}
+.book-underlay{position:relative;max-height:74vh;overflow-y:auto}
+.book-overlay{position:absolute;inset:0;max-height:74vh;overflow-y:auto;
+	transform-origin:left center;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .book-page .card{animation:none!important;opacity:1!important;transform:none!important}
 .book-page .card-inner{min-height:0}
 .book-hint{text-align:center;color:var(--muted);font-size:11px;letter-spacing:.08em;
@@ -1972,6 +1972,8 @@ function openBook() {
   bookTurning = false;
   document.getElementById('bookReader').classList.add('open');
   document.body.style.overflow = 'hidden';
+  document.querySelector('.book-hint').textContent =
+    isTouchDevice ? '左右滑动翻页 · 点击卡片翻转' : '点击边缘/左右滑动翻页 · 方向键 · 点击卡片翻转';
   renderBook();
 }
 
@@ -2028,16 +2030,61 @@ bookStage.addEventListener('pointerdown', e => {
   bookSwipeY = e.clientY;
 });
 bookStage.addEventListener('pointerup', e => {
+  // 链接、按钮、头像不参与翻页
+  if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.portrait')) return;
   const dx = e.clientX - bookSwipeX;
   const dy = e.clientY - bookSwipeY;
   if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
     turnBook(dx < 0 ? 1 : -1);
     return;
   }
+  // 手机端只用滑动翻页
+  if (isTouchDevice) return;
   const rect = bookStage.getBoundingClientRect();
   const x = e.clientX - rect.left;
   if (x < rect.width * 0.3) turnBook(-1);
   else if (x > rect.width * 0.7) turnBook(1);
+});
+// 书内卡片交互（克隆卡不在 #cards 内，需要单独委托）
+bookStage.addEventListener('click', event => {
+  const card = event.target.closest('.card');
+  if (!card) return;
+
+  const portrait = event.target.closest('.portrait');
+  if (portrait) {
+    const person = people.find(p => p.name === card.dataset.name) || null;
+    logBorrow(person ? person.name : '未知档案');
+    const fallback = portrait.dataset.full || (person ? CHARACTER_ROOT + encodeURI(person.file) : '');
+    openCarousel(person, fallback);
+    return;
+  }
+  const fav = event.target.closest('.fav-btn');
+  if (fav) {
+    toggleFavorite(fav.dataset.name);
+    const isFav = getFavorites().includes(fav.dataset.name);
+    fav.textContent = isFav ? '★' : '☆';
+    return;
+  }
+  const toggle = event.target.closest('.note-toggle');
+  if (toggle) {
+    const section = toggle.closest('.note-section');
+    const expanded = section.classList.toggle('expanded');
+    toggle.textContent = expanded ? '收起 ▴' : '展开 ▾';
+    return;
+  }
+  const reader = event.target.closest('.note-read');
+  if (reader) {
+    const section = reader.closest('.note-section');
+    const textEl = section.querySelector('.note-text');
+    document.getElementById('noteModalName').textContent = section.dataset.name || '';
+    document.getElementById('noteModalBody').textContent = textEl ? textEl.textContent : '';
+    document.getElementById('noteModal').classList.add('open');
+    return;
+  }
+  const source = event.target.closest('.source');
+  if (source) {
+    logBorrow(card.dataset.name || '未知档案');
+  }
 });
 document.addEventListener('keydown', e => {
   if (!document.getElementById('bookReader').classList.contains('open')) return;
@@ -2225,44 +2272,13 @@ if (!isTouchDevice) {
   });
 }
 
-// 移动端：长按 1.3 秒翻转 / 再长按翻回
+// 移动端：点击翻转 / 再点翻回
 if (isTouchDevice) {
-  let pressTimer = null;
-  let pressCard = null;
-  let pressStartX = 0;
-  let pressStartY = 0;
-
-  function cancelCardPress() {
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      pressTimer = null;
-    }
-    pressCard = null;
-  }
-
-  document.addEventListener('pointerdown', function(e) {
+  document.addEventListener('click', function(e) {
     const card = e.target.closest('.card');
     if (!card || isCardInteractiveTarget(e.target)) return;
-    pressCard = card;
-    pressStartX = e.clientX;
-    pressStartY = e.clientY;
-    pressTimer = setTimeout(function() {
-      card.classList.toggle('is-flipped');
-      pressTimer = null;
-      pressCard = null;
-    }, 1300);
+    card.classList.toggle('is-flipped');
   });
-
-  document.addEventListener('pointermove', function(e) {
-    if (!pressTimer) return;
-    // 手指移动超过 10px 视为滚动，取消长按
-    if (Math.hypot(e.clientX - pressStartX, e.clientY - pressStartY) > 10) {
-      cancelCardPress();
-    }
-  });
-
-  document.addEventListener('pointerup', cancelCardPress);
-  document.addEventListener('pointercancel', cancelCardPress);
 }
 </script>
 </body>
