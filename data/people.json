@@ -1,6 +1,7 @@
 [
   {
     "name": "举",
+    "quote": "",
     "file": "举 hnb.jpeg",
     "portrait": "",
     "age": "39",
@@ -19,6 +20,7 @@
   },
   {
     "name": "初璃",
+    "quote": "",
     "file": "初璃 初离.jpeg",
     "portrait": "",
     "age": "16",
@@ -37,6 +39,7 @@
   },
   {
     "name": "屠苏",
+    "quote": "",
     "file": "屠苏 木穆.jpeg",
     "portrait": "",
     "age": "23（涂改）",
@@ -55,6 +58,7 @@
   },
   {
     "name": "桃逸佑",
+    "quote": "",
     "file": "桃逸佑 悠星.jpeg",
     "portrait": "",
     "age": "28",
@@ -73,13 +77,14 @@
   },
   {
     "name": "泠钰",
+    "quote": "",
     "file": "泠钰 弗耽.jpg",
     "portrait": "泠钰证件照.png",
     "age": "21",
     "height": "176",
     "weight": "?",
     "seat": "B-7",
-    "intro": "更辅的辅 C。混乱中立，除非工作刚性需求不会乱来，其余严格遵循当下心情，有着灵活的道德底线。",
+    "intro": "除非工作刚性需求不会乱来，其余严格遵循当下心情，有着灵活的道德底线。",
     "weak": "洁癖（血腥不算，但看见昆虫尤其史莱姆会掉 SAN）；体术一般",
     "skill": "毒药（远程高伤，单场上限5次）；跑图砖家；骇客（对数据体速度、攻击 +20%）",
     "related": "初璃",
@@ -91,6 +96,7 @@
   },
   {
     "name": "白鸢",
+    "quote": "",
     "file": "白鸢 沈寻.png",
     "portrait": "",
     "age": "11",
@@ -109,6 +115,7 @@
   },
   {
     "name": "竺囹",
+    "quote": "",
     "file": "竺囹 柏弈.jpeg",
     "portrait": "",
     "age": "17",
@@ -127,6 +134,7 @@
   },
   {
     "name": "芝葵",
+    "quote": "",
     "file": "芝葵 落木.png",
     "portrait": "",
     "age": "16",
@@ -145,6 +153,7 @@
   },
   {
     "name": "苏陇客",
+    "quote": "",
     "file": "苏陇客 沈寻.jpeg",
     "portrait": "",
     "age": "28",
@@ -163,6 +172,7 @@
   },
   {
     "name": "荒泊",
+    "quote": "",
     "file": "荒泊 云朵.jpeg",
     "portrait": "",
     "age": "28",
@@ -181,6 +191,7 @@
   },
   {
     "name": "菈提菩",
+    "quote": "",
     "file": "菈提菩 薯条泡泡.png",
     "portrait": "",
     "age": "17",
@@ -199,6 +210,7 @@
   },
   {
     "name": "蝶祈",
+    "quote": "",
     "file": "蝶祈 阿怡.jpeg",
     "portrait": "",
     "age": "17",
@@ -217,6 +229,7 @@
   },
   {
     "name": "阮无常",
+    "quote": "",
     "file": "阮无常 蝴蝶.jpeg",
     "portrait": "",
     "age": "23",
@@ -235,6 +248,7 @@
   },
   {
     "name": "陈南恕",
+    "quote": "",
     "file": "陈南恕 霉菌.jpeg",
     "portrait": "",
     "age": "36",
@@ -253,6 +267,7 @@
   },
   {
     "name": "祈渊",
+    "quote": "",
     "file": "祈渊 菠萝.jpg",
     "portrait": "祈渊证件照.jpg",
     "age": "16",
@@ -271,6 +286,7 @@
   },
   {
     "name": "？？？",
+    "quote": "",
     "file": "空白卡.jpeg",
     "portrait": "空白证件照.jpg",
     "age": "未登记",

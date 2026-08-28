@@ -221,10 +221,7 @@ body{margin:0;color:var(--ink);
     transform-style: preserve-3d;
 }
 
-/* 悬停时翻转 */
-.card:hover .card-inner {
-    transform: rotateY(180deg);
-}
+/* 翻转由 JS 控制：PC 点击 / 移动端长按 */
 
 /* 正面和背面 */
 .card-face {
@@ -318,10 +315,6 @@ body{margin:0;color:var(--ink);
     transition: opacity 0.3s ease;
 }
 
-.card:hover .card-flip-hint {
-    opacity: 0;
-}
-
 /* 卡片内边框（调整到内层，避免挡住翻转） */
 .card .card-inner .card-front::after {
     content: "";
@@ -332,10 +325,16 @@ body{margin:0;color:var(--ink);
     border-radius: 4px;
 }
 
-/* 移动端：点击翻转而非悬停 */
+.card.is-flipped .card-inner {
+    transform: rotateY(180deg);
+}
+
+/* 移动端长按翻转时禁止默认选择/呼出菜单 */
 @media (hover: none) {
-    .card.is-flipped .card-inner {
-        transform: rotateY(180deg);
+    .card {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
     }
 }
 
@@ -1035,6 +1034,11 @@ function renderSections(person) {
 // ============================================
 
 function getCharacterQuote(person) {
+  // 优先使用专门填写的语录字段
+  if (person.quote && person.quote.trim().length > 0) {
+    return { text: person.quote.trim(), source: person.name + ' · 语录' };
+  }
+
   // 优先从 detail 中提取（如果有）
   if (person.detail && person.detail.length > 10) {
     // 尝试找引号内的内容
@@ -1232,6 +1236,35 @@ function updateFavoriteUI() {
 
 document.getElementById('search').addEventListener('input', render);
 document.getElementById('seat').addEventListener('change', render);
+// ============================================
+// 📚 档案借阅记录
+// ============================================
+
+const BORROW_KEY = 'tavern_borrow_log';
+
+// 记录一次借阅
+function logBorrow(characterName) {
+  try {
+    const logs = JSON.parse(localStorage.getItem(BORROW_KEY) || '[]');
+    const now = new Date();
+    const timeStr = now.getFullYear() + '-' +
+      String(now.getMonth() + 1).padStart(2, '0') + '-' +
+      String(now.getDate()).padStart(2, '0') + ' ' +
+      String(now.getHours()).padStart(2, '0') + ':' +
+      String(now.getMinutes()).padStart(2, '0');
+    logs.unshift({
+      name: characterName,
+      time: timeStr,
+      id: Date.now()
+    });
+    // 只保留最近 200 条
+    if (logs.length > 200) logs.length = 200;
+    localStorage.setItem(BORROW_KEY, JSON.stringify(logs));
+  } catch (e) {
+    // 静默失败，不影响主功能
+  }
+}
+
 document.getElementById('cards').addEventListener('click', event => {
   const button = event.target.closest('.fav-btn');
   if (!button) return;
@@ -1278,8 +1311,19 @@ document.getElementById('cards').addEventListener('click', event => {
     document.getElementById('noteModal').classList.add('open');
     return;
   }
+  // 点击“查看原始卡片”时记录借阅
+  const sourceLink = event.target.closest('.source');
+  if (sourceLink) {
+    const card = sourceLink.closest('.card');
+    logBorrow(card ? card.dataset.name : '未知档案');
+    return;
+  }
   const target = event.target.closest('.portrait');
   if (!target || !target.dataset.full) return;
+
+  // 点击头像打开灯箱时记录借阅
+  const card = target.closest('.card');
+  logBorrow(card ? card.dataset.name : '未知档案');
 
   document.getElementById('lightboxImg').src = target.dataset.full;
   document.getElementById('lightbox').classList.add('open');
@@ -1894,18 +1938,63 @@ document.getElementById('fragment-card').addEventListener('click', e => {
   e.stopPropagation();
 });
 // ============================================
-// 📱 移动端点击翻转
+// 🎴 卡片翻转交互
 // ============================================
 
-// 检测是否支持悬停（触摸设备不支持）
-if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+// 链接、按钮、头像不参与翻转
+function isCardInteractiveTarget(target) {
+  return !!(target.closest('a') || target.closest('button') || target.closest('.portrait'));
+}
+
+// PC：点击翻转 / 再点翻回
+if (!isTouchDevice) {
   document.addEventListener('click', function(e) {
     const card = e.target.closest('.card');
-    if (!card) return;
-    // 如果点击的是链接、按钮或头像，不触发翻转
-    if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.portrait')) return;
+    if (!card || isCardInteractiveTarget(e.target)) return;
     card.classList.toggle('is-flipped');
   });
+}
+
+// 移动端：长按 1.3 秒翻转 / 再长按翻回
+if (isTouchDevice) {
+  let pressTimer = null;
+  let pressCard = null;
+  let pressStartX = 0;
+  let pressStartY = 0;
+
+  function cancelCardPress() {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+    }
+    pressCard = null;
+  }
+
+  document.addEventListener('pointerdown', function(e) {
+    const card = e.target.closest('.card');
+    if (!card || isCardInteractiveTarget(e.target)) return;
+    pressCard = card;
+    pressStartX = e.clientX;
+    pressStartY = e.clientY;
+    pressTimer = setTimeout(function() {
+      card.classList.toggle('is-flipped');
+      pressTimer = null;
+      pressCard = null;
+    }, 1300);
+  });
+
+  document.addEventListener('pointermove', function(e) {
+    if (!pressTimer) return;
+    // 手指移动超过 10px 视为滚动，取消长按
+    if (Math.hypot(e.clientX - pressStartX, e.clientY - pressStartY) > 10) {
+      cancelCardPress();
+    }
+  });
+
+  document.addEventListener('pointerup', cancelCardPress);
+  document.addEventListener('pointercancel', cancelCardPress);
 }
 </script>
 </body>

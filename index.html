@@ -828,6 +828,49 @@
         </div>
     </main>
 
+    <!-- ============================================
+    📚 档案借阅记录
+    ============================================ -->
+    <div id="borrow-log" style="
+        margin: 20px auto 90px;
+        max-width: 600px;
+        width: calc(100% - 40px);
+        padding: 16px 20px 20px;
+        background: rgba(20, 12, 8, 0.35);
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(214, 168, 93, 0.15);
+        border-radius: 8px;
+    ">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+            <h3 style="margin:0;color:var(--gold);font-weight:400;font-size:14px;letter-spacing:0.08em;">📚 档案借阅记录</h3>
+            <span id="borrow-count" style="color:var(--gold);font-size:11px;opacity:0.6;"></span>
+        </div>
+
+        <div id="borrow-list" style="
+            max-height:160px;
+            overflow-y:auto;
+            font-size:13px;
+            line-height:1.6;
+            padding-right:4px;
+            scrollbar-width:thin;
+            scrollbar-color:rgba(214,168,93,0.2) transparent;
+        ">
+            <div style="color:var(--gold);font-size:12px;text-align:center;padding:12px 0;opacity:0.4;">暂无借阅记录。</div>
+        </div>
+
+        <div style="text-align:right;margin-top:8px;">
+            <button id="borrow-clear" style="
+                background:none;
+                border:none;
+                color:rgba(214,168,93,0.25);
+                font-size:11px;
+                cursor:pointer;
+                transition:0.3s;
+                padding:2px 6px;
+            ">清空记录</button>
+        </div>
+    </div>
+
     <footer style="position:fixed;bottom:0;left:0;right:0;z-index:5;background:rgba(12,8,6,.88);backdrop-filter:blur(4px);border-top:1px solid rgba(214,168,93,.15);">
         <div class="wrap" style="display:flex;gap:20px;justify-content:center;align-items:center;flex-wrap:wrap;padding:14px 16px;">
             <span>资料来源：16号螺旋酒馆</span>
@@ -1031,6 +1074,54 @@
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') closeFragmentModal();
         });
+
+        // ============================================
+        // 📚 档案借阅记录渲染
+        // ============================================
+
+        const BORROW_KEY = 'tavern_borrow_log';
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderBorrowLog() {
+            const list = document.getElementById('borrow-list');
+            const count = document.getElementById('borrow-count');
+
+            let logs = [];
+            try {
+                logs = JSON.parse(localStorage.getItem(BORROW_KEY) || '[]');
+            } catch { logs = []; }
+
+            if (logs.length === 0) {
+                list.innerHTML = `<div style="color:var(--gold);font-size:12px;text-align:center;padding:12px 0;opacity:0.4;">还没有借阅记录。点击人物卡片的“查看原始卡片”开始记录。</div>`;
+                count.textContent = '0 次';
+                return;
+            }
+
+            count.textContent = `${logs.length} 次`;
+
+            list.innerHTML = logs.slice(0, 20).map(log => `
+                <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(214,168,93,0.06);">
+                    <span style="color:#f5e68a;">${escapeHtml(log.name)}</span>
+                    <span style="font-size:11px;color:rgba(245,230,138,0.5);">${escapeHtml(log.time)}</span>
+                </div>
+            `).join('');
+        }
+
+        // 清空借阅记录
+        document.getElementById('borrow-clear').addEventListener('click', function() {
+            if (confirm('确定要清空所有借阅记录吗？')) {
+                localStorage.setItem(BORROW_KEY, '[]');
+                renderBorrowLog();
+            }
+        });
+
+        // 在页面加载时渲染
+        document.addEventListener('DOMContentLoaded', renderBorrowLog);
     </script>
 </body>
 </html>
