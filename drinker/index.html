@@ -20,6 +20,12 @@
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
+/* 全局滚动条：深褐底 / 浅褐滑块 / 半透明细条 */
+html{scrollbar-width:thin;scrollbar-color:rgba(200,168,120,.45) rgba(72,50,28,.25)}
+html::-webkit-scrollbar{width:7px}
+html::-webkit-scrollbar-track{background:rgba(72,50,28,.25)}
+html::-webkit-scrollbar-thumb{background:rgba(200,168,120,.5);border-radius:4px}
+html::-webkit-scrollbar-thumb:hover{background:rgba(214,168,93,.7)}
 body{margin:0;color:var(--ink);
 	background-color:#0d0907;
 	background-image:
@@ -736,8 +742,10 @@ footer {
 .note-modal-body{flex:1;min-height:0;max-height:calc(82vh - 76px);padding:20px 22px 26px;overflow-y:scroll;
   color:#e4d9c6;font-size:14px;line-height:1.9;white-space:pre-wrap;word-break:break-word;
   scrollbar-color:#5d483b transparent;scrollbar-width:thin}
-.note-modal-body::-webkit-scrollbar{width:8px}
-.note-modal-body::-webkit-scrollbar-thumb{background:#5d483b;border-radius:4px}
+.note-modal-body{scrollbar-width:thin;scrollbar-color:rgba(200,168,120,.45) rgba(72,50,28,.25)}
+.note-modal-body::-webkit-scrollbar{width:7px}
+.note-modal-body::-webkit-scrollbar-track{background:rgba(72,50,28,.25)}
+.note-modal-body::-webkit-scrollbar-thumb{background:rgba(200,168,120,.5);border-radius:4px}
 .note-close{position:absolute;right:10px;top:8px;color:var(--gold);font-size:26px;
 	line-height:1;cursor:pointer;background:none;border:none;padding:4px;z-index:1}
 .note-close:hover{color:#fff}
