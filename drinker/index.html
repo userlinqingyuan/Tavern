@@ -721,7 +721,7 @@ footer {
 .note-btn:hover{background:#2c211d;border-color:var(--gold)}
 
 /* ---------- 阅读文本框 ---------- */
-.note-modal{display:none;position:fixed;z-index:8;inset:0;background:#090807ee;
+.note-modal{display:none;position:fixed;z-index:40;inset:0;background:#090807ee;
 	align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
 .note-modal.open{display:flex}
 .note-modal-box{background:linear-gradient(145deg,#2a211e,#171413);
@@ -823,6 +823,17 @@ footer {
 .book-underlay{position:relative;max-height:74vh;overflow-y:auto}
 .book-overlay{position:absolute;inset:0;max-height:74vh;overflow-y:auto;
 	transform-origin:left center;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+/* 书页滚动条：深褐底 / 浅褐滑块 / 半透明细条 */
+.book-underlay,.book-overlay{
+	scrollbar-width:thin;
+	scrollbar-color:rgba(200,168,120,.45) rgba(72,50,28,.25)}
+.book-underlay::-webkit-scrollbar,.book-overlay::-webkit-scrollbar{width:6px}
+.book-underlay::-webkit-scrollbar-track,.book-overlay::-webkit-scrollbar-track{
+	background:rgba(72,50,28,.25);border-radius:3px}
+.book-underlay::-webkit-scrollbar-thumb,.book-overlay::-webkit-scrollbar-thumb{
+	background:rgba(200,168,120,.5);border-radius:3px}
+.book-underlay::-webkit-scrollbar-thumb:hover,.book-overlay::-webkit-scrollbar-thumb:hover{
+	background:rgba(214,168,93,.7)}
 .book-page .card{animation:none!important;opacity:1!important;transform:none!important}
 .book-page .card-inner{min-height:0}
 .book-hint{text-align:center;color:var(--muted);font-size:11px;letter-spacing:.08em;
