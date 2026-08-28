@@ -90,6 +90,112 @@
         .map-item:hover img {
             filter: brightness(1.05);
         }
+        .map-wrapper {
+            position: relative;
+            overflow: hidden;
+        }
+        .map-wrapper img {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 7 / 5;
+            object-fit: contain;
+            background: #0f0c0a;
+        }
+        .footprint-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+        .footprint {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
+            cursor: pointer;
+            z-index: 2;
+        }
+        .footprint-dot {
+            display: block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 12px rgba(255, 200, 150, 0.15), inset 0 0 8px rgba(255, 200, 150, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+        .footprint-dot::after {
+            content: "";
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 200, 150, 0.08), transparent 70%);
+            animation: footprintPulse 3s ease-in-out infinite;
+        }
+        .footprint:hover .footprint-dot,
+        .footprint.active .footprint-dot {
+            transform: scale(1.5);
+            box-shadow: 0 0 24px rgba(255, 200, 150, 0.3);
+        }
+        .footprint-label {
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            background: rgba(12, 8, 6, 0.9);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(214, 168, 93, 0.2);
+            border-radius: 6px;
+            padding: 6px 14px;
+            white-space: nowrap;
+            font-size: 12px;
+            color: var(--ink);
+            pointer-events: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+        .footprint-label strong {
+            color: var(--gold);
+            font-weight: 700;
+        }
+        .footprint-label span {
+            color: var(--muted);
+            font-size: 10px;
+            margin-left: 8px;
+        }
+        .footprint-label::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: rgba(214, 168, 93, 0.2);
+        }
+        .footprint:hover .footprint-label,
+        .footprint.active .footprint-label {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+        @keyframes footprintPulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.5); opacity: 0.6; }
+        }
+        @media (hover: none) {
+            .footprint-label {
+                opacity: 0;
+                transform: translateX(-50%) scale(0.9);
+                pointer-events: none;
+                white-space: normal;
+                max-width: 160px;
+            }
+            .footprint.active .footprint-label {
+                opacity: 1;
+                transform: translateX(-50%) scale(1);
+                pointer-events: auto;
+            }
+        }
         .map-item .label {
             padding: 12px 16px;
             font-size: 13px;
@@ -241,47 +347,77 @@
     ];
 
     // ============================================
+    // 👣 旅客足迹数据（坐标为地图图片内的百分比）
+    // ============================================
+
+    const footprints = [
+        { mapIndex: 0, x: 35, y: 45, name: "举", label: "常驻吧台左端", color: "#d6a85d" },
+        { mapIndex: 0, x: 62, y: 38, name: "初璃", label: "靠窗座位", color: "#8fb0c0" },
+        { mapIndex: 0, x: 20, y: 55, name: "屠苏", label: "壁炉旁", color: "#c08060" },
+        { mapIndex: 0, x: 78, y: 60, name: "泠钰", label: "角落阴影处", color: "#b09070" },
+        { mapIndex: 0, x: 50, y: 72, name: "荒泊", label: "门口附近", color: "#b0a080" },
+        { mapIndex: 1, x: 30, y: 40, name: "蝶祈", label: "二楼走廊", color: "#d4a0b0" },
+        { mapIndex: 1, x: 65, y: 55, name: "桃逸佑", label: "档案室门口", color: "#b8a070" },
+        { mapIndex: 1, x: 45, y: 75, name: "白鸢", label: "窗边矮凳", color: "#b8c8b0" }
+    ];
+
+    // ============================================
     // 🖼️ 渲染
     // ============================================
 
     function renderMaps() {
-        const grid = document.getElementById('mapGrid');
+    const grid = document.getElementById('mapGrid');
 
-        if (maps.length === 0) {
-            grid.innerHTML = `
-                <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);border:1px dashed rgba(90,72,59,0.3);border-radius:8px;">
-                    <div style="font-size:32px;margin-bottom:12px;">🗺️</div>
-                    地图还在绘制中。
+    if (maps.length === 0) {
+        grid.innerHTML = `<div class="empty-state">🗺️ 地图还在绘制中。</div>`;
+        return;
+    }
+
+    if (maps.length === 1) {
+        grid.classList.add('single');
+    } else {
+        grid.classList.remove('single');
+    }
+
+    grid.innerHTML = maps.map((map, mapIndex) => {
+        // 筛选属于这张地图的足迹
+        const mapFootprints = footprints.filter(fp => fp.mapIndex === mapIndex);
+
+        return `
+            <div class="map-item" data-index="${mapIndex}">
+                <div class="map-wrapper">
+                    <img src="${map.src}" alt="${map.label}" loading="lazy" onerror="this.style.display='none';this.parentElement.querySelector('.label').textContent='⚠️ 图片加载失败'">
+                    <!-- 足迹层 -->
+                    <div class="footprint-layer">
+                        ${mapFootprints.map(fp => `
+                            <div class="footprint" style="left:${fp.x}%;top:${fp.y}%;">
+                                <span class="footprint-dot" style="background:${fp.color};"></span>
+                                <span class="footprint-label">
+                                    <strong>${fp.name}</strong>
+                                    <span>${fp.label}</span>
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
-            `;
-            return;
-        }
-
-        // 如果只有一张图，使用 single 类居中
-        if (maps.length === 1) {
-            grid.classList.add('single');
-        } else {
-            grid.classList.remove('single');
-        }
-
-        grid.innerHTML = maps.map((map, index) => `
-            <div class="map-item" data-index="${index}">
-                <img src="${map.src}" alt="${map.label}" loading="lazy" onerror="this.style.display='none';this.parentElement.querySelector('.label').textContent='⚠️ 图片加载失败'">
                 <div class="label">
                     <span>${map.label}</span>
-                    <span class="badge">${map.badge}</span>
+                    <span class="badge">${map.badge} · ${mapFootprints.length} 处足迹</span>
                 </div>
             </div>
-        `).join('');
+        `;
+    }).join('');
 
-        // 绑定点击事件
-        grid.querySelectorAll('.map-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const index = parseInt(this.dataset.index);
-                openLightbox(index);
-            });
+    // 绑定点击事件（灯箱）
+    grid.querySelectorAll('.map-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            // 如果点击的是足迹本身，不触发灯箱
+            if (e.target.closest('.footprint')) return;
+            const index = parseInt(this.dataset.index);
+            openLightbox(index);
         });
-    }
+    });
+}
 
     // ============================================
     // 💡 灯箱
@@ -315,6 +451,20 @@
     });
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') closeLightbox();
+    });
+
+    // 移动端点击足迹切换标签，点击其他区域关闭已展开标签。
+    document.addEventListener('click', function(e) {
+        const footprint = e.target.closest('.footprint');
+        if (!footprint) {
+            document.querySelectorAll('.footprint.active').forEach(item => item.classList.remove('active'));
+            return;
+        }
+
+        footprint.classList.toggle('active');
+        document.querySelectorAll('.footprint.active').forEach(item => {
+            if (item !== footprint) item.classList.remove('active');
+        });
     });
 
     // ============================================
