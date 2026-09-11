@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>16号螺旋酒馆 · 成就墙</title>
+    <link rel="stylesheet" href="../css/tavern.css">
+    <style>
+        /* 颜色变量/重置/滚动条见 ../css/tavern.css */
+        body {
+            background: #0c0806;
+            color: var(--ink);
+            font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+            padding: 40px 20px 70px;
+            min-height: 100vh;
+            line-height: 1.65;
+        }
+        .wrap { max-width: 1000px; margin: 0 auto; }
+
+        .header { margin-bottom: 30px; border-bottom: 1px solid var(--line); padding-bottom: 20px; }
+        .header .back {
+            display: inline-block; margin-bottom: 14px; color: var(--muted); font-size: 14px;
+            text-decoration: none; border-bottom: 1px dotted transparent; transition: 0.3s;
+        }
+        .header .back:hover { border-bottom-color: var(--gold); color: var(--gold); }
+        .header h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 400; color: var(--gold); letter-spacing: 0.06em; }
+        .header .sub { margin-top: 10px; color: var(--muted); font-size: 14px; }
+
+        /* 总进度 */
+        .progress-box {
+            margin-bottom: 40px;
+            padding: 18px 22px;
+            background: rgba(26,21,19,.6);
+            border: 1px solid rgba(90,72,59,.35);
+            border-radius: 8px;
+        }
+        .progress-line { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+        .progress-count { color: var(--gold); font-size: 16px; letter-spacing: .08em; }
+        .progress-pct { color: var(--muted); font-size: 13px; }
+        .progress-track { height: 8px; border-radius: 5px; background: rgba(90,72,59,.35); overflow: hidden; }
+        .progress-fill {
+            height: 100%; width: 0;
+            background: linear-gradient(90deg, #8a5a2b, var(--gold));
+            border-radius: 5px;
+            transition: width .6s ease;
+        }
+
+        /* 分组 */
+        .group { margin-bottom: 38px; }
+        .group-title {
+            margin-bottom: 16px; color: var(--gold); font-weight: 400; font-size: 18px;
+            letter-spacing: .14em; display: flex; align-items: center; gap: 12px;
+        }
+        .group-title::after { content: ""; flex: 1; height: 1px; background: rgba(214,168,93,.18); }
+        .group-count { color: var(--muted); font-size: 12px; letter-spacing: .05em; }
+
+        .badge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 14px;
+        }
+        .badge {
+            display: flex; gap: 14px; align-items: flex-start;
+            padding: 16px 16px 14px;
+            background: rgba(26,21,19,.6);
+            border: 1px solid rgba(90,72,59,.35);
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+        .badge.unlocked { border-color: rgba(214,168,93,.45); background: linear-gradient(160deg, rgba(40,30,22,.7), rgba(20,15,12,.7)); }
+        .badge.locked { opacity: .55; }
+        .badge-icon {
+            font-size: 30px; line-height: 1.2;
+            filter: grayscale(1) brightness(.7);
+            flex-shrink: 0;
+        }
+        .badge.unlocked .badge-icon { filter: none; filter: drop-shadow(0 0 7px rgba(214,168,93,.45)); }
+        .badge-name { font-size: 15px; color: var(--ink); letter-spacing: .04em; }
+        .badge.locked .badge-name { color: var(--muted); }
+        .badge-desc { margin-top: 4px; font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+        .badge-meta { margin-top: 7px; font-size: 11px; color: var(--gold); opacity: .75; letter-spacing: .05em; }
+        .badge-progress {
+            margin-top: 7px; height: 4px; border-radius: 3px;
+            background: rgba(90,72,59,.4); overflow: hidden;
+        }
+        .badge-progress i {
+            display: block; height: 100%;
+            background: rgba(214,168,93,.6); border-radius: 3px;
+        }
+
+        .empty {
+            padding: 60px 20px; text-align: center; color: var(--muted);
+            border: 1px dashed rgba(90,72,59,.5); border-radius: 8px;
+        }
+
+        .footer {
+            margin-top: 50px; padding-top: 20px; border-top: 1px solid rgba(90,72,59,.4);
+            display: flex; gap: 18px; justify-content: center; align-items: center; flex-wrap: wrap;
+            font-size: 13px; color: var(--muted);
+        }
+
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header class="header">
+        <a class="back" href="../">← 返回酒馆</a>
+        <h1>🏆 酒馆成就墙</h1>
+        <p class="sub">推门、翻档案、品酒、捡碎片……你在酒馆留下的每一道痕迹，都会在这里钉成一枚徽章。</p>
+    </header>
+
+    <div class="progress-box">
+        <div class="progress-line">
+            <span class="progress-count" id="progressCount">已解锁 0 / 0</span>
+            <span class="progress-pct" id="progressPct"></span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <div id="groups"><div class="empty">徽章还在锻造中，稍后再来。</div></div>
+
+    <div class="footer">
+        <a class="foot-link" href="../">档案袋</a>
+        <a class="foot-link" href="../drinker/">旅客档案</a>
+        <a class="foot-link" href="../menu/">🍺 酒单</a>
+        <span>🏆 成就</span>
+        <a class="foot-link" href="../timeline/">🕰️ 时间线</a>
+        <a class="foot-link" href="../map/">🗺️ 地图</a>
+    </div>
+</div>
+
+<script src="../js/tavern-core.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    if (!window.Tavern) {
+        document.getElementById('groups').innerHTML =
+            '<div class="empty">成就系统加载失败了，刷新一下试试。</div>';
+        return;
+    }
+
+    var GROUPS = [
+        { key: 'visit',   label: '🕯️ 到访',  count: '推门的日子' },
+        { key: 'archive', label: '📖 档案',  count: '旅客与故事' },
+        { key: 'drink',   label: '🍺 酒单',  count: '杯底的印记' },
+        { key: 'secret',  label: '❓ 彩蛋',  count: '酒馆的秘密' }
+    ];
+
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text == null ? '' : String(text);
+        return div.innerHTML;
+    }
+
+    function fmtUnlock(iso) {
+        try {
+            var d = new Date(iso);
+            return d.getFullYear() + '-' +
+                String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                String(d.getDate()).padStart(2, '0') + ' 解锁';
+        } catch (e) { return '已解锁'; }
+    }
+
+    function render() {
+        var all = Tavern.getAchievements();
+        var unlockedNum = all.filter(function (a) { return a.unlocked; }).length;
+
+        document.getElementById('progressCount').textContent = '已解锁 ' + unlockedNum + ' / ' + all.length;
+        var pct = all.length ? Math.round(unlockedNum / all.length * 100) : 0;
+        document.getElementById('progressPct').textContent = pct + '%';
+        requestAnimationFrame(function () {
+            document.getElementById('progressFill').style.width = pct + '%';
+        });
+
+        var html = GROUPS.map(function (g) {
+            var items = all.filter(function (a) { return a.def.group === g.key; });
+            var got = items.filter(function (a) { return a.unlocked; }).length;
+            var cards = items.map(function (a) {
+                var d = a.def;
+                /* 隐藏成就且未解锁：只显示剪影 */
+                if (d.hidden && !a.unlocked) {
+                    return '<div class="badge locked">' +
+                        '<div class="badge-icon">❔</div>' +
+                        '<div><div class="badge-name">？？？</div>' +
+                        '<div class="badge-desc">隐藏成就 · 继续在酒馆里转转吧</div></div>' +
+                        '</div>';
+                }
+                var meta = a.unlocked
+                    ? '<div class="badge-meta">✓ ' + escapeHtml(fmtUnlock(a.unlockedAt)) + '</div>'
+                    : (a.target > 1
+                        ? '<div class="badge-meta">进度 ' + Math.min(a.current, a.target) + ' / ' + a.target + '</div>' +
+                          '<div class="badge-progress"><i style="width:' +
+                              Math.min(100, Math.round(a.current / a.target * 100)) + '%"></i></div>'
+                        : '<div class="badge-meta">🔒 未解锁</div>');
+                return '<div class="badge ' + (a.unlocked ? 'unlocked' : 'locked') + '">' +
+                    '<div class="badge-icon">' + escapeHtml(d.icon) + '</div>' +
+                    '<div style="min-width:0"><div class="badge-name">' + escapeHtml(d.name) + '</div>' +
+                    '<div class="badge-desc">' + escapeHtml(d.desc) + '</div>' +
+                    meta + '</div></div>';
+            }).join('');
+            return '<section class="group">' +
+                '<h2 class="group-title">' + g.label +
+                    '<span class="group-count">' + got + ' / ' + items.length + ' · ' + g.count + '</span>' +
+                '</h2>' +
+                '<div class="badge-grid">' + cards + '</div></section>';
+        }).join('');
+
+        document.getElementById('groups').innerHTML = html;
+    }
+
+    Tavern.init('..').then(render);
+})();
+</script>
+</body>
+</html>

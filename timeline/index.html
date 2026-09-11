@@ -4,20 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>16号螺旋酒馆 · 时间线</title>
+    <link rel="stylesheet" href="../css/tavern.css">
     <style>
-        :root {
-            --ink: #eadcc0;
-            --muted: #a08d72;
-            --gold: #d6a85d;
-            --line: #5d483b;
-            --panel: #1a1513;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html{scrollbar-width:thin;scrollbar-color:rgba(200,168,120,.45) rgba(72,50,28,.25)}
-        html::-webkit-scrollbar{width:7px}
-        html::-webkit-scrollbar-track{background:rgba(72,50,28,.25)}
-        html::-webkit-scrollbar-thumb{background:rgba(200,168,120,.5);border-radius:4px}
-        html::-webkit-scrollbar-thumb:hover{background:rgba(214,168,93,.7)}
+        /* 颜色变量/重置/滚动条见 ../css/tavern.css */
         body {
             background: #0c0806;
             color: var(--ink);
@@ -154,8 +143,13 @@
             padding-top: 20px;
             border-top: 1px solid rgba(90,72,59,0.15);
             color: var(--muted);
-            font-size: 12px;
+            font-size: 13px;
             text-align: center;
+            display: flex;
+            gap: 18px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         @media (max-width: 600px) {
@@ -181,8 +175,21 @@
     </div>
 
     <!-- 页脚 -->
-    <div class="footer">16号螺旋酒馆 · 档案室 · 时间线</div>
+    <div class="footer">
+        <a class="foot-link" href="../">档案袋</a>
+        <a class="foot-link" href="../drinker/">旅客档案</a>
+        <a class="foot-link" href="../menu/">🍺 酒单</a>
+        <a class="foot-link" href="../achievements/">🏆 成就</a>
+        <span>🕰️ 时间线</span>
+        <a class="foot-link" href="../map/">🗺️ 地图</a>
+    </div>
 </div>
+
+<script src="../js/tavern-core.js"></script>
+<script>
+    // 到访统计 + 成就系统
+    if (window.Tavern) Tavern.init('..');
+</script>
 
 <script>
     // ============================================

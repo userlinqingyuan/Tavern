@@ -6,21 +6,10 @@
     <meta name="description" content="16号螺旋酒馆 · 旅客档案封面">
     <title>16号螺旋酒馆 · 档案室</title>
 
+    <link rel="stylesheet" href="css/tavern.css">
     <style>
-        /* 全局滚动条：深褐底 / 浅褐滑块 / 半透明细条 */
-        html{scrollbar-width:thin;scrollbar-color:rgba(200,168,120,.45) rgba(72,50,28,.25)}
-        html::-webkit-scrollbar{width:7px}
-        html::-webkit-scrollbar-track{background:rgba(72,50,28,.25)}
-        html::-webkit-scrollbar-thumb{background:rgba(200,168,120,.5);border-radius:4px}
-        html::-webkit-scrollbar-thumb:hover{background:rgba(214,168,93,.7)}
-        /* ============================================
-                   🎨 颜色变量（全局配色，改这里就行）
-                   ============================================ */
-        :root {
-            --ink: #eadcc0;       /* 文字主色（米白） */
-            --muted: #a08d72;     /* 次要文字（灰褐） */
-            --amber: #e2a653;     /* 强调色（琥珀金） */
-        }
+        /* 琥珀金为封面专属强调色，其余颜色变量/滚动条见 css/tavern.css */
+        :root { --amber: #e2a653; }
 
         /* ============================================
                    🧱 基础重置
@@ -880,8 +869,10 @@
     <footer style="position:fixed;bottom:0;left:0;right:0;z-index:5;background:rgba(12,8,6,.88);backdrop-filter:blur(4px);border-top:1px solid rgba(214,168,93,.15);">
         <div class="wrap" style="display:flex;gap:20px;justify-content:center;align-items:center;flex-wrap:wrap;padding:14px 16px;">
             <span>资料来源：16号螺旋酒馆</span>
-            <a href="timeline/" style="color:var(--muted);text-decoration:underline;text-underline-offset:4px;">时间线</a>
-            <a href="map/" style="color:var(--muted);text-decoration:underline;text-underline-offset:4px;">酒馆地图</a>
+            <a href="menu/" class="foot-link">🍺 酒单</a>
+            <a href="achievements/" class="foot-link">🏆 成就</a>
+            <a href="timeline/" class="foot-link">🕰️ 时间线</a>
+            <a href="map/" class="foot-link">酒馆地图</a>
         </div>
     </footer>
 
@@ -904,68 +895,16 @@
         font-family: inherit;
     ">📜 随机碎片</button>
 
-    <!-- 碎片弹窗 -->
-    <div id="fragment-modal" style="
-        display: none;
-        position: fixed;
-        inset: 0;
-        z-index: 20;
-        background: rgba(5, 3, 2, 0.7);
-        backdrop-filter: blur(6px);
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        cursor: pointer;
-    ">
-        <div id="fragment-card" style="
-            max-width: 480px;
-            width: 100%;
-            background: linear-gradient(160deg, #1e1814, #120e0c);
-            border: 1px solid rgba(214, 168, 93, 0.15);
-            border-radius: 12px;
-            padding: 30px 32px 26px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-            cursor: default;
-            position: relative;
-            transition: opacity 0.3s ease;
-        ">
-            <div style="
-                width: 40px;
-                height: 2px;
-                background: rgba(214, 168, 93, 0.3);
-                margin-bottom: 16px;
-            "></div>
-            <div id="fragment-source" style="
-                color: var(--gold);
-                font-size: 11px;
-                letter-spacing: 0.12em;
-                margin-bottom: 10px;
-                font-family: 'Arial Narrow', sans-serif;
-                text-transform: uppercase;
-            ">✦ 档案碎片</div>
-            <div id="fragment-text" style="
-                color: var(--ink);
-                font-size: 17px;
-                line-height: 1.7;
-                font-style: italic;
-                min-height: 60px;
-            "></div>
-            <div style="
-                margin-top: 20px;
-                color: var(--muted);
-                font-size: 11px;
-                opacity: 0.4;
-                text-align: right;
-                border-top: 1px solid rgba(160,141,114,0.08);
-                padding-top: 14px;
-            ">点击任意处关闭</div>
-        </div>
-    </div>
+    <!-- 碎片弹窗由 tavern-core.js 统一注入 -->
 
     <!-- ============================================
     📜 JavaScript：点击档案袋切换 .is-open
     ============================================ -->
+    <script src="js/tavern-core.js"></script>
     <script>
+        // 到访统计 + 成就系统（根目录页 rootPath 传 ''）
+        if (window.Tavern) Tavern.init('');
+
         const envelope = document.querySelector('.envelope');
         envelope.addEventListener('click', () => {
             const isOpen = envelope.classList.toggle('is-open');
@@ -1045,41 +984,12 @@
         ];
 
         function showRandomFragment() {
+            if (window.Tavern) Tavern.track('fragment');
             const fragment = fragmentMessages[Math.floor(Math.random() * fragmentMessages.length)];
-            document.getElementById('fragment-text').textContent = fragment.text;
-            document.getElementById('fragment-source').textContent = '✦ ' + fragment.source;
-            const modal = document.getElementById('fragment-modal');
-            modal.style.display = 'flex';
-            const card = document.getElementById('fragment-card');
-            card.style.opacity = '0';
-            requestAnimationFrame(() => {
-                card.style.transition = 'opacity 0.3s ease';
-                card.style.opacity = '1';
-            });
-        }
-
-        function closeFragmentModal() {
-            const modal = document.getElementById('fragment-modal');
-            if (!modal || modal.style.display !== 'flex') return;
-            const card = document.getElementById('fragment-card');
-            card.style.opacity = '0';
-            setTimeout(() => {
-                modal.style.display = 'none';
-                card.style.opacity = '1';
-                card.style.transition = '';
-            }, 300);
+            if (window.Tavern) Tavern.openFragment(fragment);
         }
 
         document.getElementById('fragment-trigger').addEventListener('click', showRandomFragment);
-        document.getElementById('fragment-modal').addEventListener('click', e => {
-            if (e.target === e.currentTarget) closeFragmentModal();
-        });
-        document.getElementById('fragment-card').addEventListener('click', e => {
-            e.stopPropagation();
-        });
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') closeFragmentModal();
-        });
 
         // ============================================
         // 📚 档案借阅记录渲染

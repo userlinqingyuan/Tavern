@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>16号螺旋酒馆 · 酒单</title>
+    <link rel="stylesheet" href="../css/tavern.css">
+    <style>
+        /* 颜色变量/重置/滚动条见 ../css/tavern.css */
+        body {
+            background: #0c0806;
+            color: var(--ink);
+            font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+            padding: 40px 20px 70px;
+            min-height: 100vh;
+            line-height: 1.65;
+        }
+        .wrap { max-width: 1000px; margin: 0 auto; }
+
+        /* 页眉 */
+        .header { margin-bottom: 34px; border-bottom: 1px solid var(--line); padding-bottom: 20px; }
+        .header .back {
+            display: inline-block; margin-bottom: 14px; color: var(--muted); font-size: 14px;
+            text-decoration: none; border-bottom: 1px dotted transparent; transition: 0.3s;
+        }
+        .header .back:hover { border-bottom-color: var(--gold); color: var(--gold); }
+        .header h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 400; color: var(--gold); letter-spacing: 0.06em; }
+        .header .sub { margin-top: 10px; color: var(--muted); font-size: 14px; }
+
+        /* 当日酒卡 */
+        .today-card {
+            position: relative;
+            margin-bottom: 46px;
+            padding: 30px 30px 26px;
+            background: linear-gradient(160deg, rgba(40,30,22,.92), rgba(20,15,12,.95));
+            border: 1px solid rgba(214,168,93,.35);
+            border-radius: 10px;
+            box-shadow: 0 18px 45px rgba(0,0,0,.45);
+            overflow: hidden;
+        }
+        .today-card::before {
+            content: "";
+            position: absolute; right: -60px; top: -60px;
+            width: 220px; height: 220px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(214,168,93,.14), transparent 70%);
+            pointer-events: none;
+        }
+        .today-ribbon {
+            display: inline-block; margin-bottom: 14px; padding: 3px 12px;
+            font: 700 11px/1.6 "Arial Narrow", sans-serif; letter-spacing: .22em;
+            text-transform: uppercase; color: #171311; background: var(--gold); border-radius: 3px;
+        }
+        .today-main { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
+        .today-emoji {
+            font-size: clamp(56px, 9vw, 84px); line-height: 1;
+            filter: drop-shadow(0 6px 14px rgba(0,0,0,.5));
+        }
+        .today-info { flex: 1; min-width: 240px; }
+        .today-name { font-size: clamp(24px, 4vw, 32px); color: var(--ink); letter-spacing: .05em; }
+        .today-meta { margin-top: 6px; color: var(--gold); font-size: 13px; letter-spacing: .08em; }
+        .today-story { margin-top: 14px; color: var(--muted); font-size: 14.5px; line-height: 1.9; font-style: italic; }
+        .today-story.placeholder { opacity: .55; font-style: normal; }
+        .taste-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: var(--gold);
+            color: #171311;
+            border: none;
+            border-radius: 3px;
+            font: inherit; font-size: 15px; letter-spacing: .12em;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .taste-btn:hover:not(:disabled) { box-shadow: 0 0 24px rgba(214,168,93,.35); transform: translateY(-1px); }
+        .taste-btn:disabled { background: rgba(214,168,93,.18); color: var(--muted); cursor: default; }
+
+        /* 酒单网格 */
+        .section-title {
+            margin: 10px 0 18px; color: var(--gold); font-weight: 400; font-size: 18px;
+            letter-spacing: .14em; display: flex; align-items: center; gap: 12px;
+        }
+        .section-title::after { content: ""; flex: 1; height: 1px; background: rgba(214,168,93,.18); }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+        }
+        .drink-card {
+            position: relative;
+            padding: 20px 20px 18px;
+            background: rgba(26,21,19,.6);
+            border: 1px solid rgba(90,72,59,.35);
+            border-top: 3px solid var(--dc, var(--gold));
+            border-radius: 6px;
+            transition: 0.3s;
+        }
+        .drink-card:hover { border-color: rgba(214,168,93,.3); background: rgba(26,21,19,.9); transform: translateY(-2px); }
+        .drink-card.is-today { border-color: rgba(214,168,93,.55); box-shadow: 0 0 22px rgba(214,168,93,.12); }
+        .drink-head { display: flex; align-items: center; gap: 12px; }
+        .drink-emoji { font-size: 30px; line-height: 1; }
+        .drink-name { font-size: 18px; color: var(--ink); }
+        .drink-meta { margin-top: 2px; font-size: 12px; color: var(--muted); letter-spacing: .05em; }
+        .drink-desc { margin-top: 12px; font-size: 13.5px; color: var(--muted); line-height: 1.8; }
+        .drink-desc.placeholder { opacity: .5; }
+        .drink-badge {
+            position: absolute; top: 12px; right: 12px;
+            font-size: 11px; letter-spacing: .1em;
+        }
+        .badge-today {
+            padding: 2px 9px; background: var(--gold); color: #171311;
+            border-radius: 3px; font-weight: 700; font-family: "Arial Narrow", sans-serif;
+        }
+        .badge-tasted { color: var(--gold); opacity: .8; }
+        .empty {
+            padding: 60px 20px; text-align: center; color: var(--muted);
+            border: 1px dashed rgba(90,72,59,.5); border-radius: 8px;
+        }
+
+        /* 页脚 */
+        .footer {
+            margin-top: 50px; padding-top: 20px; border-top: 1px solid rgba(90,72,59,.4);
+            display: flex; gap: 18px; justify-content: center; align-items: center; flex-wrap: wrap;
+            font-size: 13px; color: var(--muted);
+        }
+
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header class="header">
+        <a class="back" href="../">← 返回酒馆</a>
+        <h1>🍺 酒馆酒单</h1>
+        <p class="sub">十五款特供按日子轮换，每天一款今日特供。点一杯，在酒单上留下你的品鉴印。</p>
+    </header>
+
+    <section class="today-card" id="todayCard">
+        <span class="today-ribbon">今日特供 · Today's Special</span>
+        <div class="today-main">
+            <div class="today-emoji" id="todayEmoji">🍺</div>
+            <div class="today-info">
+                <div class="today-name" id="todayName">酒保正在擦杯子……</div>
+                <div class="today-meta" id="todayMeta"></div>
+                <div class="today-story" id="todayStory"></div>
+                <button class="taste-btn" id="tasteBtn">🍺 点一杯今日特供</button>
+            </div>
+        </div>
+    </section>
+
+    <h2 class="section-title">酒单全录 · 15 款</h2>
+    <section class="menu-grid" id="menuGrid">
+        <div class="empty">酒单还没挂出来，稍后再来看看。</div>
+    </section>
+
+    <div class="footer">
+        <a class="foot-link" href="../">档案袋</a>
+        <a class="foot-link" href="../drinker/">旅客档案</a>
+        <span>🍺 酒单</span>
+        <a class="foot-link" href="../achievements/">🏆 成就</a>
+        <a class="foot-link" href="../timeline/">🕰️ 时间线</a>
+        <a class="foot-link" href="../map/">🗺️ 地图</a>
+    </div>
+</div>
+
+<script src="../js/tavern-core.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    if (window.Tavern) Tavern.init('..');
+
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text == null ? '' : String(text);
+        return div.innerHTML;
+    }
+
+    function refreshTasteButton() {
+        var btn = document.getElementById('tasteBtn');
+        if (!window.Tavern) return;
+        if (Tavern.hasTastedToday()) {
+            btn.disabled = true;
+            btn.textContent = '今日已品鉴 ✓';
+        } else {
+            btn.disabled = false;
+            btn.textContent = '🍺 点一杯今日特供';
+        }
+    }
+
+    function render(drinks) {
+        var todayIdx = window.Tavern ? Tavern.todaysDrinkIndex(drinks.length) : 0;
+        var tastedSet = {};
+        if (window.Tavern) Tavern.tastedDrinkIndices(drinks.length).forEach(function (i) { tastedSet[i] = true; });
+
+        /* 当日酒卡 */
+        var t = drinks[todayIdx];
+        document.getElementById('todayEmoji').textContent = t.emoji || '🍺';
+        document.getElementById('todayName').textContent = t.name;
+        document.getElementById('todayMeta').textContent = (t.type || '特供') + ' · 酒精度 ' + (t.abv || '？');
+        var storyEl = document.getElementById('todayStory');
+        if (t.story) {
+            storyEl.textContent = t.story;
+            storyEl.classList.remove('placeholder');
+        } else {
+            storyEl.textContent = '酒保还没为这款酒写下注脚……也许你该亲口尝尝。';
+            storyEl.classList.add('placeholder');
+        }
+        document.getElementById('todayCard').style.setProperty('--dc', t.color || '#d6a85d');
+        refreshTasteButton();
+
+        /* 酒单网格 */
+        var grid = document.getElementById('menuGrid');
+        grid.innerHTML = drinks.map(function (d, i) {
+            var badges = '';
+            if (i === todayIdx) badges += '<span class="badge-today">今日特供</span>';
+            else if (tastedSet[i]) badges += '<span class="badge-tasted">🍸 已品鉴</span>';
+            var desc = d.desc
+                ? escapeHtml(d.desc)
+                : '<span style="opacity:.5">酒保还没为这款酒写下注脚……</span>';
+            return '<div class="drink-card' + (i === todayIdx ? ' is-today' : '') + '" style="--dc:' + escapeHtml(d.color || '#d6a85d') + '">' +
+                '<div class="drink-badge">' + badges + '</div>' +
+                '<div class="drink-head">' +
+                    '<span class="drink-emoji">' + escapeHtml(d.emoji || '🍺') + '</span>' +
+                    '<div><div class="drink-name">' + escapeHtml(d.name) + '</div>' +
+                    '<div class="drink-meta">' + escapeHtml(d.type || '特供') + ' · ' + escapeHtml(d.abv || '？') + '</div></div>' +
+                '</div>' +
+                '<div class="drink-desc">' + desc + '</div>' +
+                '</div>';
+        }).join('');
+    }
+
+    document.getElementById('tasteBtn').addEventListener('click', function () {
+        if (!window.Tavern) return;
+        Tavern.track('tasting');
+        refreshTasteButton();
+        /* 重新渲染以刷新已品鉴印记（走缓存，不重复请求） */
+        Tavern.loadJSON('../data/drinks.json')
+            .then(function (data) { if (data.drinks) render(data.drinks); })
+            .catch(function () {});
+    });
+
+    Tavern.loadJSON('../data/drinks.json')
+        .then(function (data) {
+            if (!data.drinks || !data.drinks.length) throw new Error('empty');
+            if (window.Tavern) Tavern.track('menuview');
+            render(data.drinks);
+        })
+        .catch(function () {
+            document.getElementById('menuGrid').innerHTML =
+                '<div class="empty">酒单被酒保收走了，稍后再来看看。</div>';
+        });
+})();
+</script>
+</body>
+</html>

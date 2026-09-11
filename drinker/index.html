@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>16号螺旋酒馆 · 酒客档案</title>
+<link rel="stylesheet" href="../css/tavern.css">
 <style>
+/* 基础变量/滚动条/重置见 ../css/tavern.css；这里覆盖档案页专属调色板 */
 :root{
 	--ink:#eee7d8;
 	--muted:#b5aa98;
@@ -18,14 +20,7 @@
 	--blue:#6e91aa;
 	--shadow:0 18px 45px #0008;
 }
-*{box-sizing:border-box}
 html{scroll-behavior:smooth}
-/* 全局滚动条：深褐底 / 浅褐滑块 / 半透明细条 */
-html{scrollbar-width:thin;scrollbar-color:rgba(200,168,120,.45) rgba(72,50,28,.25)}
-html::-webkit-scrollbar{width:7px}
-html::-webkit-scrollbar-track{background:rgba(72,50,28,.25)}
-html::-webkit-scrollbar-thumb{background:rgba(200,168,120,.5);border-radius:4px}
-html::-webkit-scrollbar-thumb:hover{background:rgba(214,168,93,.7)}
 body{margin:0;color:var(--ink);
 	background-color:#0d0907;
 	background-image:
@@ -470,6 +465,18 @@ body{margin:0;color:var(--ink);
     color: var(--gold) !important;
 }
 
+/* 座位旁的地图入口（仅有 map 字段的档案显示） */
+.map-link {
+    display: inline-block;
+    margin-left: 5px;
+    font-size: 12px;
+    text-decoration: none;
+    filter: grayscale(.2);
+    opacity: .75;
+    transition: opacity .2s, transform .2s;
+}
+.map-link:hover { opacity: 1; transform: scale(1.18); filter: none; }
+
 
 /* ============================================
    📝 卡片正文区
@@ -866,7 +873,7 @@ footer {
   </div>
   <div id="changelogEntries" style="margin-top:10px;color:var(--muted);font-size:13px;line-height:1.7;"></div>
 </div>
-<footer><div class="wrap" style="display:flex;gap:20px;justify-content:center;align-items:center;flex-wrap:wrap;">资料来源：16号螺旋酒馆；页面排版为归档展示用途。<a href="../timeline/" style="color:var(--muted);text-decoration:underline;text-underline-offset:4px;">🕰️ 时间线</a></div></footer>
+<footer><div class="wrap" style="display:flex;gap:20px;justify-content:center;align-items:center;flex-wrap:wrap;">资料来源：16号螺旋酒馆；页面排版为归档展示用途。<a href="../menu/" class="foot-link">🍺 酒单</a><a href="../achievements/" class="foot-link">🏆 成就</a><a href="../timeline/" class="foot-link">🕰️ 时间线</a><a href="../map/" class="foot-link">🗺️ 地图</a></div></footer>
 <div class="lightbox" id="lightbox"><span class="close">×</span><img id="lightboxImg" alt="原始人物卡"></div>
 <!-- 证件照/立绘轮播灯箱 -->
 <div class="carousel" id="carousel">
@@ -928,70 +935,11 @@ footer {
     font-family: inherit;
 ">📜 随机碎片</button>
 
-<!-- 碎片弹窗 -->
-<div id="fragment-modal" style="
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 20;
-    background: rgba(5, 3, 2, 0.7);
-    backdrop-filter: blur(6px);
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    cursor: pointer;
-">
-    <div id="fragment-card" style="
-        max-width: 480px;
-        width: 100%;
-        background: linear-gradient(160deg, #1e1814, #120e0c);
-        border: 1px solid rgba(214, 168, 93, 0.15);
-        border-radius: 12px;
-        padding: 30px 32px 26px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-        cursor: default;
-        position: relative;
-        transition: opacity 0.3s ease;
-    ">
-        <!-- 装饰线 -->
-        <div style="
-            width: 40px;
-            height: 2px;
-            background: rgba(214, 168, 93, 0.3);
-            margin-bottom: 16px;
-        "></div>
-
-        <!-- 碎片来源 -->
-        <div id="fragment-source" style="
-            color: var(--gold);
-            font-size: 11px;
-            letter-spacing: 0.12em;
-            margin-bottom: 10px;
-            font-family: 'Arial Narrow', sans-serif;
-            text-transform: uppercase;
-        ">✦ 档案碎片</div>
-
-        <!-- 碎片正文 -->
-        <div id="fragment-text" style="
-            color: var(--ink);
-            font-size: 17px;
-            line-height: 1.7;
-            font-style: italic;
-            min-height: 60px;
-        "></div>
-
-        <!-- 底部关闭提示 -->
-        <div style="
-            margin-top: 20px;
-            color: var(--muted);
-            font-size: 11px;
-            opacity: 0.4;
-            text-align: right;
-            border-top: 1px solid rgba(160,141,114,0.08);
-            padding-top: 14px;
-        ">点击任意处关闭</div>
-    </div>
-</div>
+<!-- 碎片弹窗由 tavern-core.js 统一注入 -->
+<script src="../js/tavern-core.js"></script>
+<script>
+if (window.Tavern) Tavern.init('..');
+</script>
 <script>
 const CHARACTER_ROOT = '../images/character/';
 const ID_ROOT = '../images/ID/';
@@ -1017,6 +965,7 @@ async function loadPeople() {
     document.getElementById('loadingIndicator').textContent = '📂 档案已就绪';
     document.getElementById('loadingIndicator').style.color = 'var(--gold)';
     render();
+    focusPersonFromURL();
   } catch (error) {
     console.error('加载人物数据失败:', error);
     document.getElementById('cards').innerHTML = `
@@ -1028,6 +977,20 @@ async function loadPeople() {
     document.getElementById('count').textContent = '加载失败';
     document.getElementById('loadingIndicator').textContent = '📂 档案加载失败';
   }
+}
+
+// 从地图等页面跳入：?name=泠钰 → 滚动并高亮该档案
+function focusPersonFromURL() {
+  const name = new URLSearchParams(location.search).get('name');
+  if (!name) return;
+  setTimeout(() => {
+    const card = Array.from(document.querySelectorAll('.card'))
+      .find(el => el.dataset.name === name);
+    if (!card) return;
+    document.querySelectorAll('.card.highlight').forEach(el => el.classList.remove('highlight'));
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.add('highlight');
+  }, 200);
 }
 
 // ============================================
@@ -1220,7 +1183,7 @@ function card(person, index) {
               <span>AGE<b>${esc(person.age)}</b></span>
               <span>HEIGHT<b>${esc(person.height)}</b></span>
               <span>WEIGHT<b>${esc(person.weight)}</b></span>
-              <span>SEAT<b class="seat">${esc(person.seat)}</b></span>
+              <span>SEAT<b class="seat">${esc(person.seat)}</b>${person.map ? `<a class="map-link" href="../map/?name=${encodeURIComponent(person.name)}" title="在地图上查看 ${esc(person.name)} 的位置" aria-label="在地图上查看 ${esc(person.name)} 的位置">🗺️</a>` : ''}</span>
             </div>
           </div>
         </div>
@@ -1308,6 +1271,7 @@ function toggleFavorite(name) {
     list.splice(index, 1);
   } else {
     list.push(name);
+    if (window.Tavern) Tavern.track('favorite');
   }
   saveFavorites(list);
   updateFavoriteUI();
@@ -1354,6 +1318,7 @@ function logBorrow(characterName) {
     // 只保留最近 200 条
     if (logs.length > 200) logs.length = 200;
     localStorage.setItem(BORROW_KEY, JSON.stringify(logs));
+    if (window.Tavern) Tavern.track('borrow');
   } catch (e) {
     // 静默失败，不影响主功能
   }
@@ -1378,6 +1343,7 @@ document.getElementById('randomBtn').addEventListener('click', function() {
   // 随机选一张
   const randomIndex = Math.floor(Math.random() * visibleCards.length);
   const targetCard = visibleCards[randomIndex];
+  if (window.Tavern) Tavern.track('dice');
 
   // 移除之前的高亮
   document.querySelectorAll('.card.highlight').forEach(card => card.classList.remove('highlight'));
@@ -1422,6 +1388,7 @@ document.getElementById('cards').addEventListener('click', event => {
   // 打开证件照 / 立绘轮播
   const person = card ? people.find(p => p.name === card.dataset.name) : null;
   const fallback = target.dataset.full || (person ? CHARACTER_ROOT + encodeURI(person.file) : '');
+  if (window.Tavern) Tavern.track('lightbox', { name: card ? card.dataset.name : '' });
   openCarousel(person, fallback);
 });
 document.getElementById('lightbox').addEventListener('click', () => {
@@ -1437,7 +1404,7 @@ document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
   noteModal.classList.remove('open');
   document.getElementById('graphModal').classList.remove('open');
-  closeFragmentModal();
+  if (window.Tavern) Tavern.closeFragment();
   closeCarousel();
 });
 // ============================================
@@ -1734,6 +1701,7 @@ function openGraph() {
     alert('档案还没加载完，请稍后再试。');
     return;
   }
+  if (window.Tavern) Tavern.track('network');
   document.getElementById('graphModal').classList.add('open');
   sizeGraphCanvas();
   graphScale = 1;
@@ -1981,6 +1949,7 @@ let bookSwipeY = 0;
 function openBook() {
   const cards = Array.from(document.querySelectorAll('#cards .card'));
   if (!cards.length) return;
+  if (window.Tavern) Tavern.track('book');
   bookCards = cards.map(card => {
     const clone = card.cloneNode(true);
     clone.removeAttribute('style');
@@ -2115,9 +2084,9 @@ document.addEventListener('keydown', e => {
 loadPeople();
 renderChangelog();
 // ============================================
-// 🍺 今日特供
+// 🍺 今日特供（酒名取自 data/drinks.json，加载失败时用内置名单兜底）
 // ============================================
-const specials = [
+const FALLBACK_SPECIALS = [
   "深岩麦酒",
   "烟熏黑啤",
   "蜜酒·秋收",
@@ -2136,19 +2105,31 @@ const specials = [
 ];
 
 // 基于日期取模，每天固定一款
-function getTodaysSpecial() {
+function getFallbackSpecial() {
   const today = new Date();
   const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-  const index = dayOfYear % specials.length;
-  return specials[index];
+  return FALLBACK_SPECIALS[dayOfYear % FALLBACK_SPECIALS.length];
 }
 
 // 显示今日特供
 function displaySpecial() {
   const el = document.getElementById('todays-special');
   if (!el) return;
-  const special = getTodaysSpecial();
-  el.textContent = `🍺 今日特供 · ${special}`;
+  const loader = window.Tavern
+    ? Tavern.loadJSON('../data/drinks.json')
+    : fetch('../data/drinks.json').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+  loader
+    .then(data => {
+      const drinks = (data && data.drinks) || [];
+      if (!drinks.length) throw new Error('empty');
+      const idx = window.Tavern
+        ? Tavern.todaysDrinkIndex(drinks.length)
+        : Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000) % drinks.length;
+      el.textContent = `🍺 今日特供 · ${drinks[idx].name}`;
+    })
+    .catch(() => {
+      el.textContent = `🍺 今日特供 · ${getFallbackSpecial()}`;
+    });
 }
 
 document.addEventListener('DOMContentLoaded', displaySpecial);
@@ -2223,54 +2204,19 @@ function getFragments() {
   ];
 }
 
-// 显示随机碎片
+// 显示随机碎片（弹窗由 tavern-core 统一提供）
 function showRandomFragment() {
   const fragments = getFragments();
   if (fragments.length === 0) {
-    document.getElementById('fragment-text').textContent = '暂无碎片可显示。';
-    document.getElementById('fragment-source').textContent = '✦ 档案室';
+    if (window.Tavern) Tavern.openFragment({ text: '暂无碎片可显示。', source: '档案室' });
     return;
   }
-
-  const randomIndex = Math.floor(Math.random() * fragments.length);
-  const fragment = fragments[randomIndex];
-
-  document.getElementById('fragment-text').textContent = fragment.text;
-  document.getElementById('fragment-source').textContent = `✦ ${fragment.source}`;
-
-  // 打开弹窗
-  const modal = document.getElementById('fragment-modal');
-  modal.style.display = 'flex';
-  // 加一个小淡入
-  const card = document.getElementById('fragment-card');
-  card.style.opacity = '0';
-  requestAnimationFrame(() => {
-    card.style.transition = 'opacity 0.3s ease';
-    card.style.opacity = '1';
-  });
+  if (window.Tavern) Tavern.track('fragment');
+  const fragment = fragments[Math.floor(Math.random() * fragments.length)];
+  if (window.Tavern) Tavern.openFragment(fragment);
 }
 
-// 关闭弹窗
-function closeFragmentModal() {
-  const modal = document.getElementById('fragment-modal');
-  if (!modal || modal.style.display !== 'flex') return;
-  const card = document.getElementById('fragment-card');
-  card.style.opacity = '0';
-  setTimeout(() => {
-    modal.style.display = 'none';
-    card.style.opacity = '1';
-    card.style.transition = '';
-  }, 300);
-}
-
-// 绑定事件
 document.getElementById('fragment-trigger').addEventListener('click', showRandomFragment);
-document.getElementById('fragment-modal').addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeFragmentModal();
-});
-document.getElementById('fragment-card').addEventListener('click', e => {
-  e.stopPropagation();
-});
 // ============================================
 // 🎴 卡片翻转交互
 // ============================================
@@ -2288,6 +2234,7 @@ if (!isTouchDevice) {
     const card = e.target.closest('.card');
     if (!card || isCardInteractiveTarget(e.target)) return;
     card.classList.toggle('is-flipped');
+    if (card.classList.contains('is-flipped') && window.Tavern) Tavern.track('cardflip');
   });
 }
 
@@ -2297,6 +2244,7 @@ if (isTouchDevice) {
     const card = e.target.closest('.card');
     if (!card || isCardInteractiveTarget(e.target)) return;
     card.classList.toggle('is-flipped');
+    if (card.classList.contains('is-flipped') && window.Tavern) Tavern.track('cardflip');
   });
 }
 </script>

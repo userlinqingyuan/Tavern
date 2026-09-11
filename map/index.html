@@ -4,19 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>16号螺旋酒馆 · 地图</title>
+    <link rel="stylesheet" href="../css/tavern.css">
     <style>
-        :root {
-            --ink: #eadcc0;
-            --muted: #a08d72;
-            --gold: #d6a85d;
-            --line: #5d483b;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html{scrollbar-width:thin;scrollbar-color:rgba(200,168,120,.45) rgba(72,50,28,.25)}
-        html::-webkit-scrollbar{width:7px}
-        html::-webkit-scrollbar-track{background:rgba(72,50,28,.25)}
-        html::-webkit-scrollbar-thumb{background:rgba(200,168,120,.5);border-radius:4px}
-        html::-webkit-scrollbar-thumb:hover{background:rgba(214,168,93,.7)}
+        /* 颜色变量/重置/滚动条见 ../css/tavern.css */
         body {
             background: #0c0806;
             color: var(--ink);
@@ -226,6 +216,31 @@
             color: var(--muted);
             padding: 5px 4px;
         }
+        /* 足迹可点跳档案 */
+        a.footprint { text-decoration: none; }
+        a.footprint-chip {
+            cursor: pointer;
+            text-decoration: none;
+            transition: border-color .2s, background .2s;
+        }
+        a.footprint-chip:hover {
+            border-color: rgba(214, 168, 93, .45);
+            background: rgba(214, 168, 93, .12);
+        }
+        /* 从档案页跳来时高亮目标足迹 */
+        .footprint.is-target .footprint-dot {
+            transform: scale(1.5);
+            border-color: var(--gold);
+            box-shadow: 0 0 0 5px rgba(214, 168, 93, .25), 0 0 22px rgba(214, 168, 93, .65);
+        }
+        .footprint.is-target .footprint-label {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+        .footprint-chip.is-target {
+            border-color: rgba(214, 168, 93, .6);
+            background: rgba(214, 168, 93, .16);
+        }
         @keyframes footprintPulse {
             0%, 100% { transform: scale(1); opacity: 0.3; }
             50% { transform: scale(1.5); opacity: 0.6; }
@@ -406,6 +421,11 @@
             color: var(--muted);
             font-size: 12px;
             text-align: center;
+            display: flex;
+            gap: 18px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         @media (max-width: 700px) {
@@ -434,7 +454,14 @@
     </div>
 
     <!-- 页脚 -->
-    <div class="footer">16号螺旋酒馆 · 地图 · 点击图片放大</div>
+    <div class="footer">
+        <a class="foot-link" href="../">档案袋</a>
+        <a class="foot-link" href="../drinker/">旅客档案</a>
+        <a class="foot-link" href="../menu/">🍺 酒单</a>
+        <a class="foot-link" href="../achievements/">🏆 成就</a>
+        <a class="foot-link" href="../timeline/">🕰️ 时间线</a>
+        <span>🗺️ 地图 · 点击图片放大</span>
+    </div>
 </div>
 
 <!-- 灯箱 -->
@@ -450,6 +477,10 @@
     <div class="caption" id="lightboxCaption">地图</div>
 </div>
 
+<script src="../js/tavern-core.js"></script>
+<script>
+    if (window.Tavern) Tavern.init('..');
+</script>
 <script>
     // ============================================
     // 🗺️ 地图数据（改这里）
@@ -475,41 +506,56 @@
     ];
 
     // ============================================
-    // 👣 旅客足迹数据（坐标为地图图片内的百分比）
+    // 👣 旅客足迹（单一数据源：../data/people.json 的 map 字段）
     // ============================================
 
-    const footprints = [
-        { mapIndex: 0, x: 35, y: 45, name: "举", label: "常驻吧台左端", color: "#d6a85d" },
-        { mapIndex: 0, x: 62, y: 38, name: "初璃", label: "靠窗座位", color: "#8fb0c0" },
-        { mapIndex: 0, x: 20, y: 55, name: "屠苏", label: "壁炉旁", color: "#c08060" },
-        { mapIndex: 0, x: 78, y: 60, name: "泠钰", label: "角落阴影处", color: "#b09070" },
-        { mapIndex: 0, x: 50, y: 72, name: "荒泊", label: "门口附近", color: "#b0a080" },
-        { mapIndex: 1, x: 30, y: 40, name: "蝶祈", label: "二楼走廊", color: "#d4a0b0" },
-        { mapIndex: 1, x: 65, y: 55, name: "桃逸佑", label: "档案室门口", color: "#b8a070" },
-        { mapIndex: 1, x: 45, y: 75, name: "白鸢", label: "窗边矮凳", color: "#b8c8b0" }
-    ];
+    let footprints = [];
 
-    // ============================================
-    // 👣 足迹标记 / 足迹条 HTML
-    // ============================================
+    // 每个人的点颜色由名字稳定决定（数据里不存颜色）
+    const FP_COLORS = ['#d6a85d','#8fb0c0','#c08060','#b09070','#b0a080','#d4a0b0','#b8a070','#b8c8b0','#9a7fb8','#c07a7a'];
+    function colorForName(name) {
+        let h = 0;
+        for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+        return FP_COLORS[h % FP_COLORS.length];
+    }
 
+    function buildFootprints(people) {
+        return people
+            .filter(p => p && p.map && p.name !== '？？？')
+            .map(p => ({
+                mapIndex: p.map.floor,
+                x: p.map.x,
+                y: p.map.y,
+                name: p.name,
+                label: p.map.label || '酒馆',
+                color: colorForName(p.name)
+            }));
+    }
+
+    function drinkerURL(name) {
+        return '../drinker/?name=' + encodeURIComponent(name);
+    }
+
+    // 足迹标记 / 足迹条 HTML（点击跳转到对应档案）
     function footprintMarkerHTML(fp) {
         return `
-            <div class="footprint" style="left:${fp.x}%;top:${fp.y}%;">
+            <a class="footprint" data-name="${fp.name}" href="${drinkerURL(fp.name)}"
+               title="查看 ${fp.name} 的档案" aria-label="查看 ${fp.name} 的档案"
+               style="left:${fp.x}%;top:${fp.y}%;">
                 <span class="footprint-dot" style="background:${fp.color};"></span>
                 <span class="footprint-label">
                     <strong>${fp.name}</strong>
                     <span>${fp.label}</span>
                 </span>
-            </div>`;
+            </a>`;
     }
 
     function footprintChipHTML(fp) {
         return `
-            <span class="footprint-chip">
+            <a class="footprint-chip" data-name="${fp.name}" href="${drinkerURL(fp.name)}">
                 <i style="background:${fp.color};"></i>
                 ${fp.name}<em>· ${fp.label}</em>
-            </span>`;
+            </a>`;
     }
 
     function footprintChipsHTML(mapIndex) {
@@ -625,10 +671,35 @@
     });
 
     // ============================================
-    // 🚀 启动
+    // 🎯 从档案页跳入：?name=泠钰 → 打开对应楼层灯箱并高亮足迹
     // ============================================
 
-    renderMaps();
+    function focusFootprintFromURL() {
+        const name = new URLSearchParams(location.search).get('name');
+        if (!name) return;
+        const fp = footprints.find(f => f.name === name);
+        if (!fp) return;
+        openLightbox(fp.mapIndex);
+        // openLightbox 同步填充灯箱 DOM，直接标记即可（不依赖 rAF，后台标签也可靠）
+        document.querySelectorAll('#lightboxFootprints .footprint, #lightboxStrip .footprint-chip')
+            .forEach(el => el.classList.toggle('is-target', el.dataset.name === name));
+        const chip = document.querySelector('#lightboxStrip .footprint-chip.is-target');
+        if (chip) chip.scrollIntoView({ block: 'nearest', inline: 'center' });
+    }
+
+    // ============================================
+    // 🚀 启动：先取人物数据生成足迹，再渲染地图
+    // ============================================
+
+    Tavern.loadJSON('../data/people.json')
+        .then(people => {
+            if (Array.isArray(people)) footprints = buildFootprints(people);
+        })
+        .catch(() => { footprints = []; })
+        .then(() => {
+            renderMaps();
+            focusFootprintFromURL();
+        });
 </script>
 
 </body>
