@@ -1,0 +1,64 @@
+[
+  {
+    "id": "ember_click",
+    "page": "index",
+    "selector": ".fireplace",
+    "trigger": "click_count",
+    "count": 3,
+    "fragment": "ember_letter",
+    "achievement": "fire_grabber",
+    "hint": "火星溅出，夹着一张烧焦的纸条。"
+  },
+  {
+    "id": "book_spine",
+    "page": "timeline",
+    "selector": ".timeline-container",
+    "trigger": "click_count",
+    "count": 1,
+    "fragment": "unfinished_diary",
+    "achievement": "bookworm",
+    "hint": "书架最右侧那本暗色书脊，藏着未写完的日记。"
+  },
+  {
+    "id": "coffee_secret",
+    "page": "bar",
+    "selector": "#mixButton",
+    "trigger": "ingredient_combo",
+    "ingredient": "黑咖啡液",
+    "count": 3,
+    "fragment": "barista_secret",
+    "achievement": "insomniac",
+    "hint": "连续三杯都选了黑咖啡液，咖啡师递来一张纸条。"
+  },
+  {
+    "id": "lucky_seven",
+    "page": "bar",
+    "selector": "#diceRollBtn",
+    "trigger": "dice_sum",
+    "sum": 7,
+    "count": 3,
+    "fragment": "dice_remembers",
+    "achievement": "lucky_seven",
+    "hint": "骰子连续掷出三次7，它好像记得什么。"
+  },
+  {
+    "id": "footprint",
+    "page": "map",
+    "selector": "#mapCanvas",
+    "trigger": "click_count",
+    "count": 2,
+    "fragment": "visitor_trace",
+    "achievement": "tracker",
+    "hint": "地图最偏僻角落的脚印，有人来过。"
+  },
+  {
+    "id": "rim_kiss",
+    "page": "menu",
+    "selector": ".today-card",
+    "trigger": "click_count",
+    "count": 2,
+    "fragment": "lip_mark",
+    "achievement": "sommelier",
+    "hint": "杯沿上有一个淡淡的唇印。"
+  }
+]

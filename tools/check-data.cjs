@@ -45,8 +45,10 @@ const KNOWN_METRICS = new Set([
   'fragmentsDrawn', 'favoritesAdded', 'menuViews', 'tastingCount',
   'tastingStreak', 'drinksTasted', 'borrows', 'sawBlankCard',
   'notesRead', 'storyFragments',
-  'mixes', 'hiddenRecipes', 'diceRolls', 'encounters', 'gambleWins', 'gambleStreak'
+  'mixes', 'hiddenRecipes', 'diceRolls', 'encounters', 'gambleWins', 'gambleStreak',
+  'fullMoonVisit', 'fortuneDays', 'festivalVisit', 'weatherTypes', 'eggsFound'
 ]);
+const VALID_SEASONS = new Set(['spring', 'summer', 'autumn', 'winter']);
 
 let roster = new Set();
 if (Array.isArray(people)) {
@@ -203,6 +205,9 @@ if (eventsDoc) {
         if (!roster.has(n)) error(`${tag} people 引用了不存在的人物「${n}」`);
         ALIASES.forEach(([bad]) => { if (n.includes(bad)) error(`${tag} people 含别称错字「${bad}」`); });
       });
+      if (ev.season !== undefined && !VALID_SEASONS.has(ev.season)) {
+        error(`${tag} 非法 season「${ev.season}」（须为 spring/summer/autumn/winter）`);
+      }
       if (dateSeen.has(ev.date)) warn(`${tag} 与「${dateSeen.get(ev.date)}」同日（多条同日事件确认是否有意）`);
       dateSeen.set(ev.date, ev.title);
     });
@@ -224,6 +229,9 @@ if (drinksDoc) {
       });
       if (names.has(d.name)) error(`${tag} 酒名重复`);
       names.add(d.name);
+      if (d.season !== undefined && !VALID_SEASONS.has(d.season)) {
+        error(`${tag} 非法 season「${d.season}」（须为 spring/summer/autumn/winter）`);
+      }
     });
     // 与 drinker/index.html 内置 FALLBACK_SPECIALS 顺序比对
     const drinkerHTML = fs.readFileSync(path.join(ROOT, 'drinker/index.html'), 'utf8');
@@ -269,6 +277,9 @@ if (Array.isArray(achievements)) {
     }
     if (typeof a.value === 'boolean' && a.op !== '==') {
       error(`${tag} 布尔型 value 只能配合 op "=="`);
+    }
+    if (a.season !== undefined && !VALID_SEASONS.has(a.season)) {
+      error(`${tag} 非法 season「${a.season}」（须为 spring/summer/autumn/winter）`);
     }
   });
 } else {
@@ -475,6 +486,169 @@ if (Array.isArray(updateLog) && updateLog.length && updateLog[0].version) {
   if (seenVersions.size > 1) error(`各页面 ?v= 不一致: ${[...seenVersions].join(' / ')}`);
 } else {
   warn('[update_log.json] 无法读取最新版本号，跳过版本一致性检查');
+}
+
+/* ---------- ambient.json ---------- */
+const ambient = readJSON('data/ambient.json');
+if (!ambient) {
+  error('[ambient.json] 文件不存在或 JSON 解析失败');
+} else {
+  // seasons
+  const requiredSeasons = ['spring', 'summer', 'autumn', 'winter'];
+  if (!ambient.seasons) {
+    error('[ambient.json] 缺少 seasons 对象');
+  } else {
+    const allMonths = [];
+    requiredSeasons.forEach(s => {
+      if (!ambient.seasons[s]) { error(`[ambient.json] seasons 缺少「${s}」`); return; }
+      const season = ambient.seasons[s];
+      if (!Array.isArray(season.months) || season.months.length !== 3) {
+        error(`[ambient.json] seasons.${s}.months 必须是 3 个月份数组`);
+      } else {
+        allMonths.push(...season.months);
+      }
+      if (!season.vars) { error(`[ambient.json] seasons.${s} 缺少 vars`); return; }
+      ['--gold', '--ink', '--panel', '--bg-gradient'].forEach(v => {
+        if (!season.vars[v]) error(`[ambient.json] seasons.${s}.vars 缺少 ${v}`);
+      });
+      if (!season.label) error(`[ambient.json] seasons.${s} 缺少 label`);
+      if (!season.subtitle) error(`[ambient.json] seasons.${s} 缺少 subtitle`);
+    });
+    // 月份覆盖检查
+    for (let m = 1; m <= 12; m++) {
+      if (!allMonths.includes(m)) error(`[ambient.json] 月份 ${m} 未被任何季节覆盖`);
+    }
+    // 月份重复检查
+    const dup = allMonths.filter((m, i) => allMonths.indexOf(m) !== i);
+    if (dup.length) error(`[ambient.json] 月份重复: ${dup.join(', ')}`);
+  }
+
+  // timeSlots
+  const requiredSlots = ['dawn', 'noon', 'dusk', 'night'];
+  if (!ambient.timeSlots) {
+    error('[ambient.json] 缺少 timeSlots 对象');
+  } else {
+    const allHours = [];
+    requiredSlots.forEach(s => {
+      if (!ambient.timeSlots[s]) { error(`[ambient.json] timeSlots 缺少「${s}」`); return; }
+      const slot = ambient.timeSlots[s];
+      if (!Array.isArray(slot.hours)) { error(`[ambient.json] timeSlots.${s}.hours 必须是数组`); return; }
+      allHours.push(...slot.hours);
+      if (typeof slot.brightness !== 'number') error(`[ambient.json] timeSlots.${s}.brightness 必须是数字`);
+      if (slot.bgTint === undefined) error(`[ambient.json] timeSlots.${s} 缺少 bgTint`);
+      if (!slot.label) error(`[ambient.json] timeSlots.${s} 缺少 label`);
+    });
+    // 小时覆盖检查
+    for (let h = 0; h <= 23; h++) {
+      if (!allHours.includes(h)) error(`[ambient.json] 小时 ${h} 未被任何时段覆盖`);
+    }
+    const dupH = allHours.filter((h, i) => allHours.indexOf(h) !== i);
+    if (dupH.length) error(`[ambient.json] 小时重复: ${dupH.join(', ')}`);
+  }
+
+  // moonPhases
+  if (!Array.isArray(ambient.moonPhases) || ambient.moonPhases.length !== 8) {
+    error('[ambient.json] moonPhases 必须是 8 项数组');
+  } else {
+    let prevT = -1;
+    ambient.moonPhases.forEach((p, i) => {
+      if (!p.name) error(`[ambient.json] moonPhases[${i}] 缺少 name`);
+      if (!p.emoji) error(`[ambient.json] moonPhases[${i}] 缺少 emoji`);
+      if (typeof p.threshold !== 'number') error(`[ambient.json] moonPhases[${i}].threshold 必须是数字`);
+      if (p.threshold <= prevT) error(`[ambient.json] moonPhases[${i}].threshold 必须递增`);
+      prevT = p.threshold;
+    });
+  }
+
+  // moonEvents
+  if (!Array.isArray(ambient.moonEvents) || ambient.moonEvents.length < 3) {
+    error('[ambient.json] moonEvents 至少需要 3 条');
+  }
+
+  // greetings
+  if (!ambient.greetings) {
+    error('[ambient.json] 缺少 greetings 对象');
+  } else {
+    ['firstVisit', 'returnSameSeason', 'returnNewSeason'].forEach(k => {
+      if (!ambient.greetings[k]) error(`[ambient.json] greetings 缺少 ${k}`);
+    });
+  }
+}
+
+/* ---------- fortune.json ---------- */
+const fortune = readJSON('data/fortune.json');
+if (!fortune) {
+  error('[fortune.json] 文件不存在或 JSON 解析失败');
+} else if (!Array.isArray(fortune) || fortune.length < 50) {
+  error('[fortune.json] 至少需要 50 支签');
+} else {
+  var validLevels = new Set(['上上', '上', '中上', '中', '中下', '下', '下下', '吉']);
+  fortune.forEach(function (s, i) {
+    var tag = '[fortune.json] #' + (i + 1);
+    if (!s.id) error(tag + ' 缺少 id');
+    if (!s.level || !validLevels.has(s.level)) error(tag + ' 非法 level「' + s.level + '」');
+    if (!s.text) error(tag + ' 缺少 text');
+    if (!s.lucky) error(tag + ' 缺少 lucky');
+    if (!s.taboo) error(tag + ' 缺少 taboo');
+  });
+}
+
+/* ---------- festivals.json ---------- */
+const festivals = readJSON('data/festivals.json');
+if (!festivals) {
+  error('[festivals.json] 文件不存在或 JSON 解析失败');
+} else if (!Array.isArray(festivals) || festivals.length < 20) {
+  error('[festivals.json] 至少需要 20 条记录');
+} else {
+  var validTypes = new Set(['solar_term', 'festival']);
+  var validDateTypes = new Set(['solar', 'lunar']);
+  festivals.forEach(function (f, i) {
+    var tag = '[festivals.json] ' + (f.id || '#' + (i + 1));
+    if (!f.id) error(tag + ' 缺少 id');
+    if (!f.date) error(tag + ' 缺少 date');
+    if (!f.dateType || !validDateTypes.has(f.dateType)) error(tag + ' 非法 dateType');
+    if (!f.name) error(tag + ' 缺少 name');
+    if (!f.type || !validTypes.has(f.type)) error(tag + ' 非法 type');
+    if (!f.title) error(tag + ' 缺少 title');
+    if (!f.desc) error(tag + ' 缺少 desc');
+  });
+}
+
+/* ---------- weather.json ---------- */
+const weather = readJSON('data/weather.json');
+if (!weather) {
+  error('[weather.json] 文件不存在或 JSON 解析失败');
+} else {
+  if (!weather.types) { error('[weather.json] 缺少 types'); }
+  else {
+    ['sunny', 'cloudy', 'rainy', 'snowy', 'foggy', 'stormy'].forEach(function (k) {
+      if (!weather.types[k]) error('[weather.json] types 缺少「' + k + '」');
+      else {
+        var t = weather.types[k];
+        if (!t.label) error('[weather.json] types.' + k + ' 缺少 label');
+        if (!t.desc) error('[weather.json] types.' + k + ' 缺少 desc');
+      }
+    });
+  }
+  if (!weather.hints) error('[weather.json] 缺少 hints');
+}
+
+/* ---------- easter_eggs.json ---------- */
+const eggs = readJSON('data/easter_eggs.json');
+if (!eggs) {
+  error('[easter_eggs.json] 文件不存在或 JSON 解析失败');
+} else if (!Array.isArray(eggs) || eggs.length < 4) {
+  error('[easter_eggs.json] 至少需要 4 条彩蛋');
+} else {
+  var validTriggers = new Set(['click_count', 'ingredient_combo', 'dice_sum']);
+  eggs.forEach(function (e, i) {
+    var tag = '[easter_eggs.json] ' + (e.id || '#' + (i + 1));
+    if (!e.id) error(tag + ' 缺少 id');
+    if (!e.page) error(tag + ' 缺少 page');
+    if (!e.selector) error(tag + ' 缺少 selector');
+    if (!e.trigger || !validTriggers.has(e.trigger)) error(tag + ' 非法 trigger');
+    if (!e.hint) error(tag + ' 缺少 hint');
+  });
 }
 
 /* ---------- 汇总 ---------- */

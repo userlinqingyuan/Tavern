@@ -1,0 +1,87 @@
+{
+  "seasons": {
+    "spring": {
+      "months": [3, 4, 5],
+      "vars": {
+        "--gold": "#8cb846",
+        "--ink": "#d8e8b8",
+        "--panel": "#1e2a1a",
+        "--bg-gradient": "radial-gradient(ellipse at 50% 40%, #1e2a1a, #101808)"
+      },
+      "label": "春",
+      "subtitle": "万物复苏"
+    },
+    "summer": {
+      "months": [6, 7, 8],
+      "vars": {
+        "--gold": "#e6b450",
+        "--ink": "#f5e6c8",
+        "--panel": "#1a1408",
+        "--bg-gradient": "radial-gradient(ellipse at 50% 40%, #2a2010, #1a1408)"
+      },
+      "label": "夏",
+      "subtitle": "烈日透窗"
+    },
+    "autumn": {
+      "months": [9, 10, 11],
+      "vars": {
+        "--gold": "#d6a85d",
+        "--ink": "#eadcc0",
+        "--panel": "#1a1513",
+        "--bg-gradient": "radial-gradient(ellipse at 50% 40%, #2a1810, #18100a)"
+      },
+      "label": "秋",
+      "subtitle": "落叶纷飞"
+    },
+    "winter": {
+      "months": [12, 1, 2],
+      "vars": {
+        "--gold": "#a0c0e8",
+        "--ink": "#e0e8f5",
+        "--panel": "#141820",
+        "--bg-gradient": "radial-gradient(ellipse at 50% 40%, #141820, #080a10)"
+      },
+      "label": "冬",
+      "subtitle": "寒风呼啸"
+    }
+  },
+  "timeSlots": {
+    "dawn":  { "hours": [5, 6, 7, 8, 9], "brightness": 1.15, "bgTint": "rgba(255,200,100,0.03)", "label": "晨" },
+    "noon":  { "hours": [10, 11, 12, 13, 14, 15, 16], "brightness": 1.0, "bgTint": "transparent", "label": "午" },
+    "dusk":  { "hours": [17, 18, 19, 20, 21], "brightness": 0.80, "bgTint": "rgba(180,60,20,0.04)", "label": "暮" },
+    "night": { "hours": [22, 23, 0, 1, 2, 3, 4], "brightness": 0.55, "bgTint": "rgba(0,0,0,0.08)", "label": "夜" }
+  },
+  "moonPhases": [
+    { "name": "新月",   "emoji": "🌑", "threshold": 0.000 },
+    { "name": "蛾眉月", "emoji": "🌒", "threshold": 0.125 },
+    { "name": "上弦月", "emoji": "🌓", "threshold": 0.250 },
+    { "name": "盈凸月", "emoji": "🌔", "threshold": 0.375 },
+    { "name": "满月",   "emoji": "🌕", "threshold": 0.500 },
+    { "name": "亏凸月", "emoji": "🌖", "threshold": 0.625 },
+    { "name": "下弦月", "emoji": "🌗", "threshold": 0.750 },
+    { "name": "残月",   "emoji": "🌘", "threshold": 0.875 }
+  ],
+  "moonEvents": [
+    "满月悬于中庭，银光泻地。酒保说今夜有客从远方来。",
+    "圆月当空，酒馆的水晶杯格外透亮。",
+    "满月夜，后院的老橡树在月光下像一座黑塔。",
+    "月华如水，冲淡了杯中余酒。"
+  ],
+  "greetings": {
+    "firstVisit": "欢迎，新旅人。16号螺旋酒馆今夜开张。",
+    "returnSameSeason": "欢迎回来。{seasonSub}，门始终为你留着。",
+    "returnNewSeason": "好久不见。{oldSeasonLabel}别来无恙？如今已是{newSeasonLabel}。"
+  },
+  "seasonSubs": {
+    "spring": "万物复苏",
+    "summer": "烈日透窗",
+    "autumn": "落叶纷飞",
+    "winter": "寒风呼啸"
+  },
+  "seasonLabels": {
+    "spring": "春",
+    "summer": "夏",
+    "autumn": "秋",
+    "winter": "冬"
+  }
+}

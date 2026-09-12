@@ -1,0 +1,25 @@
+{
+  "types": {
+    "sunny":   { "label": "晴",   "emoji": "☀️", "desc": "日光穿过酒馆的彩窗，在地板上投下暖斑。",     "filter": "brightness(1.08)" },
+    "cloudy":  { "label": "阴",   "emoji": "☁️", "desc": "天色灰蒙，酒馆内点起了所有蜡烛。",             "filter": "brightness(0.92)" },
+    "rainy":   { "label": "雨",   "emoji": "🌧️", "desc": "雨打窗棂，壁炉里的柴火噼啪作响。",             "filter": "brightness(0.85) saturate(0.9)" },
+    "snowy":   { "label": "雪",   "emoji": "❄️", "desc": "大雪封路，但酒馆的门始终开着。",               "filter": "brightness(1.05) hue-rotate(-5deg)" },
+    "foggy":   { "label": "雾",   "emoji": "🌫️", "desc": "晨雾弥漫，酒馆像漂在海上的船。",               "filter": "brightness(0.88)" },
+    "stormy":  { "label": "暴",   "emoji": "⛈️", "desc": "雷暴肆虐，酒杯在架上微微颤动。",               "filter": "brightness(0.80) contrast(1.1)" }
+  },
+  "hints": {
+    "1":  "snowy",
+    "2":  "snowy",
+    "3":  "sunny",
+    "4":  "sunny",
+    "5":  "cloudy",
+    "6":  "rainy",
+    "7":  "stormy",
+    "8":  "foggy",
+    "9":  "sunny",
+    "10": "cloudy",
+    "11": "rainy",
+    "12": "snowy",
+    "default": "cloudy"
+  }
+}

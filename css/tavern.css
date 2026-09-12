@@ -10,9 +10,81 @@
   --gold: #d6a85d;       /* 金色强调 */
   --line: #5d483b;       /* 分隔线/边框 */
   --panel: #1a1513;      /* 面板底色 */
+  --bg-tint: transparent; /* 时段叠加色（由 Ambient 模块设置） */
+  --bg-gradient: transparent; /* 季节叠加层（由 Ambient 模块设置） */
+
+  /* 页面背景：照片 + 暗化 + 暗角（各页只覆盖 --page-photo / --page-attach） */
+  --page-photo: none;
+  --page-attach: fixed;   /* 子页面默认固定（滚动时背景不动）；首页改成 scroll */
+  --page-base: #080606;   /* 兜底底色：近黑，避免露出褐色 */
+  --page-dim: linear-gradient(180deg, rgba(8,5,4,.66), rgba(8,5,4,.40) 42%, rgba(8,5,4,.70));
+  --page-vignette: radial-gradient(ellipse 105% 90% at 50% 40%, transparent 42%, rgba(5,3,2,.62) 100%);
+
+  /* 玻璃质感（首页交互 UI 与全站页脚短条共用） */
+  --glass-blur: 14px;
+  --glass-sat: 150%;
+  --glass-bg: linear-gradient(158deg, rgba(48,35,25,.40), rgba(17,12,9,.52));
+  --glass-border: rgba(214,168,93,.24);
+  --glass-edge: rgba(255,238,205,.16);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ---------- 页面背景层：照片铺满视口（或整页），下方永不露底色 ---------- */
+html {
+  background-color: var(--page-base);
+  background-image: var(--page-dim), var(--page-vignette), var(--page-photo);
+  background-position: center;
+  background-size: cover, cover, cover;
+  background-repeat: no-repeat;
+  background-attachment: var(--page-attach);
+}
+
+/* ============================================
+   🧊 玻璃质感：模糊玻璃 + 边缘折射
+   首页交互 UI 与全站页脚短条共用；参数在 :root
+   ============================================ */
+.glass {
+  overflow: hidden;
+  background:
+    radial-gradient(130% 68% at 50% 116%, rgba(255,238,205,.07), transparent 72%), /* 底部弧光：玻璃下沿折射的亮边 */
+    var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(1.06);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(1.06);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 var(--glass-edge),       /* 上沿高光 */
+    inset 0 -1px 0 rgba(255,238,205,.08),  /* 下沿玻璃厚度 */
+    0 16px 38px rgba(0,0,0,.48);
+}
+/* 靠近底边与弧形弯处再模糊一层并轻微放大，做出玻璃边缘的折射形变。
+   z-index:-1 很关键：它让这一层落在文字之下，避免把内容自己糊掉。 */
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: -6% -6% -14%;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 1.7)) saturate(1.35) brightness(1.14);
+  backdrop-filter: blur(calc(var(--glass-blur) * 1.7)) saturate(1.35) brightness(1.14);
+  transform: scale(1.06);
+  transform-origin: 50% 100%;
+  -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.8) 20%, transparent 58%);
+  mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.8) 20%, transparent 58%);
+}
+/* 手记卡保留左侧金色书脊 */
+.tavern-note-card.glass { border-left: 3px solid rgba(214,168,93,.55); }
+
+@media (max-width: 620px) {
+  :root { --glass-blur: 9px; }
+  .glass::after { transform: scale(1.04); }
+}
+/* 不支持 backdrop-filter 时退回半透明底，保证文字可读 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background: rgba(20,12,8,.82); }
+  .glass::after { display: none; }
+}
 
 /* ---------- 全局滚动条：深褐底 / 浅褐滑块 ---------- */
 html {
@@ -32,6 +104,58 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(214, 168, 93, .7); }
   transition: color .2s ease;
 }
 .foot-link:hover { color: var(--gold); }
+
+/* ---------- 🧭 页脚导航短条（底部悬浮玻璃胶囊，全站统一） ---------- */
+.tavern-dock {
+  /* sticky 而非 fixed：滚动时同样悬浮在视口底部，且不受 body 上 filter 造成的
+     "fixed 相对 body 定位" 影响；margin-top:auto 让页面内容不足一屏时也贴底 */
+  position: sticky;
+  bottom: max(18px, env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: fit-content;
+  max-width: calc(100vw - 24px);
+  margin: auto auto 0;
+  padding: 7px 10px;
+  border-radius: 999px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.tavern-dock::-webkit-scrollbar { display: none; }
+.tavern-dock .dock-link {
+  padding: 7px 13px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12.5px;
+  letter-spacing: .04em;
+  text-decoration: none;
+  transition: color .2s ease, background .2s ease;
+}
+.tavern-dock .dock-link:hover {
+  color: var(--gold);
+  background: rgba(214,168,93,.12);
+}
+.tavern-dock .dock-current {
+  padding: 7px 13px;
+  border-radius: 999px;
+  color: var(--gold);
+  font-size: 12.5px;
+  letter-spacing: .04em;
+  background: rgba(214,168,93,.14);
+  cursor: default;
+}
+@media (max-width: 620px) {
+  .tavern-dock { gap: 0; padding: 5px 8px; }
+  .tavern-dock .dock-link,
+  .tavern-dock .dock-current { padding: 6px 9px; font-size: 12px; letter-spacing: 0; }
+}
 
 /* ---------- 📜 随机碎片弹窗（由 tavern-core.js 注入 DOM） ---------- */
 .tavern-frag-overlay {
@@ -662,8 +786,222 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(214, 168, 93, .7); }
   color: var(--gold);
   font-size: 14px;
   margin-top: 8px;
-  letter-spacing: .1em;
-  min-height: 20px;
+}
+
+/* ============================================
+   🌙 Ambient 模块样式（季节/时段/欢迎语）
+   ============================================ */
+
+/* body 时段过渡 */
+body {
+  transition: filter 0.8s ease;
+}
+
+/* 季节叠加层：压在页面自己的背景（如档案页的 bar2.jpg）之上，四季统一 30% 不透明度。
+   z-index:-1 让它落在正文内容之下、页面背景之上；--bg-gradient 由 Ambient 模块写入。 */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--bg-gradient, transparent);
+  opacity: .3;
+}
+
+/* 夜晚时段：壁炉光晕脉动 */
+body.time-night .fireplace {
+  filter: brightness(1.3);
+}
+
+@keyframes hearthPulse {
+  from { opacity: 0.4; transform: scale(0.9); }
+  to   { opacity: 0.7; transform: scale(1.1); }
+}
+
+/* 欢迎语容器 */
+#greeting {
+  text-align: center;
+  color: var(--gold);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  margin: 0 auto 1.2rem;
+  max-width: 560px;
+  line-height: 1.6;
+}
+
+/* 满月事件展示 */
+#moonEvent {
+  display: none;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+  margin: 0.8rem auto;
+  max-width: 560px;
+  font-style: italic;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body { transition: none; }
+  body.time-night::after { animation: none; }
+}
+
+/* ============================================
+   🎨 视觉质感提升
+   ============================================ */
+
+/* 页面淡入 */
+body {
+  animation: pageFadeIn 0.6s ease-out;
+}
+@keyframes pageFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* 打盹模式 */
+body.tavern-doze {
+  filter: brightness(0.85) saturate(0.8) !important;
+  transition: filter 1.5s ease;
+}
+body.tavern-doze .fireplace {
+  filter: brightness(0.6);
+  transition: filter 1.5s ease;
+}
+body.tavern-doze .portal-card {
+  opacity: 0.92;
+  transition: opacity 1.5s ease;
+}
+
+/* 卡片光影增强 */
+.portal-card, .tavern-note-card {
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(214, 168, 93, 0.05);
+}
+
+/* 面板内阴影 */
+.tavern-panel, .panel {
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.15),
+    0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(214, 168, 93, 0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(214, 168, 93, 0.4);
+}
+
+/* ============================================
+   🔮 每日运势签
+   ============================================ */
+#fortuneBox { margin: 1rem auto; text-align: center; }
+.fortune-tube {
+  display: inline-block;
+  position: relative;
+  width: 40px;
+  height: 100px;
+  cursor: pointer;
+}
+.fortune-tube-body {
+  width: 36px;
+  height: 80px;
+  margin: 8px auto 0;
+  background: linear-gradient(180deg, #8b6914, #6b4f10, #4a3508);
+  border-radius: 18px 18px 8px 8px;
+  border: 2px solid #3d2818;
+  box-shadow: inset 0 4px 8px rgba(255, 200, 100, 0.1), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.fortune-tube-cap {
+  width: 42px;
+  height: 14px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #c8a030, #8b6914);
+  border-radius: 50%;
+  border: 2px solid #3d2818;
+}
+.fortune-tube-shake {
+  animation: tubeShake 0.8s ease-in-out;
+}
+@keyframes tubeShake {
+  0%, 100% { transform: rotate(0) translateY(0); }
+  20% { transform: rotate(-8deg) translateY(-3px); }
+  40% { transform: rotate(8deg) translateY(2px); }
+  60% { transform: rotate(-5deg) translateY(-2px); }
+  80% { transform: rotate(5deg) translateY(0); }
+}
+.fortune-tube-hint {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 6px;
+}
+.fortune-slip {
+  background: rgba(234, 220, 192, 0.06);
+  border: 1px solid rgba(214, 168, 93, 0.2);
+  border-radius: 6px;
+  padding: 12px 16px;
+  max-width: 280px;
+  margin: 0 auto;
+  animation: pageFadeIn 0.5s ease;
+}
+.fortune-slip-level {
+  color: var(--gold);
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.fortune-slip-text {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+.fortune-slip-lucky {
+  color: var(--gold);
+  font-size: 11px;
+  opacity: 0.8;
+}
+.fortune-slip-taboo {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+/* ============================================
+   🎉 节日/节气卡片
+   ============================================ */
+#festivalCard {
+  display: none;
+  background: rgba(214, 168, 93, 0.08);
+  border: 1px solid rgba(214, 168, 93, 0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 0.8rem auto;
+  max-width: 280px;
+  text-align: center;
+}
+.festival-title {
+  color: var(--gold);
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.festival-desc {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+.festival-drink {
+  color: var(--muted);
+  font-size: 11px;
 }
 .tavern-gamble-mid {
   color: var(--gold);

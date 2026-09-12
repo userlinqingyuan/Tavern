@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Georgia, "Noto Serif SC", serif;
+  background: #0a0604;
+  color: #eadcc0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+h1 { font-size: 1.4rem; text-align: center; margin: 1.5rem 0 0.5rem; }
+.subtitle { text-align: center; color: #a08d72; font-size: 0.85rem; margin-bottom: 1.5rem; }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  max-width: 800px;
+  margin: 0 auto 1rem;
+  padding: 0 1rem;
+}
+.card {
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+  border: 2px solid transparent;
+}
+.card:hover { transform: translateY(-4px); }
+.card.selected { border-color: #d6a85d; box-shadow: 0 0 20px rgba(214,168,93,0.3); }
+.card-preview {
+  height: 180px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.card-preview .tavern-name {
+  font-size: 1.1rem;
+  letter-spacing: 0.15em;
+  margin-bottom: 0.3rem;
+}
+.card-preview .tavern-sub {
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  opacity: 0.6;
+}
+.card-preview .tavern-door {
+  margin-top: 0.8rem;
+  width: 40px;
+  height: 60px;
+  border-radius: 3px 3px 0 0;
+  border: 1px solid rgba(0,0,0,0.3);
+}
+.card-body {
+  padding: 0.8rem;
+  text-align: center;
+}
+.card-body h3 { font-size: 0.95rem; margin-bottom: 0.3rem; }
+.card-body p { font-size: 0.75rem; color: #a08d72; }
+.card-body .vars {
+  font-size: 0.65rem;
+  margin-top: 0.4rem;
+  color: #6b5d4a;
+  font-family: monospace;
+}
+
+/* Spring */
+.spring .card-preview {
+  background: radial-gradient(ellipse at 50% 40%, #1e2a1a, #101808);
+  color: #d8e8b8;
+}
+.spring .card-preview .tavern-door {
+  background: linear-gradient(165deg, #5a6b38, #384520);
+  box-shadow: 0 0 14px rgba(140,180,70,0.25);
+}
+
+/* Summer */
+.summer .card-preview {
+  background: radial-gradient(ellipse at 50% 40%, #2a2010, #1a1408);
+  color: #f5e6c8;
+}
+.summer .card-preview .tavern-door {
+  background: linear-gradient(165deg, #8b6b30, #5d4020);
+  box-shadow: 0 0 14px rgba(230,180,80,0.25);
+}
+
+/* Autumn */
+.autumn .card-preview {
+  background: radial-gradient(ellipse at 50% 40%, #2a1810, #18100a);
+  color: #eadcc0;
+}
+.autumn .card-preview .tavern-door {
+  background: linear-gradient(165deg, #7b4020, #4a2810);
+  box-shadow: 0 0 12px rgba(200,100,40,0.20);
+}
+
+/* Winter */
+.winter .card-preview {
+  background: radial-gradient(ellipse at 50% 40%, #141820, #080a10);
+  color: #e0e8f5;
+}
+.winter .card-preview .tavern-door {
+  background: linear-gradient(165deg, #48587a, #28324a);
+  box-shadow: 0 0 14px rgba(120,160,220,0.30);
+}
+
+/* Time strip */
+.time-strip {
+  max-width: 800px;
+  margin: 0 auto 2rem;
+  padding: 0 1rem;
+}
+.time-bar {
+  display: flex;
+  gap: 4px;
+  height: 40px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.time-seg {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  transition: filter 0.3s;
+}
+.time-seg:hover { filter: brightness(1.3); }
+.time-dawn { background: linear-gradient(90deg, #2a1810, #4a3020); }
+.time-noon { background: linear-gradient(90deg, #4a3020, #5a4030); }
+.time-dusk { background: linear-gradient(90deg, #3a2020, #2a1810); }
+.time-night { background: linear-gradient(90deg, #181014, #0a0604); }
+.time-label { text-align: center; font-size: 0.75rem; color: #a08d72; margin-top: 0.5rem; }
+
+.actions { text-align: center; padding: 1rem; }
+.btn {
+  padding: 0.6rem 1.5rem;
+  font-size: 0.85rem;
+  border: 1px solid #5d483b;
+  border-radius: 4px;
+  background: #1a1513;
+  color: #eadcc0;
+  cursor: pointer;
+  margin: 0 0.5rem;
+  transition: all 0.3s;
+}
+.btn:hover { border-color: #d6a85d; color: #d6a85d; }
+.btn.primary { background: #d6a85d; color: #1a1513; border-color: #d6a85d; }
+</style>
+</head>
+<body>
+
+<h1>季节配色 × 时段氛围 — 批次1设计预览</h1>
+<p class="subtitle">点击卡片选择季节方案 · 底部时段条展示一天的氛围变化</p>
+
+<div class="grid">
+  <div class="card spring" data-choice="spring" onclick="toggleSelect(this)">
+    <div class="card-preview">
+      <div class="tavern-name">16号螺旋酒馆</div>
+      <div class="tavern-sub">SPRING</div>
+      <div class="tavern-door"></div>
+    </div>
+    <div class="card-body">
+      <h3>春 · 嫩绿暖调</h3>
+      <p>万物复苏，木桌泛新绿微光</p>
+      <div class="vars">--gold: #8cb846 | --ink: #d8e8b8 | --panel: #1e2a1a</div>
+    </div>
+  </div>
+
+  <div class="card summer" data-choice="summer" onclick="toggleSelect(this)">
+    <div class="card-preview">
+      <div class="tavern-name">16号螺旋酒馆</div>
+      <div class="tavern-sub">SUMMER</div>
+      <div class="tavern-door"></div>
+    </div>
+    <div class="card-body">
+      <h3>夏 · 明亮金色</h3>
+      <p>烈日透窗，铜器闪闪发亮</p>
+      <div class="vars">--gold: #e6b450 | --ink: #f5e6c8 | --panel: #1a1408</div>
+    </div>
+  </div>
+
+  <div class="card autumn" data-choice="autumn" onclick="toggleSelect(this)">
+    <div class="card-preview">
+      <div class="tavern-name">16号螺旋酒馆</div>
+      <div class="tavern-sub">AUTUMN</div>
+      <div class="tavern-door"></div>
+    </div>
+    <div class="card-body">
+      <h3>秋 · 橙暖褐色</h3>
+      <p>落叶纷飞，壁炉火光正旺</p>
+      <div class="vars">--gold: #d6a85d | --ink: #eadcc0 | --panel: #1a1513</div>
+    </div>
+  </div>
+
+  <div class="card winter" data-choice="winter" onclick="toggleSelect(this)">
+    <div class="card-preview">
+      <div class="tavern-name">16号螺旋酒馆</div>
+      <div class="tavern-sub">WINTER</div>
+      <div class="tavern-door"></div>
+    </div>
+    <div class="card-body">
+      <h3>冬 · 冷蓝调</h3>
+      <p>寒风呼啸，窗棂结霜微蓝</p>
+      <div class="vars">--gold: #a0c0e8 | --ink: #e0e8f5 | --panel: #141820</div>
+    </div>
+  </div>
+</div>
+
+<div class="time-strip">
+  <div class="time-bar">
+    <div class="time-seg time-dawn">晨 5-10</div>
+    <div class="time-seg time-noon">午 10-17</div>
+    <div class="time-seg time-dusk">暮 17-22</div>
+    <div class="time-seg time-night">夜 22-5</div>
+  </div>
+  <div class="time-label">时段联动：4 个时段叠加在季节配色之上，调整亮度/暗度而非换色</div>
+</div>
+
+<div class="actions">
+  <button class="btn" onclick="resetAll()">重置选择</button>
+  <button class="btn primary" onclick="confirmChoice()">确认方案</button>
+</div>
+
+<script>
+function toggleSelect(el) {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function resetAll() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+}
+function confirmChoice() {
+  const sel = document.querySelector('.card.selected');
+  if (sel) {
+    const choice = sel.getAttribute('data-choice');
+    document.getElementById('result').textContent = '已确认: ' + choice;
+  }
+}
+</script>
+<div id="result" style="text-align:center;color:#d6a85d;font-size:0.85rem;padding-bottom:1rem"></div>
+</body>
+</html>

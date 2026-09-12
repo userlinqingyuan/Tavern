@@ -71,7 +71,9 @@
         cardFlips: 0, lightboxViews: 0, networkOpens: 0, bookReads: 0,
         diceUses: 0, fragmentsDrawn: 0, menuViews: 0, favoritesAdded: 0,
         notesRead: 0,
-        mixes: 0, diceRolls: 0, encounters: 0, gambleWins: 0
+        mixes: 0, diceRolls: 0, encounters: 0, gambleWins: 0,
+        fullMoonVisit: 0, fortuneDays: 0, festivalVisit: 0,
+        weatherTypes: 0, eggsFound: 0
       },
       peopleViewed: [],
       storyFragments: [],
@@ -79,7 +81,13 @@
       mixLog: [],
       hiddenRecipes: [],
       gambleStreak: 0,
-      unlocked: {}
+      unlocked: {},
+      lastSeason: null,
+      fullMoonVisited: null,
+      greetingShown: false,
+      fortuneDates: [],
+      weatherTypes: [],
+      eggsFound: []
     };
   }
 
@@ -149,7 +157,12 @@
       diceRolls: state.counters.diceRolls,
       encounters: state.counters.encounters,
       gambleWins: state.counters.gambleWins,
-      gambleStreak: state.gambleStreak || 0
+      gambleStreak: state.gambleStreak || 0,
+      fullMoonVisit: state.counters.fullMoonVisit || 0,
+      fortuneDays: state.counters.fortuneDays || 0,
+      festivalVisit: state.counters.festivalVisit || 0,
+      weatherTypes: state.counters.weatherTypes || 0,
+      eggsFound: state.counters.eggsFound || 0
     };
   }
 
@@ -164,8 +177,10 @@
   function evaluate() {
     if (!defsLoaded || !state) return;
     var m = calcMetrics();
+    var currentSeason = Ambient.season;
     defs.forEach(function (def) {
       if (state.unlocked[def.id]) return;
+      if (def.season && def.season !== currentSeason) return;
       if (conditionMet(def, m)) {
         state.unlocked[def.id] = new Date().toISOString();
         queue.push(def);
@@ -268,6 +283,29 @@
         state.gambleStreak = (state.gambleStreak || 0) + 1;
         break;
       case 'gambleLose': state.gambleStreak = 0; break;
+      case 'fullMoonVisit': state.counters.fullMoonVisit = 1; break;
+      case 'fortuneDraw':
+        if (state.fortuneDates && state.fortuneDates.indexOf(today) === -1) {
+          state.fortuneDates.push(today);
+          state.counters.fortuneDays = state.fortuneDates.length;
+        }
+        break;
+      case 'festivalVisit': state.counters.festivalVisit = 1; break;
+      case 'weather':
+        if (!state.weatherTypes) state.weatherTypes = [];
+        if (data.type && state.weatherTypes.indexOf(data.type) === -1) {
+          state.weatherTypes.push(data.type);
+          state.counters.weatherTypes = state.weatherTypes.length;
+        }
+        break;
+      case 'eggFound':
+        if (!state.eggsFound) state.eggsFound = [];
+        if (data.id && state.eggsFound.indexOf(data.id) === -1) {
+          state.eggsFound.push(data.id);
+          state.counters.eggsFound = state.eggsFound.length;
+          if (data.fragment) track('storyFragment', { id: data.fragment });
+        }
+        break;
       default: break;
     }
     saveState();
@@ -312,9 +350,13 @@
     fragOverlay.querySelector('.tavern-frag-source').textContent = '✦ ' + (fragment.source || '档案碎片');
     fragOverlay.querySelector('.tavern-frag-card').classList.toggle('special', !!fragment.special);
     fragOverlay.classList.add('open');
+    /* 锁背景滚动：否则弹窗盖住了页面，背后还能滑 */
+    document.body.style.overflow = 'hidden';
   }
   function closeFragment() {
-    if (fragOverlay) fragOverlay.classList.remove('open');
+    if (!fragOverlay) return;
+    fragOverlay.classList.remove('open');
+    document.body.style.overflow = '';
   }
 
   /* ---------- 🗔 通用弹窗（.tavern-modal-overlay） ----------
@@ -363,6 +405,181 @@
     modalLastFocus = null;
   }
 
+  /* ==========================================
+     Ambient 模块：季节 / 时段 / 月相 / 欢迎语
+     ========================================== */
+  var Ambient = {
+    season: null,
+    timeSlot: null,
+    moonPhase: null,
+    isFirstVisit: false,
+    config: null,
+    _intervalId: null,
+
+    /* ---- 离线月相计算 ----
+       参考朔日: 2000-01-06 18:14 UTC, 朔望月 29.530588853 天 */
+    _SYNODIC: 29.530588853,
+    _REF_NEW_MOON: Date.UTC(2000, 0, 6, 18, 14) / 86400000,
+
+    calcMoonIllumination: function (date) {
+      var now = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000;
+      var phase = ((now - this._REF_NEW_MOON) % this._SYNODIC + this._SYNODIC) % this._SYNODIC / this._SYNODIC;
+      return { phase: phase, illumination: (1 - Math.cos(2 * Math.PI * phase)) / 2 };
+    },
+
+    calcSeason: function (now) {
+      var month = now.getMonth() + 1; /* 1-12 */
+      var cfg = this.config;
+      if (!cfg || !cfg.seasons) { this.season = 'autumn'; return; }
+      for (var key in cfg.seasons) {
+        if (cfg.seasons[key].months.indexOf(month) !== -1) { this.season = key; return; }
+      }
+      this.season = 'autumn';
+    },
+
+    calcTimeSlot: function (hour) {
+      var cfg = this.config;
+      if (!cfg || !cfg.timeSlots) { this.timeSlot = 'noon'; return; }
+      for (var key in cfg.timeSlots) {
+        if (cfg.timeSlots[key].hours.indexOf(hour) !== -1) { this.timeSlot = key; return; }
+      }
+      this.timeSlot = 'noon';
+    },
+
+    getMoonPhase: function (date) {
+      var info = this.calcMoonIllumination(date);
+      var cfg = this.config;
+      if (!cfg || !cfg.moonPhases) {
+        this.moonPhase = { name: '未知', emoji: '🌑', illumination: info.illumination };
+        return this.moonPhase;
+      }
+      var phases = cfg.moonPhases;
+      var matched = phases[0];
+      for (var i = 0; i < phases.length; i++) {
+        if (info.phase >= phases[i].threshold) matched = phases[i];
+      }
+      /* phase 接近 1 时回绕到新月 */
+      if (info.phase >= 0.875 && info.phase < 1.0) matched = phases[7];
+      this.moonPhase = { name: matched.name, emoji: matched.emoji, illumination: info.illumination };
+      return this.moonPhase;
+    },
+
+    isFullMoon: function () {
+      if (!this.moonPhase) return false;
+      return this.moonPhase.illumination >= 0.95;
+    },
+
+    applySeason: function () {
+      if (!this.season || !this.config || !this.config.seasons) return;
+      var vars = this.config.seasons[this.season];
+      if (!vars || !vars.vars) return;
+      var root = document.documentElement;
+      for (var cssVar in vars.vars) {
+        root.style.setProperty(cssVar, vars.vars[cssVar]);
+      }
+      /* 季节色只作为叠加层（见 css 的 body::after，30% 不透明度），
+         不覆盖各页面自己的背景图：--bg-gradient 已在上面的循环里写到 :root */
+    },
+
+    applyTimeSlot: function () {
+      if (!this.timeSlot || !this.config || !this.config.timeSlots) return;
+      var ts = this.config.timeSlots[this.timeSlot];
+      if (!ts) return;
+      var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var isMobile = window.matchMedia('(max-width: 620px)').matches;
+      if (!reduceMotion && !isMobile) {
+        document.body.style.filter = 'brightness(' + ts.brightness + ')';
+      }
+      var root = document.documentElement;
+      root.style.setProperty('--bg-tint', ts.bgTint);
+      /* 夜晚 class */
+      if (this.timeSlot === 'night') document.body.classList.add('time-night');
+      else document.body.classList.remove('time-night');
+    },
+
+    handleGreetingAndFullMoon: function () {
+      if (!state || !this.config) return;
+      var now = new Date();
+      var today = fmtDate(now);
+
+      /* 欢迎语 */
+      this.isFirstVisit = !state.lastSeason;
+      if (!state.greetingShown) {
+        var greetingEl = document.getElementById('greeting');
+        if (greetingEl) {
+          greetingEl.textContent = this.getGreeting();
+          greetingEl.style.opacity = '0';
+          greetingEl.style.transition = 'opacity 0.8s ease';
+          requestAnimationFrame(function () { greetingEl.style.opacity = '1'; });
+        }
+        state.greetingShown = true;
+      }
+      state.lastSeason = this.season;
+
+      /* 满月事件 */
+      if (this.isFullMoon() && state.fullMoonVisited !== today) {
+        state.fullMoonVisited = today;
+        track('fullMoonVisit', 1);
+        /* 首页展示满月事件 */
+        var moonEl = document.getElementById('moonEvent');
+        if (moonEl && this.config.moonEvents) {
+          var events = this.config.moonEvents;
+          var text = events[Math.floor(Math.random() * events.length)];
+          moonEl.textContent = '🌕 ' + text;
+          moonEl.style.display = 'block';
+        }
+      }
+      saveState();
+    },
+
+    getGreeting: function () {
+      if (!this.config || !this.config.greetings) return '';
+      var g = this.config.greetings;
+      if (this.isFirstVisit) return g.firstVisit || '';
+      var subs = this.config.seasonSubs || {};
+      var labels = this.config.seasonLabels || {};
+      if (state.lastSeason === this.season) {
+        return (g.returnSameSeason || '').replace('{seasonSub}', subs[this.season] || '');
+      } else {
+        return (g.returnNewSeason || '')
+          .replace('{oldSeasonLabel}', labels[state.lastSeason] || '')
+          .replace('{newSeasonLabel}', labels[this.season] || '');
+      }
+    },
+
+    startInterval: function () {
+      if (this._intervalId) clearInterval(this._intervalId);
+      var self = this;
+      this._intervalId = setInterval(function () {
+        var now = new Date();
+        var newSlot = self.timeSlot;
+        self.calcTimeSlot(now.getHours());
+        if (newSlot !== self.timeSlot) self.applyTimeSlot();
+      }, 60000);
+    },
+
+    init: function (root) {
+      var self = this;
+      return loadJSON(root + 'data/ambient.json')
+        .then(function (cfg) {
+          self.config = cfg;
+          var now = new Date();
+          self.calcSeason(now);
+          self.calcTimeSlot(now.getHours());
+          self.getMoonPhase(now);
+          self.applySeason();
+          self.applyTimeSlot();
+          self.handleGreetingAndFullMoon();
+          self.startInterval();
+        })
+        .catch(function () {
+          /* 配置加载失败：回退到 autumn 配色 */
+          self.season = 'autumn';
+          self.timeSlot = 'noon';
+        });
+    }
+  };
+
   /* ---------- 初始化（每页一次） ---------- */
   function init(root) {
     // 规范化根路径：'..' → '../'，'' 保持 ''
@@ -376,7 +593,13 @@
     if (now.getMonth() === 0 && now.getDate() === 1) state.flags.newYearVisit = true;
     saveState();
     evaluate();
-    return loadJSON(rootPath + 'data/achievements.json')
+    /* 先加载 ambient 配置（季节/时段/月相/欢迎语） */
+    return Ambient.init(rootPath)
+      .then(function () {
+        /* ambient 就绪后重新评估成就（季节限定成就需要 Ambient.season） */
+        evaluate();
+        return loadJSON(rootPath + 'data/achievements.json');
+      })
       .then(function (list) {
         defs = Array.isArray(list) ? list : [];
         defsLoaded = true;
@@ -439,6 +662,9 @@
     },
     todaysDrinkIndex: todaysDrinkIndex,
     hasTastedToday: hasTastedToday,
-    tastedDrinkIndices: tastedDrinkIndices
+    tastedDrinkIndices: tastedDrinkIndices,
+    Ambient: Ambient,
+    _root: rootPath,
+    get _state() { if (!state) loadState(); return state; }
   };
 })();

@@ -4,14 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>16号螺旋酒馆 · 地图</title>
-    <link rel="stylesheet" href="../css/tavern.css?v=v2.5.0">
+    <link rel="stylesheet" href="../css/tavern.css?v=v2.3.0">
     <style>
         /* 颜色变量/重置/滚动条见 ../css/tavern.css */
+        :root { --page-photo: url('../images/bar.jpg'); }
         body {
-            background: #0c0806;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
             color: var(--ink);
             font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
-            padding: 40px 20px 60px;
+            padding: 40px 20px 100px;
             min-height: 100vh;
         }
         .wrap {
@@ -177,6 +180,7 @@
             padding: 10px 14px;
             border-top: 1px solid rgba(90, 72, 59, 0.1);
             -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
             scrollbar-width: thin;
             scrollbar-color: rgba(200, 168, 120, 0.45) rgba(72, 50, 28, 0.25);
         }
@@ -413,20 +417,7 @@
             margin-right: auto;
         }
 
-        /* 页脚 */
-        .footer {
-            margin-top: 48px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(90,72,59,0.15);
-            color: var(--muted);
-            font-size: 12px;
-            text-align: center;
-            display: flex;
-            gap: 18px;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+        /* 页脚导航改由 css/tavern.css 的 .tavern-dock 提供 */
 
         @media (max-width: 700px) {
             body { padding: 24px 16px 40px; }
@@ -454,16 +445,17 @@
     </div>
 
     <!-- 页脚 -->
-    <div class="footer">
-        <a class="foot-link" href="../">档案袋</a>
-        <a class="foot-link" href="../drinker/">旅客档案</a>
-        <a class="foot-link" href="../menu/">🍺 酒单</a>
-        <a class="foot-link" href="../bar/">🍸 吧台</a>
-        <a class="foot-link" href="../achievements/">🏆 成就</a>
-        <a class="foot-link" href="../timeline/">🕰️ 时间线</a>
-        <span>🗺️ 地图 · 点击图片放大</span>
-    </div>
 </div>
+
+<nav class="tavern-dock glass" aria-label="站点导航">
+    <a class="dock-link" href="../">档案袋</a>
+    <a class="dock-link" href="../drinker/">旅客档案</a>
+    <a class="dock-link" href="../menu/">🍺 酒单</a>
+    <a class="dock-link" href="../bar/">🍸 吧台</a>
+    <a class="dock-link" href="../achievements/">🏆 成就</a>
+    <a class="dock-link" href="../timeline/">🕰️ 时间线</a>
+    <span class="dock-current">🗺️ 地图</span>
+</nav>
 
 <!-- 灯箱 -->
 <div class="lightbox-map" id="lightboxMap" role="dialog" aria-modal="true" aria-label="楼层地图与旅客足迹">
@@ -478,7 +470,7 @@
     <div class="caption" id="lightboxCaption">地图</div>
 </div>
 
-<script src="../js/tavern-core.js?v=v2.5.0"></script>
+<script src="../js/tavern-core.js?v=v2.3.0"></script>
 <script>
     if (window.Tavern) Tavern.init('..');
 </script>

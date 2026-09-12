@@ -4,14 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>16号螺旋酒馆 · 时间线</title>
-    <link rel="stylesheet" href="../css/tavern.css?v=v2.5.0">
+    <link rel="stylesheet" href="../css/tavern.css?v=v2.3.0">
     <style>
         /* 颜色变量/重置/滚动条见 ../css/tavern.css */
+        :root { --page-photo: url('../images/bar.jpg'); }
         body {
-            background: #0c0806;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
             color: var(--ink);
             font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
-            padding: 40px 20px 60px;
+            padding: 40px 20px 100px;
             min-height: 100vh;
         }
 
@@ -191,26 +194,145 @@
             border-radius: 8px;
         }
 
-        /* 页脚 */
-        .footer {
-            margin-top: 48px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(90,72,59,0.15);
-            color: var(--muted);
-            font-size: 13px;
-            text-align: center;
-            display: flex;
-            gap: 18px;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+        /* 页脚导航改由 css/tavern.css 的 .tavern-dock 提供 */
 
         @media (max-width: 600px) {
             body { padding: 24px 16px 40px; }
             .timeline { padding-left: 28px; }
             .event::before { left: -22px; width: 10px; height: 10px; }
             .event .title { font-size: 16px; }
+        }
+
+        /* 壁炉火焰 */
+        .fireplace {
+            position: relative;
+            width: 100%;
+            max-width: 340px;
+            margin: 1.5rem auto 0;
+            pointer-events: none;
+        }
+        .fireplace-frame {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            border-radius: 8px 8px 4px 4px;
+            background: linear-gradient(180deg, #1a0e06 0%, #0d0703 100%);
+            border: 1px solid rgba(93, 72, 59, 0.4);
+            border-bottom: none;
+            box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.6), 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .fireplace-frame::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 12px;
+            background: linear-gradient(180deg, #3d2818, #2a1810);
+            border-bottom: 2px solid rgba(214, 168, 93, 0.15);
+        }
+        .flame-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 140px;
+        }
+        .flame {
+            position: absolute;
+            bottom: 0;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            transform-origin: bottom center;
+            animation: burn 0.8s ease-in-out infinite alternate;
+        }
+        .flame-1 { left: 42px; width: 44px; height: 90px; background: radial-gradient(ellipse at 50% 100%, #ff6b00, #ff3300 50%, #cc2200 80%, transparent); animation-duration: 0.6s; filter: blur(3px); }
+        .flame-2 { left: 30px; width: 32px; height: 68px; background: radial-gradient(ellipse at 50% 100%, #ff8800, #ff4400 50%, #cc2200 80%, transparent); animation-duration: 0.7s; animation-delay: 0.15s; filter: blur(4px); }
+        .flame-3 { left: 60px; width: 36px; height: 75px; background: radial-gradient(ellipse at 50% 100%, #ffaa00, #ff5500 50%, #cc3300 80%, transparent); animation-duration: 0.55s; animation-delay: 0.3s; filter: blur(4px); }
+        .flame-4 { left: 24px; width: 24px; height: 52px; background: radial-gradient(ellipse at 50% 100%, #ffcc44, #ff8800 50%, #cc4400 80%, transparent); animation-duration: 0.9s; animation-delay: 0.1s; filter: blur(3px); }
+        .flame-5 { left: 70px; width: 24px; height: 56px; background: radial-gradient(ellipse at 50% 100%, #ffcc44, #ff8800 50%, #cc4400 80%, transparent); animation-duration: 0.75s; animation-delay: 0.45s; filter: blur(3px); }
+        .flame-6 { left: 50px; width: 18px; height: 40px; background: radial-gradient(ellipse at 50% 100%, #ffee88, #ffaa00 50%, #cc5500 80%, transparent); animation-duration: 0.5s; animation-delay: 0.2s; filter: blur(2px); }
+        .glow {
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 60px;
+            background: radial-gradient(ellipse at 50% 100%, rgba(255, 120, 20, 0.35), transparent 70%);
+            border-radius: 50%;
+            animation: glowPulse 2s ease-in-out infinite alternate;
+        }
+        .glow-outer {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 280px;
+            height: 80px;
+            background: radial-gradient(ellipse at 50% 100%, rgba(255, 100, 20, 0.12), transparent 70%);
+            border-radius: 50%;
+            animation: glowPulse 3s ease-in-out infinite alternate;
+        }
+        .log {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 16px;
+            background: linear-gradient(180deg, #5a3a20, #3d2718, #2a1a10);
+            border-radius: 4px 4px 12px 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(120, 80, 40, 0.3);
+            z-index: 2;
+        }
+        .log::before {
+            content: "";
+            position: absolute;
+            top: 2px; left: 14px; right: 14px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(160, 110, 60, 0.2), transparent);
+            border-radius: 50%;
+        }
+        .log::after {
+            content: "";
+            position: absolute;
+            top: 6px; left: 25%;
+            width: 8px; height: 3px;
+            background: rgba(80, 50, 30, 0.4);
+            border-radius: 50%;
+            transform: rotate(8deg);
+            box-shadow: 20px 0 0 rgba(80, 50, 30, 0.3), 35px -2px 0 rgba(80, 50, 30, 0.2);
+        }
+        .ember {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: rgba(255, 160, 40, 0.8);
+            box-shadow: 0 0 4px rgba(255, 120, 20, 0.6);
+            animation: emberFloat 3s ease-out infinite;
+        }
+        .ember-1 { bottom: 30px; left: 45%; animation-delay: 0s; }
+        .ember-2 { bottom: 25px; left: 55%; animation-delay: 1s; }
+        .ember-3 { bottom: 35px; left: 38%; animation-delay: 2s; }
+        @keyframes burn {
+            0% { transform: scaleY(0.85) scaleX(0.95) translateY(0); }
+            25% { transform: scaleY(1.05) scaleX(1.02) translateY(-3px); }
+            50% { transform: scaleY(0.90) scaleX(0.98) translateY(-1px); }
+            75% { transform: scaleY(1.08) scaleX(1.04) translateY(-4px); }
+            100% { transform: scaleY(0.92) scaleX(0.96) translateY(0); }
+        }
+        @keyframes glowPulse {
+            0% { opacity: 0.5; transform: translateX(-50%) scaleX(1); }
+            100% { opacity: 0.9; transform: translateX(-50%) scaleX(1.2); }
+        }
+        @keyframes emberFloat {
+            0% { opacity: 0; transform: translateY(0) translateX(0); }
+            20% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(-60px) translateX(8px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .flame, .glow, .glow-outer, .ember { animation: none; }
         }
     </style>
 </head>
@@ -231,19 +353,41 @@
         <!-- 由 JavaScript 动态渲染 -->
     </div>
 
-    <!-- 页脚 -->
-    <div class="footer">
-        <a class="foot-link" href="../">档案袋</a>
-        <a class="foot-link" href="../drinker/">旅客档案</a>
-        <a class="foot-link" href="../menu/">🍺 酒单</a>
-        <a class="foot-link" href="../bar/">🍸 吧台</a>
-        <a class="foot-link" href="../achievements/">🏆 成就</a>
-        <span>🕰️ 时间线</span>
-        <a class="foot-link" href="../map/">🗺️ 地图</a>
+    <!-- 壁炉 -->
+    <div class="fireplace" aria-hidden="true">
+        <div class="fireplace-frame">
+            <div class="flame-container">
+                <div class="flame flame-1"></div>
+                <div class="flame flame-2"></div>
+                <div class="flame flame-3"></div>
+                <div class="flame flame-4"></div>
+                <div class="flame flame-5"></div>
+                <div class="flame flame-6"></div>
+                <div class="ember ember-1"></div>
+                <div class="ember ember-2"></div>
+                <div class="ember ember-3"></div>
+                <div class="glow-outer"></div>
+                <div class="glow"></div>
+            </div>
+            <div class="log"></div>
+        </div>
     </div>
+
+    <!-- 页脚 -->
 </div>
 
-<script src="../js/tavern-core.js?v=v2.5.0"></script>
+<nav class="tavern-dock glass" aria-label="站点导航">
+    <a class="dock-link" href="../">档案袋</a>
+    <a class="dock-link" href="../drinker/">旅客档案</a>
+    <a class="dock-link" href="../menu/">🍺 酒单</a>
+    <a class="dock-link" href="../bar/">🍸 吧台</a>
+    <a class="dock-link" href="../achievements/">🏆 成就</a>
+    <span class="dock-current">🕰️ 时间线</span>
+    <a class="dock-link" href="../map/">🗺️ 地图</a>
+</nav>
+
+<script src="../js/tavern-core.js?v=v2.3.0"></script>
+<script src="../js/tavern-ambient.js?v=v2.3.0"></script>
 <script>
     // 到访统计 + 成就系统
     if (window.Tavern) Tavern.init('..');

@@ -1,0 +1,352 @@
+[
+  {
+    "id": "start_of_spring",
+    "date": "02-04",
+    "dateType": "solar",
+    "name": "立春",
+    "type": "solar_term",
+    "title": "立春 · 万物始生",
+    "desc": "酒馆门口柳条悄悄抽芽。酒保温了一壶黄酒，说迎春要喝温的，整年不僵手。",
+    "drink": "黄酒"
+  },
+  {
+    "id": "rain_water",
+    "date": "02-19",
+    "dateType": "solar",
+    "name": "雨水",
+    "type": "solar_term",
+    "title": "雨水 · 春雨润物",
+    "desc": "春雨敲打屋檐。酒保把酒坛挪到内屋，说雨水天的酒最养胃，润一冬的燥。",
+    "drink": "米酒"
+  },
+  {
+    "id": "awakening_of_insects",
+    "date": "03-06",
+    "dateType": "solar",
+    "name": "惊蛰",
+    "type": "solar_term",
+    "title": "惊蛰 · 春雷乍响",
+    "desc": "一声春雷震得酒杯轻响。酒保说惊蛰饮酒能驱一冬的寒气，给客人各斟一杯。",
+    "drink": "烧酒"
+  },
+  {
+    "id": "spring_equinox",
+    "date": "03-20",
+    "dateType": "solar",
+    "name": "春分",
+    "type": "solar_term",
+    "title": "春分 · 昼夜平分",
+    "desc": "酒馆门前的桃树开了第一朵花。酒保说，春分日饮花雕，整年不犯困。",
+    "drink": "花雕"
+  },
+  {
+    "id": "clear_and_bright",
+    "date": "04-05",
+    "dateType": "solar",
+    "name": "清明",
+    "type": "solar_term",
+    "title": "清明 · 慎终追远",
+    "desc": "雨纷纷的傍晚，酒馆角落有人独酌。酒保温一壶酒，无声地敬了远行人一杯。",
+    "drink": "黄酒"
+  },
+  {
+    "id": "grain_rain",
+    "date": "04-20",
+    "dateType": "solar",
+    "name": "谷雨",
+    "type": "solar_term",
+    "title": "谷雨 · 雨生百谷",
+    "desc": "院后茶树冒了新芽。酒保取新茶入酒，说谷雨茶酒最清心，喝完整夏不烦。",
+    "drink": "茶酒"
+  },
+  {
+    "id": "start_of_summer",
+    "date": "05-06",
+    "dateType": "solar",
+    "name": "立夏",
+    "type": "solar_term",
+    "title": "立夏 · 夏始初长",
+    "desc": "酒馆换上竹帘。酒保开一坛青梅酒，说立夏饮梅酒，整个夏天不疰夏。",
+    "drink": "青梅酒"
+  },
+  {
+    "id": "grain_buds",
+    "date": "05-21",
+    "dateType": "solar",
+    "name": "小满",
+    "type": "solar_term",
+    "title": "小满 · 物至于此小得盈",
+    "desc": "麦穗渐饱。酒保碾新麦做了饼，配一壶米酒，说小满刚刚好，不满也不空。",
+    "drink": "米酒"
+  },
+  {
+    "id": "grain_in_ear",
+    "date": "06-06",
+    "dateType": "solar",
+    "name": "芒种",
+    "type": "solar_term",
+    "title": "芒种 · 有芒之谷可种",
+    "desc": "农人忙归。酒馆备好凉茶和米酒，酒保说忙人也该歇一口，喝完再走。",
+    "drink": "米酒"
+  },
+  {
+    "id": "summer_solstice",
+    "date": "06-21",
+    "dateType": "solar",
+    "name": "夏至",
+    "type": "solar_term",
+    "title": "夏至 · 日长至",
+    "desc": "白昼最长的一天。酒保在井里冰了啤酒，说夏至日长，酒兴也要长一些。",
+    "drink": "冰啤酒"
+  },
+  {
+    "id": "minor_heat",
+    "date": "07-07",
+    "dateType": "solar",
+    "name": "小暑",
+    "type": "solar_term",
+    "title": "小暑 · 倏忽温风至",
+    "desc": "蝉鸣不断。酒馆挂起竹帘，酒保说小暑饮酸梅汤兑酒最解暑，给客人各盛一碗。",
+    "drink": "酸梅酒"
+  },
+  {
+    "id": "major_heat",
+    "date": "07-23",
+    "dateType": "solar",
+    "name": "大暑",
+    "type": "solar_term",
+    "title": "大暑 · 炎热至极",
+    "desc": "酷暑难当。酒保把酒坛沉到井底，说大暑天凉酒最解烦，再热也不上头。",
+    "drink": "凉酒"
+  },
+  {
+    "id": "start_of_autumn",
+    "date": "08-08",
+    "dateType": "solar",
+    "name": "立秋",
+    "type": "solar_term",
+    "title": "立秋 · 凉风至",
+    "desc": "第一片梧桐叶落进酒杯。酒保说立秋饮烧酒贴秋膘，给客人添了一碟肉。",
+    "drink": "烧酒"
+  },
+  {
+    "id": "end_of_heat",
+    "date": "08-23",
+    "dateType": "solar",
+    "name": "处暑",
+    "type": "solar_term",
+    "title": "处暑 · 暑气止",
+    "desc": "暑气渐退。酒馆撤下竹帘，酒保说处暑夜喝酒不燥也不寒，正是好时分。",
+    "drink": "米酒"
+  },
+  {
+    "id": "white_dew",
+    "date": "09-08",
+    "dateType": "solar",
+    "name": "白露",
+    "type": "solar_term",
+    "title": "白露 · 露凝而白",
+    "desc": "草尖凝了露。酒保在桂花树下温酒，说白露饮桂酒润一秋，香气能到冬至。",
+    "drink": "桂花酒"
+  },
+  {
+    "id": "autumn_equinox",
+    "date": "09-23",
+    "dateType": "solar",
+    "name": "秋分",
+    "type": "solar_term",
+    "title": "秋分 · 昼夜均",
+    "desc": "昼夜均分。酒馆点起烛火，酒保说秋分夜饮酒最中正，多一分则醉，少一分则淡。",
+    "drink": "黄酒"
+  },
+  {
+    "id": "cold_dew",
+    "date": "10-08",
+    "dateType": "solar",
+    "name": "寒露",
+    "type": "solar_term",
+    "title": "寒露 · 露气寒冷",
+    "desc": "露寒可触。酒馆门前菊花初黄，酒保说寒露饮菊酒明目，给每人斟了一小盏。",
+    "drink": "菊花酒"
+  },
+  {
+    "id": "frost_descent",
+    "date": "10-23",
+    "dateType": "solar",
+    "name": "霜降",
+    "type": "solar_term",
+    "title": "霜降 · 草木黄落",
+    "desc": "屋瓦凝霜。酒保在火塘温一壶老酒，说霜降天酒要烫到刚好烫口，入喉才暖。",
+    "drink": "老酒"
+  },
+  {
+    "id": "start_of_winter",
+    "date": "11-08",
+    "dateType": "solar",
+    "name": "立冬",
+    "type": "solar_term",
+    "title": "立冬 · 冬始物藏",
+    "desc": "酒馆挂起棉门帘。酒保说立冬饮烧酒，一冬不冷脚，给早到的客人添了一杯。",
+    "drink": "烧酒"
+  },
+  {
+    "id": "minor_snow",
+    "date": "11-22",
+    "dateType": "solar",
+    "name": "小雪",
+    "type": "solar_term",
+    "title": "小雪 · 雪初下",
+    "desc": "初雪落薄。酒保温了米酒说，小雪天喝酒，看雪不冷，听雪不寂。",
+    "drink": "温米酒"
+  },
+  {
+    "id": "major_snow",
+    "date": "12-07",
+    "dateType": "solar",
+    "name": "大雪",
+    "type": "solar_term",
+    "title": "大雪 · 雪盛于此",
+    "desc": "雪深没阶。酒馆火塘烧得旺，酒保说大雪天烈酒最暖身，给推门客先倒一杯。",
+    "drink": "烈酒"
+  },
+  {
+    "id": "winter_solstice",
+    "date": "12-22",
+    "dateType": "solar",
+    "name": "冬至",
+    "type": "solar_term",
+    "title": "冬至 · 日影最长",
+    "desc": "夜最长。酒馆包了饺子，酒保说冬至酒配饺子，数九从这一口开始。",
+    "drink": "烧酒"
+  },
+  {
+    "id": "minor_cold",
+    "date": "01-06",
+    "dateType": "solar",
+    "name": "小寒",
+    "type": "solar_term",
+    "title": "小寒 · 寒气积久",
+    "desc": "寒气透骨。酒保烫一壶老白干，说小寒饮烈酒御寒，一杯下去手脚都暖了。",
+    "drink": "老白干"
+  },
+  {
+    "id": "major_cold",
+    "date": "01-20",
+    "dateType": "solar",
+    "name": "大寒",
+    "type": "solar_term",
+    "title": "大寒 · 寒至极",
+    "desc": "一年最寒。酒馆火塘彻夜不熄，酒保说大寒饮烧酒送冬去，再熬几日便是春。",
+    "drink": "烧酒"
+  },
+  {
+    "id": "spring_festival",
+    "date": "01-01",
+    "dateType": "lunar",
+    "name": "春节",
+    "type": "festival",
+    "title": "春节 · 辞旧迎新",
+    "desc": "鞭炮声里，酒馆挂上红灯笼。酒保开一坛陈酿，说新年头杯敬天地，再敬来人。",
+    "drink": "陈酿"
+  },
+  {
+    "id": "lantern_festival",
+    "date": "01-15",
+    "dateType": "lunar",
+    "name": "元宵",
+    "type": "festival",
+    "title": "元宵 · 花灯如昼",
+    "desc": "花灯映雪。酒馆煮了汤圆，酒保说元宵夜喝酒要配甜的，一年都圆满。",
+    "drink": "甜米酒"
+  },
+  {
+    "id": "dragon_boat",
+    "date": "05-05",
+    "dateType": "lunar",
+    "name": "端午",
+    "type": "festival",
+    "title": "端午 · 艾叶驱邪",
+    "desc": "艾草挂上门楣。酒保温了雄黄酒，说端午饮此酒，五毒不近，蛇虫绕道。",
+    "drink": "雄黄酒"
+  },
+  {
+    "id": "qixi",
+    "date": "07-07",
+    "dateType": "lunar",
+    "name": "七夕",
+    "type": "festival",
+    "title": "七夕 · 鹊桥相会",
+    "desc": "鹊桥夜。酒馆角落有少年独酌，酒保说七夕酒里要加桂花，等的人会闻香而来。",
+    "drink": "桂花酒"
+  },
+  {
+    "id": "mid_autumn",
+    "date": "08-15",
+    "dateType": "lunar",
+    "name": "中秋",
+    "type": "festival",
+    "title": "中秋 · 月圆人圆",
+    "desc": "月圆如镜。酒馆分了月饼，酒保说中秋夜桂酒配月最相宜，独饮也能敬远人。",
+    "drink": "桂花酒"
+  },
+  {
+    "id": "double_ninth",
+    "date": "09-09",
+    "dateType": "lunar",
+    "name": "重阳",
+    "type": "festival",
+    "title": "重阳 · 登高赏菊",
+    "desc": "登高归来。酒馆菊花满桌，酒保说重阳饮菊酒延一岁，给老者添了满杯。",
+    "drink": "菊花酒"
+  },
+  {
+    "id": "laba",
+    "date": "12-08",
+    "dateType": "lunar",
+    "name": "腊八",
+    "type": "festival",
+    "title": "腊八 · 腊月祭祖",
+    "desc": "寒风里飘着粥香。酒馆熬了腊八粥，酒保说配一壶暖酒最对味，喝完整冬有力。",
+    "drink": "暖酒"
+  },
+  {
+    "id": "new_year_eve",
+    "date": "12-30",
+    "dateType": "lunar",
+    "name": "除夕",
+    "type": "festival",
+    "title": "除夕 · 守岁辞旧",
+    "desc": "守夜人满座。酒保开了陈年好酒，说除夕这杯辞旧迎新，喝完就是新年。",
+    "drink": "陈酿"
+  },
+  {
+    "id": "new_year",
+    "date": "01-01",
+    "dateType": "solar",
+    "name": "新年",
+    "type": "festival",
+    "title": "新年 · 元旦伊始",
+    "desc": "元旦清晨。酒馆开了第一杯酒，酒保说新年要喝新酿，新新相迎，整年顺遂。",
+    "drink": "新酿"
+  },
+  {
+    "id": "halloween_eve",
+    "date": "10-31",
+    "dateType": "solar",
+    "name": "万圣夜",
+    "type": "festival",
+    "title": "万圣夜 · 鬼怪出没",
+    "desc": "南瓜灯摆上吧台。酒保调了一杯血色酒，说今夜鬼也来喝一口，给他们留个位。",
+    "drink": "血腥酒"
+  },
+  {
+    "id": "christmas_eve",
+    "date": "12-24",
+    "dateType": "solar",
+    "name": "平安夜",
+    "type": "festival",
+    "title": "平安夜 · 雪夜平安",
+    "desc": "雪落在窗外。酒馆点了蜡烛，酒保温一杯热红酒，说平安夜要暖，从喉暖到心。",
+    "drink": "热红酒"
+  }
+]

@@ -27,9 +27,10 @@ Tavern/
 │   ├── map-v1.png      # 一楼地图
 │   └── map-v2.png      # 二楼地图
 ├── css/
-│   └── tavern.css      # 全站共享样式：颜色变量 / 滚动条 / 页脚链接 / 通用弹窗 / 碎片弹窗 / 吧台组件
+│   └── tavern.css      # 全站共享样式：颜色变量 / 页面背景层 / 玻璃质感 / 页脚短条 / 滚动条 / 通用弹窗 / 吧台组件
 ├── js/
-│   └── tavern-core.js  # 共享核心：埋点 / 到访统计 / 成就判定 / 转义与弹窗工具 / 缓存 JSON 加载
+│   ├── tavern-core.js  # 共享核心：埋点 / 到访统计 / 成就判定 / 转义与弹窗工具 / 缓存 JSON 加载
+│   └── tavern-ambient.js # 环境交互：季节时段 / 天气粒子 / 运势签 / 节日卡 / 彩蛋 / 打盹与浮尘
 ├── tools/
 │   └── check-data.cjs  # 数据校验器（npm run check，ERROR 退出码 1）
 ├── package.json        # 仅提供 npm run check 脚本（无依赖、无构建）
@@ -42,10 +43,15 @@ Tavern/
 │   ├── fragments.json    # 随机碎片 + 故事碎片（收集玩法）
 │   ├── raw.json          # 吧台调酒数据（基酒 / 配料 / 风味短句 / 隐藏配方）
 │   ├── dice.json         # 骰子桌数据（遇客事件 / 赌局台词）
+│   ├── ambient.json      # 环境感知：季节变量 / 时段 / 月相 / 欢迎语
+│   ├── weather.json      # 天气：类型文案 + 按月提示（驱动天气粒子层）
+│   ├── fortune.json      # 每日运势签（按等级加权抽取）
+│   ├── festivals.json    # 节日 / 节气（按公历日期命中，含推荐酒）
+│   ├── easter_eggs.json  # 隐藏彩蛋（点击次数触发 + 提示文案）
 │   └── update_log.json   # 版本更新日志
 └── images/
-    ├── bar.jpg         # 封面背景
-    ├── bar2.jpg        # 档案页背景
+    ├── bar.jpg         # 封面 / 酒单 / 时间线 / 成就 / 地图 的背景照片
+    ├── bar2.jpg        # 旅客档案 / 吧台 的背景照片
     ├── character/      # 原始人物卡图片
     ├── ID/             # 证件照
     └── sil/            # 立绘（按「姓名 立绘.jpg」命名，当前仅泠钰）
@@ -58,11 +64,13 @@ Tavern/
 ### 封面入口页（`index.html`）
 
 - **推门入场**：PC 端先播 Canvas 螺旋星系开场动画，底部「跳 过」可随时进店；移动端（≤620px）、二次访问（`tavern_door_opened`）与系统「减少动效」偏好都直接进内景
-- **内景氛围**：酒馆背景图 + 噪点 + 6 枚浮尘粒子；品牌区配随机欢迎语（10 条，淡入）
+- **内景氛围**：`images/bar.jpg` 作为画布背景**钉在屏幕上**（不随内容滚动，等比铺满后裁掉多余部分、不变形）+ 噪点 + 6 枚浮尘粒子；品牌区配随机欢迎语（10 条，淡入）
 - **九宫格入口**：🍺 酒单 / 🍸 吧台 / 🏆 成就 / 📖 酒客档案（主入口）/ 🕰️ 时间线 / 🗺️ 地图
-- **今日手记**：每日一篇酒保手记（年内第 N 天 % 手记数，与今日特供同款算法），来自 `data/notes.json`，手记中登记的人物名渲染成金色链接直达档案卡；「往期 ✎」弹窗翻看全部，当日篇标记「今日」
+- **今日手记 + 借阅记录同栏**：右栏上下两张卡（320px 列宽一致）——上面是每日手记（年内第 N 天 % 手记数，与今日特供同款算法，来自 `data/notes.json`，人物名渲染成金色链接；「往期 ✎」弹窗翻看全部），下面是档案借阅记录（最近 20 条、可清空）；整列高度与左侧九宫格对齐，借阅列表随卡片拉长并内部滚动
 - **随机碎片**：左下角按钮弹出酒馆氛围语录（弹窗由 `tavern-core.js` 注入）；**每累计抽 3 次必得一枚✦故事碎片，按钮旁「✦ n/6」徽标点开碎片集，集齐 6 枚拼出关于「？？？」的隐藏故事**（金色弹窗，收集进度存 `tavern_state_v1`）
 - **档案借阅记录**：显示来自档案页的借阅流水（最多展示最近 20 条，可清空）
+- **玻璃质感**：九宫格卡片、今日手记、借阅记录、随机碎片按钮、碎片集徽标、跳过按钮统一套 `.glass`（模糊玻璃 + 边缘折射）
+- **无页脚短条**：首页导航就是上方九宫格，故不挂底部的 `.tavern-dock`
 
 ### 旅客档案页（`drinker/index.html`）
 
@@ -123,6 +131,18 @@ Tavern/
 - **旅客足迹**：从 `people.json` 的 `map` 字段自动生成，一楼/二楼分别落点；悬停或点击显示姓名与位置说明
 - **足迹条**：每张地图下方有横向足迹条，点击任意足迹跳到对应档案
 - **深链定位**：通过 `?name=姓名` 打开对应楼层灯箱并高亮该足迹（与档案页双向跳转）
+
+---
+
+### 🎨 全站公共样式与导航
+
+各页 `<style>` 只管本页布局，下面这些是全站统一的（都在 `css/tavern.css`）：
+
+- **背景系统**：照片 + 暗化渐变 + 暗角三层叠在 `html` 画布层上，**钉在屏幕上、不随内容滚动**；`background-size: cover` 等比铺满后**裁掉多余部分，不会拉伸变形**（宽屏裁上下、竖屏裁左右）。各页只声明照片：封面 / 酒单 / 时间线 / 成就 / 地图用 `images/bar.jpg`，旅客档案 / 吧台用 `images/bar2.jpg`。封面页的照片写在 `index.html` 自己的 `html` 规则里（不走共享 `--page-photo`，原因见「日常维护」的路径说明）。
+- **玻璃质感 `.glass`**：模糊玻璃（`backdrop-filter: blur + saturate`）+ 上沿高光 + 下沿厚度 + 底部弧光；`::after` 折射层用更强的模糊 + 以底边为原点轻微放大 + 底部遮罩做出玻璃边缘的形变，`z-index:-1` 保证不糊住卡片自己的文字。参数集中在 `:root`（`--glass-blur / --glass-sat / --glass-bg / --glass-border / --glass-edge`），≤620px 自动降到 9px；浏览器不支持 `backdrop-filter` 时退回半透明底。
+- **页脚导航短条 `.tavern-dock`**：6 个子页面共用的**独立玻璃小短条**——圆角胶囊、宽度随内容、居中、当前页高亮且不可点（`<span class="dock-current">`）。`position: sticky` + `bottom: max(18px, env(safe-area-inset-bottom))`：滚动时悬浮在视口底部，内容不足一屏时贴底；窄屏可横向滑动。首页不挂（它的导航是九宫格）。
+- **主题化滚动条**：下列容器共用同一套深褐底 / 浅褐滑块皮肤，并带 `overscroll-behavior: contain`（滑到底不会带着背景页一起滚）：全站 `html`、通用弹窗（`.tavern-modal` / `.tavern-modal-body`）、酒单放大窗正文、吧台基酒滚动区、首页借阅记录列表、档案页备注弹窗、档案页翻书双页、地图足迹条。
+- **弹窗**：统一 `.tavern-modal-overlay` + `.tavern-modal` 结构与 `Tavern.openModal/closeModal`（Esc、点遮罩、✕、背景滚动锁、关闭后焦点归还）；随机碎片弹窗由 core 注入 DOM，打开时同样锁背景滚动。
 
 ---
 
@@ -215,7 +235,7 @@ Tavern/
 | `icon / name / desc` | 徽章图标、名称、描述 |
 | `group` | `visit` 到访 / `archive` 档案 / `drink` 酒单 / `bar` 吧台 / `secret` 彩蛋 |
 | `hidden` | 可选；`true` 时未解锁显示「？？？」 |
-| `metric` | 判定指标：`visitDays / visitStreak / lateNightVisit / newYearVisit / peopleViewed / cardFlips / networkOpens / bookReads / diceUses / fragmentsDrawn / favoritesAdded / menuViews / tastingCount / tastingStreak / drinksTasted / borrows / sawBlankCard / notesRead / storyFragments / mixes / hiddenRecipes / diceRolls / encounters / gambleWins / gambleStreak` |
+| `metric` | 判定指标：`visitDays / visitStreak / lateNightVisit / newYearVisit / peopleViewed / cardFlips / networkOpens / bookReads / diceUses / fragmentsDrawn / favoritesAdded / menuViews / tastingCount / tastingStreak / drinksTasted / borrows / sawBlankCard / notesRead / storyFragments / mixes / hiddenRecipes / diceRolls / encounters / gambleWins / gambleStreak / fullMoonVisit / fortuneDays / festivalVisit / weatherTypes / eggsFound` |
 | `op / value` | `">=" 数字` 或 `"==" true/false` |
 
 ### `data/notes.json`
@@ -236,6 +256,34 @@ Tavern/
 - `fragments`：普通氛围碎片 `[{ text, source }]`，封面与档案页的随机抽取池
 - `story`：✦ 故事碎片 `[{ id, text }]`，**数组顺序即拼合顺序**；每累计抽 3 次普通碎片必出下一枚未收集的，集齐后在封面碎片集弹窗拼出完整段落；条数必须与 `achievements.json` 中 `story-complete` 的 `value` 一致（校验器强制）
 
+### `data/ambient.json`
+
+环境感知主配置，`{ seasons, timeSlots, moonPhases, moonEvents, greetings, seasonSubs, seasonLabels }`：
+
+| 字段 | 说明 |
+|------|------|
+| `seasons` | 四季：`months`（各 3 个月，须覆盖 12 个月且不重复）+ `vars`（`--gold / --ink / --panel / --bg-gradient`）+ `label / subtitle`。`--bg-gradient` 现在**只作为 30% 不透明度的叠加层**（`body::after`）压在页面背景照片上，不再覆盖整页背景 |
+| `timeSlots` | 时段：`hours`（覆盖 24 小时）+ `brightness`（桌面端页面亮度，由 Ambient 写到 `body.style.filter`）+ `bgTint` + `label`；夜间追加 `body.time-night` |
+| `moonPhases` | 8 个月相（`name / emoji / threshold`），用离线朔望月算法推算（参考朔日 2000-01-06） |
+| `moonEvents` | 满月夜文案池 |
+| `greetings` / `seasonSubs` / `seasonLabels` | 欢迎语模板（首次到访 / 同季回归 / 换季回归）与季节文案 |
+
+### `data/weather.json`
+
+`{ types, hints }`：`types` 是天气类型表（`sunny / cloudy / rainy / snowy / foggy / stormy`，含 `label / emoji / desc / filter`）；`hints` 是「月份 → 天气类型」提示表（`"1"`~`"12"` + `default`）。`js/tavern-ambient.js` 按当月取类型，并渲染对应 Canvas 粒子层（阳光光束 / 雨 / 雪 / 雾，暴雨带闪电）。
+
+### `data/fortune.json`
+
+运势签数组（`{ id, level, text, lucky, taboo }`）。当日签由「日期做种子 + 等级加权」确定，权重写在 `js/tavern-ambient.js` 的 `_buildWeighted`（上上 5 / 上 15 / 中上 15 / 中 30 / 中下 15 / 下 12 / 下下 8 / 吉 8）；当天抽过就不再抽（`tavern_state_v1` 的 `fortuneDates`）。**注意：页面还缺 `#fortuneBox` 挂载点，见文末「已知待办」**。
+
+### `data/festivals.json`
+
+节日 / 节气数组（`{ id, date: "MM-DD", dateType: "solar", name, type, title, desc, drink }`）。当前只命中 `dateType: "solar"` 的公历日期，命中时显示节日卡（推荐酒取 `drink`）并记 `festivalVisit`；`lunar`（农历）换算尚未实现（代码里留了 TODO）。**同样缺 `#festivalCard` 挂载点**。
+
+### `data/easter_eggs.json`
+
+隐藏彩蛋数组（`{ id, page, selector, trigger: "click_count", count, fragment, achievement, hint }`）：对 `selector` 指定元素点击 `count` 次即触发，弹出 `hint` 并记 `eggFound`。**其中 4 条的选择器目前指不到页面元素，见文末「已知待办」**。
+
 ### `data/update_log.json`
 
 版本日志数组，`renderChangelog` 读取，展示最近 5 条。**顶部的 `version` 同时是全站静态资源 `?v=` 参数的唯一来源**。
@@ -252,11 +300,12 @@ Tavern/
 
 ## 🔧 共享模块
 
-- **`css/tavern.css`**：颜色变量（`--ink / --muted / --gold / --line / --panel`）、基础重置、全局滚动条、页脚链接、通用弹窗（`.tavern-modal-overlay / .tavern-modal / .tavern-modal-body`，自带主题化滚动条皮肤与滚动链隔离）、随机碎片弹窗样式、吧台组件（选料 chips / 结果卡 / 骰子 / 模式胶囊 / 调酒日志列表）。页面自己的 `<style>` 在其后加载，可覆盖变量。
+- **`css/tavern.css`**：颜色变量（`--ink / --muted / --gold / --line / --panel`，页面背景 `--page-*`，玻璃 `--glass-*`）、基础重置、**页面背景层**（`html` 上的照片 + 暗化 + 暗角，附着方式取 `--page-attach`）、**玻璃质感**（`.glass` + `::after` 折射层）、**页脚短条**（`.tavern-dock`）、全局与局部滚动条皮肤、页脚链接、通用弹窗（`.tavern-modal-overlay / .tavern-modal / .tavern-modal-body`）、随机碎片弹窗样式、吧台组件（选料 chips / 结果卡 / 骰子 / 模式胶囊 / 调酒日志列表）。页面自己的 `<style>` 在其后加载，可覆盖变量。
+- **`js/tavern-ambient.js`**：环境交互层（自动探测页面元素，有则启用，无则跳过）。包含：鼠标速度与空闲检测（30s 无操作进入打盹 `body.tavern-doze`）、滚动越深画面越暗并触发浮尘、浮尘 Canvas 粒子（按 DPR 分高/中/低三档密度）、手机倾斜轻晃卡片、每日运势签、节日卡、天气 Canvas 粒子层、隐藏彩蛋。配合 core 里的 `Tavern.Ambient`（季节 / 时段 / 月相 / 欢迎语）使用。
 - **`js/tavern-core.js`**：所有页面共用的核心脚本。用法：
 
   ```html
-  <script src="../js/tavern-core.js?v=v2.4.0"></script>
+  <script src="../js/tavern-core.js?v=v2.3.0"></script>
   <script>
     Tavern.init('..');            // 根目录页传 ''，子页面传 '..'
     Tavern.track('cardflip');     // 埋点，驱动成就判定
@@ -284,6 +333,10 @@ Tavern/
 - **重置成就**：浏览器清掉 localStorage 的 `tavern_state_v1` 即可
 - **记版本**：往 `data/update_log.json` 顶部插一条 `{ date, version, entries }`，**并把 7 个页面里 `tavern.css` / `tavern-core.js` 引用的 `?v=` 改成同一个新版本号**（漏改会被校验器拦下；根治浏览器缓存旧代码）
 - **新增弹窗**：复用 `.tavern-modal-overlay` + `.tavern-modal`（标题行 `.tavern-modal-title`、滚动区 `.tavern-modal-body`），开关一律走 `Tavern.openModal/closeModal`——Esc、点遮罩、✕、背景滚动锁、关闭后焦点归还都自动生效，不要再手写事件绑定
+- **换页面背景**：在该页 `<style>` 里改 `--page-photo` 即可（封面页例外：照片写在 `index.html` 自己的 `html` 规则里）。⚠️ 由于照片是在 `css/tavern.css` 的 `html` 规则里被 `var()` 引用的，相对路径**可能按样式表位置解析**，所以子页面一律写 `../images/xxx.jpg` 这种「两种解析都落在同一处」的形式；要放在站点根之外的写法一定先在浏览器里确认能加载
+- **新增可滚动容器**：照抄现有皮肤（`scrollbar-width / scrollbar-color` + `::-webkit-scrollbar` 三件套 + `overscroll-behavior: contain`），保证和全站一致；已美化的容器清单见「全站公共样式与导航」
+- **新增页面/页面底部导航**：复制任一子页面底部的 `<nav class="tavern-dock glass">` 结构，把本页那一项换成 `<span class="dock-current">`，其余用 `<a class="dock-link">`；`body` 保持 `display:flex; flex-direction:column` 并留足 `padding-bottom`（约 100px）
+- **加运势签 / 天气 / 节日 / 彩蛋**：分别改 `data/fortune.json`（加权等级）、`data/weather.json`（`types` + 按月 `hints`）、`data/festivals.json`（公历日期 `MM-DD`）、`data/easter_eggs.json`（`selector` 必须能在对应页面选到元素）
 - **借阅记录**：由档案页点击自动写入，无需手动维护
 - **改完数据跑校验**：`npm run check`（或 `node tools/check-data.cjs`），有 ERROR 会以退出码 1 失败，可直接接 CI
 
@@ -299,7 +352,21 @@ Tavern/
 
 - 纯原生 HTML/CSS/JS，无依赖、无构建
 - 页面间共享 `css/tavern.css` 与 `js/tavern-core.js`，数据统一放 `data/*.json`
+- 页面背景走 `html` 画布层：`background-attachment: fixed` 钉在屏幕上，`background-size: cover` 等比铺满后裁掉多余部分（宽屏裁上下、竖屏裁左右），任何比例下都不变形
+- ⚠️ **`body` 上只要挂了 `filter`（Ambient 的时段亮度会写 `body.style.filter`），它内部所有 `position: fixed` 都会改成相对 body 定位**（滚动时被带走）。所以：页脚短条用 `position: sticky` 而不是 fixed；背景放 `html` 画布层而不是固定 div；以后新增固定元素要留意这一点
+- 玻璃质感靠 `backdrop-filter`，折射层必须 `z-index:-1`（落在卡片文字之下，否则会把内容一起糊掉），`.glass` 本身不写 `position`（避免覆盖元素自己的定位）
 - 人物关系网用 Canvas + 简易力导向布局；卡片翻转、火焰、粒子、书页翻转为 CSS 动画/3D 变换
 - 成就由「声明式条件 + 状态推导指标」驱动，加成就只改 JSON
 - 页面间数据共享靠 localStorage（同源）；`Tavern.loadJSON` 对同一次访问内的相同请求做缓存
 - 已适配移动端：卡片翻转、关系网触摸拖动、地图足迹条、响应式布局
+
+---
+
+## 🚧 已知待办（2026-09-13 收工记录）
+
+- **环境感知只接线了一半**：`data/fortune.json`、节日卡、欢迎语、满月事件的数据与 JS/CSS 都在，但页面**还没有挂载点**——`#fortuneBox` / `#festivalCard` / `#greeting` / `#moonEvent` 在任何页面都找不到，所以运势签、节日卡、欢迎语、满月事件目前不会显示。已生效的是：季节配色（30% 叠加层）、时段亮度、天气粒子层、浮尘、打盹、滚动变暗、设备倾斜、部分彩蛋。
+- **4 条彩蛋的选择器失效**：`data/easter_eggs.json` 里 `book_spine`（`.timeline-container`）、`coffee_secret`（`#mixButton`）、`lucky_seven`（`#diceRollBtn`）、`footprint`（`#mapCanvas`）选不到元素（实际分别是 `.timeline`、`#mixBtn`、`#rollBtn` / `#gambleBtn`、地图页的 canvas id），需要改选择器或在页面补 id。
+- **9 枚成就缺 `group`**：`spring_first_bloom / autumn_harvest / fullmoon_reunion / fortune_7day / festival_guest / weather_all / egg_collector / egg_master / lucky_seven_ach` 没有 `group` 字段，而成就墙只渲染 `visit / archive / drink / bar / secret` 五组，这 9 枚不会上墙（共 41 枚，墙上只显示 32 枚）。校验器目前不查 `group`，建议顺手加一条校验。
+- **农历节日未实现**：`festivals.json` 里 `dateType: "lunar"` 的条目需要真实农历换算，代码里留了 TODO。
+- **页脚短条里的「资料来源」那句**：暂时以注释形式保留在 `drinker/index.html` 短条上方，文案定了再放回 `<nav>` 里。
+- **首页壁炉已停用（2026-09-13）**：按需求把 `index.html` 的小火苗 HTML/CSS **整段注释保留**（其它页面：酒单、时间线页的壁炉不受影响），日后想恢复删掉那对注释标记即可。停用期间 `data/easter_eggs.json` 里首页的 `ember_click`（连点壁炉 3 次 → 成就 `fire_grabber`）选不到元素，暂时无法触发。

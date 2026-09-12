@@ -1,19 +1,34 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="16号螺旋酒馆 · 推门入场">
+    <meta name="description" content="16号螺旋酒馆">
     <title>16号螺旋酒馆</title>
 
-    <link rel="stylesheet" href="css/tavern.css?v=v2.5.0">
+    <link rel="stylesheet" href="css/tavern.css?v=v2.3.0">
     <style>
         /* 琥珀金为封面专属强调色，其余颜色变量/滚动条见 css/tavern.css */
-        :root { --amber: #e2a653; }
+        :root {
+            --amber: #e2a653;
+            /* 首页照片不走共享的 --page-photo（那条相对路径会按 css/ 解析成 404），
+               直接在本页覆盖 html 背景，见下方 html 规则 */
+        }
 
         /* ============================================
                    🧱 基础重置
                    ============================================ */
+        /* 首页画布背景：照片钉在屏幕上（不随内容滚），等比铺满后裁掉多余部分，不变形。
+           放在 html 画布层是因为 body 上会被 ambient 模块加 filter，
+           那样 body 内部的 position:fixed 会失效、跟着滚动。 */
+        html {
+            background-color: var(--page-base);
+            background-image: var(--page-dim), var(--page-vignette), url('images/bar.jpg');
+            background-position: center;
+            background-size: cover, cover, cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
         * { box-sizing: border-box; }
         html, body { height: 100%; }
         body {
@@ -21,7 +36,8 @@
             overflow-x: hidden;
             color: var(--ink);
             font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
-            background: #0c0806;
+            /* 背景照片与暗化/暗角由 css/tavern.css 的 html 背景层统一提供 */
+            background: transparent;
         }
         a { color: inherit; text-decoration: none; }
 
@@ -66,27 +82,6 @@
                    🏛️ 酒馆内景
                    ============================================ */
         .interior { position: relative; min-height: 100vh; }
-        .interior-bg {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            background: #0c0806 url('images/bar.jpg') center/cover no-repeat;
-            pointer-events: none;
-            animation: bgFadeIn 1.4s ease both;
-        }
-        @keyframes bgFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .interior-bg::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, rgba(5,3,2,0.72), rgba(5,3,2,0.28) 38%, rgba(5,3,2,0.72));
-        }
-        .interior-bg::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(ellipse 92% 80% at 50% 42%, transparent 34%, rgba(0,0,0,0.74) 100%);
-        }
 
         /* 噪点纹理 */
         .grain {
@@ -187,14 +182,15 @@
             display: grid;
             grid-template-columns: 1fr 320px;
             gap: 24px;
-            align-items: start;
+            align-items: stretch;   /* 左右两列等高，右侧整列底部与九宫格对齐 */
         }
 
         /* 功能九宫格 */
         .portal-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            grid-auto-rows: minmax(110px, auto);
+            /* 行高可随右侧手记栏拉高，保证左侧卡片底部与右侧整列底部对齐 */
+            grid-auto-rows: minmax(110px, 1fr);
             gap: 14px;
         }
         .portal-card {
@@ -259,10 +255,11 @@
         .portal-card.primary .title { font-size: 20px; }
         .portal-card.primary .desc { font-size: 12px; }
 
-        /* 手记栏 */
+        /* 手记栏：手记在上、借阅记录紧随其下，同宽同栏 */
         .note-wrap {
-            position: sticky;
-            top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
             animation: slideInRight 0.9s cubic-bezier(0.2,0.8,0.2,1) 0.15s both;
         }
         @keyframes slideInRight {
@@ -270,9 +267,12 @@
             to { opacity: 1; transform: translateX(0); }
         }
 
-        /* 借阅记录 */
+        /* 借阅记录：撑满手记下方的剩余高度，列表随之拉长 */
         .borrow-section {
-            margin-top: 28px;
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
             animation: fadeInUp 0.8s ease 0.35s both;
         }
         @keyframes fadeInUp {
@@ -281,8 +281,9 @@
         }
 
         /* ============================================
-                   🔥 壁炉火焰（保留）
+                   🔥 壁炉火焰（首页已停用 · 代码保留备用）
                    ============================================ */
+        /* 2026-09-13 按需求停用首页小火苗：日后想恢复，删掉这一对注释标记即可。
         .fireplace {
             position: fixed;
             bottom: 24px;
@@ -362,6 +363,7 @@
             0% { opacity: 0.5; transform: translateX(-50%) scaleX(1); }
             100% { opacity: 0.9; transform: translateX(-50%) scaleX(1.2); }
         }
+        */
 
         /* ============================================
                    📱 移动端适配
@@ -384,12 +386,14 @@
                 padding: 28px 14px;
             }
             .portal-card { padding: 20px 14px; }
+            /* .fireplace 首页已停用（2026-09-13）：
             .fireplace {
                 transform: scale(0.55);
                 bottom: 12px;
                 right: 8px;
                 opacity: 0.3;
             }
+            */
             .dust-3, .dust-5, .dust-6 { display: none; }
         }
 
@@ -404,6 +408,33 @@
             color: #171311;
             border-color: var(--gold);
         }
+
+        /* ============================================
+                   🧊 首页玻璃 UI
+                   （玻璃配方 .glass 已收进 css/tavern.css，与页脚短条共用）
+                   ============================================ */
+        /* 需要给折射层做定位的元素（.portal-card / .tavern-note-card 自带 relative，.door-skip 自带 absolute） */
+        .borrow-section.glass,
+        #fragment-trigger.glass,
+        .tavern-frag-badge.glass { position: relative; }
+        /* 跳过按钮改成小玻璃胶囊 */
+        .door-skip.glass {
+            padding: 9px 22px;
+            border-radius: 999px;
+            color: rgba(200,180,150,.55);
+        }
+        .door-skip.glass:hover { color: rgba(226,208,170,.9); }
+
+        /* 借阅记录列表滚动条：与全站同一套皮肤（内联样式写不了伪元素） */
+        #borrow-list {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(200,168,120,.45) rgba(72,50,28,.25);
+            overscroll-behavior: contain;
+        }
+        #borrow-list::-webkit-scrollbar { width: 7px; }
+        #borrow-list::-webkit-scrollbar-track { background: rgba(72,50,28,.25); border-radius: 4px; }
+        #borrow-list::-webkit-scrollbar-thumb { background: rgba(200,168,120,.5); border-radius: 4px; }
+        #borrow-list::-webkit-scrollbar-thumb:hover { background: rgba(214,168,93,.7); }
     </style>
 </head>
 
@@ -413,14 +444,13 @@
     ============================================ -->
     <div class="door-scene" id="doorScene" aria-label="螺旋星系开场动画">
         <canvas id="galaxyCanvas"></canvas>
-        <button class="door-skip" id="doorSkip" type="button">跳 过</button>
+        <button class="door-skip glass" id="doorSkip" type="button">跳 过</button>
     </div>
 
     <!-- ============================================
     🏛️ 酒馆内景
     ============================================ -->
     <div class="interior">
-        <div class="interior-bg" aria-hidden="true"></div>
         <div class="grain" aria-hidden="true"></div>
         <div class="dust-container" aria-hidden="true">
             <div class="dust dust-1"></div>
@@ -442,86 +472,83 @@
             <!-- 主区域：九宫格 + 手记 -->
             <div class="main-grid">
                 <div class="portal-grid">
-                    <a class="portal-card" href="menu/" tabindex="0">
+                    <a class="portal-card glass" href="menu/" tabindex="0">
                         <span class="icon">🍺</span>
                         <span class="title">酒单</span>
                         <span class="desc">今日特供</span>
                     </a>
-                    <a class="portal-card" href="bar/" tabindex="0">
+                    <a class="portal-card glass" href="bar/" tabindex="0">
                         <span class="icon">🍸</span>
                         <span class="title">吧台</span>
                         <span class="desc">调酒与骰子</span>
                     </a>
-                    <a class="portal-card" href="achievements/" tabindex="0">
+                    <a class="portal-card glass" href="achievements/" tabindex="0">
                         <span class="icon">🏆</span>
                         <span class="title">成就</span>
                         <span class="desc">酒馆荣誉</span>
                     </a>
-                    <a class="portal-card primary" href="drinker/" tabindex="0">
+                    <a class="portal-card primary glass" href="drinker/" tabindex="0">
                         <span class="icon">📖</span>
                         <span class="title">酒客档案</span>
                         <span class="desc">推开第一扇门</span>
                     </a>
-                    <a class="portal-card" href="timeline/" tabindex="0">
+                    <a class="portal-card glass" href="timeline/" tabindex="0">
                         <span class="icon">🕰️</span>
                         <span class="title">时间线</span>
                         <span class="desc">往事回顾</span>
                     </a>
-                    <a class="portal-card" href="map/" tabindex="0">
+                    <a class="portal-card glass" href="map/" tabindex="0">
                         <span class="icon">🗺️</span>
                         <span class="title">地图</span>
                         <span class="desc">酒馆布局</span>
                     </a>
                 </div>
 
-                <!-- 今日手记 -->
+                <!-- 今日手记 + 借阅记录：同一栏，宽度一致，整列底部与左侧九宫格对齐 -->
                 <aside class="note-wrap">
-                    <div id="today-note" class="tavern-note-card">
+                    <div id="today-note" class="tavern-note-card glass">
                         <div class="note-head">
                             <span class="note-title">📖 今日手记</span>
                             <button id="note-past" class="note-past">往期 ✎</button>
                         </div>
                         <div id="note-text" class="note-text"></div>
                     </div>
+
+                    <!-- 借阅记录 -->
+                    <section class="borrow-section glass" id="borrow-log" style="
+                        width: 100%;
+                        padding: 16px 20px 20px;
+                        border-radius: 10px;
+                    ">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+                            <h3 style="margin:0;color:var(--gold);font-weight:400;font-size:14px;letter-spacing:0.08em;">📚 档案借阅记录</h3>
+                            <span id="borrow-count" style="color:var(--gold);font-size:11px;opacity:0.6;"></span>
+                        </div>
+                        <div id="borrow-list" style="
+                            flex:1 1 auto;
+                            min-height:96px;
+                            overflow-y:auto;
+                            font-size:13px;
+                            line-height:1.6;
+                            padding-right:4px;
+                        ">
+                            <div style="color:var(--gold);font-size:12px;text-align:center;padding:12px 0;opacity:0.4;">暂无借阅记录。</div>
+                        </div>
+                        <div style="text-align:right;margin-top:8px;">
+                            <button id="borrow-clear" style="
+                                background:none;border:none;
+                                color:rgba(214,168,93,0.25);
+                                font-size:11px;cursor:pointer;
+                                transition:0.3s;padding:2px 6px;
+                            ">清空记录</button>
+                        </div>
+                    </section>
                 </aside>
             </div>
-
-            <!-- 借阅记录 -->
-            <section class="borrow-section" id="borrow-log" style="
-                max-width: 100%;
-                padding: 16px 20px 20px;
-                background: rgba(20, 12, 8, 0.4);
-                backdrop-filter: blur(4px);
-                border: 1px solid rgba(214, 168, 93, 0.15);
-                border-radius: 10px;
-            ">
-                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
-                    <h3 style="margin:0;color:var(--gold);font-weight:400;font-size:14px;letter-spacing:0.08em;">📚 档案借阅记录</h3>
-                    <span id="borrow-count" style="color:var(--gold);font-size:11px;opacity:0.6;"></span>
-                </div>
-                <div id="borrow-list" style="
-                    max-height:160px;
-                    overflow-y:auto;
-                    font-size:13px;
-                    line-height:1.6;
-                    padding-right:4px;
-                    scrollbar-width:thin;
-                    scrollbar-color:rgba(214,168,93,0.2) transparent;
-                ">
-                    <div style="color:var(--gold);font-size:12px;text-align:center;padding:12px 0;opacity:0.4;">暂无借阅记录。</div>
-                </div>
-                <div style="text-align:right;margin-top:8px;">
-                    <button id="borrow-clear" style="
-                        background:none;border:none;
-                        color:rgba(214,168,93,0.25);
-                        font-size:11px;cursor:pointer;
-                        transition:0.3s;padding:2px 6px;
-                    ">清空记录</button>
-                </div>
-            </section>
         </main>
 
         <!-- 壁炉火焰 -->
+        <!-- 🔥 壁炉火焰：首页已停用（2026-09-13），代码保留备用，恢复时去掉这对注释标记即可
         <div class="fireplace" aria-hidden="true">
             <div class="flame-container">
                 <div class="flame flame-1"></div>
@@ -533,6 +560,7 @@
             </div>
             <div class="log"></div>
         </div>
+        -->
     </div>
 
     <!-- 随机碎片触发器 + 碎片集徽标 -->
@@ -546,10 +574,7 @@
         align-items: flex-start;
         gap: 8px;
     ">
-        <button id="fragment-trigger" style="
-            background: rgba(20, 12, 8, 0.65);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(214, 168, 93, 0.5);
+        <button id="fragment-trigger" class="glass" style="
             color: var(--gold);
             padding: 10px 14px;
             border-radius: 30px;
@@ -559,12 +584,12 @@
             transition: 0.3s;
             font-family: inherit;
         ">📜 随机碎片</button>
-        <button id="fragment-collection" class="tavern-frag-badge" style="display:none;" title="查看碎片集">✦ <span id="frag-count">0</span>/6</button>
+        <button id="fragment-collection" class="tavern-frag-badge glass" style="display:none;" title="查看碎片集">✦ <span id="frag-count">0</span>/6</button>
     </div>
 
     <!-- 碎片弹窗由 tavern-core.js 统一注入 -->
 
-    <script src="js/tavern-core.js?v=v2.5.0"></script>
+    <script src="js/tavern-core.js?v=v2.3.0"></script>
     <script>
         // 到访统计 + 成就系统（根目录页 rootPath 传 ''）
         if (window.Tavern) Tavern.init('');
@@ -1012,6 +1037,15 @@
                     '<div id="note-past-list"></div>' +
                     '</div>';
                 document.body.appendChild(overlay);
+                overlay.addEventListener('click', function (e) {
+                    if (e.target === overlay) overlay.classList.remove('open');
+                });
+                overlay.querySelector('.tavern-modal-close').addEventListener('click', function () {
+                    overlay.classList.remove('open');
+                });
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape') overlay.classList.remove('open');
+                });
             }
             const today = todayNote();
             const list = document.getElementById('note-past-list');
@@ -1020,8 +1054,7 @@
                 const tag = isToday ? '<span class="note-tag">今日</span>' : '';
                 return '<div class="tavern-note-item"><div class="note-text">' + tag + noteToHtml(n, 'drinker/index.html') + '</div></div>';
             }).join('');
-            /* Esc / 点遮罩 / ✕ / 背景滚动锁 / 焦点归还：统一由 tavern-core 处理 */
-            Tavern.openModal(overlay);
+            overlay.classList.add('open');
         }
         document.getElementById('note-past').addEventListener('click', function () {
             if (window.Tavern && notesPool.length) openPastNotes();
@@ -1093,6 +1126,15 @@
                     '<div id="coll-body"></div>' +
                     '</div>';
                 document.body.appendChild(overlay);
+                overlay.addEventListener('click', function (e) {
+                    if (e.target === overlay) overlay.classList.remove('open');
+                });
+                overlay.querySelector('.tavern-modal-close').addEventListener('click', function () {
+                    overlay.classList.remove('open');
+                });
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape') overlay.classList.remove('open');
+                });
             }
             const got = Tavern.getStoryFragments();
             document.getElementById('coll-count').textContent = got.length + '/' + storyPool.length;
@@ -1102,8 +1144,7 @@
             } else {
                 body.innerHTML = fragGridHtml(got);
             }
-            /* Esc / 点遮罩 / ✕ / 背景滚动锁 / 焦点归还：统一由 tavern-core 处理 */
-            Tavern.openModal(overlay);
+            overlay.classList.add('open');
         }
         document.getElementById('fragment-collection').addEventListener('click', function () {
             if (window.Tavern && storyPool.length) openFragmentCollection();

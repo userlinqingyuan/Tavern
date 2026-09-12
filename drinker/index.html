@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>16号螺旋酒馆 · 酒客档案</title>
-<link rel="stylesheet" href="../css/tavern.css?v=v2.5.0">
+<link rel="stylesheet" href="../css/tavern.css?v=v2.3.0">
 <style>
 /* 基础变量/滚动条/重置见 ../css/tavern.css；这里覆盖档案页专属调色板 */
 :root{
@@ -19,18 +19,13 @@
 	--green:#718a70;
 	--blue:#6e91aa;
 	--shadow:0 18px 45px #0008;
+	--page-photo:url('../images/bar2.jpg');
 }
 html{scroll-behavior:smooth}
 body{margin:0;color:var(--ink);
-	background-color:#0d0907;
-	background-image:
-		linear-gradient(180deg,rgba(8,5,4,.66),rgba(8,5,4,.40) 42%,rgba(8,5,4,.70)),
-		radial-gradient(ellipse 105% 90% at 50% 40%,transparent 42%,rgba(5,3,2,.62) 100%),
-		url('../images/bar2.jpg');
-	background-size:auto,auto,cover;
-	background-position:center;
-	background-repeat:no-repeat;
-	background-attachment:fixed;
+	/* 背景照片与暗化/暗角由 css/tavern.css 的 html 背景层统一提供 */
+	background:transparent;
+	display:flex;flex-direction:column;
 	font-family:"Noto Serif SC","Source Han Serif SC","Microsoft YaHei",serif;
 	line-height:1.65}body:before{content:"";
 	position:fixed;inset:0;pointer-events:none;
@@ -788,7 +783,7 @@ footer {
 .note-modal-head .who{color:var(--ink);font-size:20px}
 .note-modal-body{flex:1;min-height:0;max-height:calc(82vh - 76px);padding:20px 22px 26px;overflow-y:scroll;
   color:#e4d9c6;font-size:14px;line-height:1.9;white-space:pre-wrap;word-break:break-word;
-  scrollbar-color:#5d483b transparent;scrollbar-width:thin}
+	scrollbar-color:#5d483b transparent;scrollbar-width:thin;overscroll-behavior:contain}
 .note-modal-body{scrollbar-width:thin;scrollbar-color:rgba(200,168,120,.45) rgba(72,50,28,.25)}
 .note-modal-body::-webkit-scrollbar{width:7px}
 .note-modal-body::-webkit-scrollbar-track{background:rgba(72,50,28,.25)}
@@ -883,8 +878,9 @@ footer {
 .book-close:hover{color:var(--gold);transform:rotate(90deg)}
 .book-stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;touch-action:pan-y}
 .book{position:relative;width:min(560px,96vw);max-height:74vh;perspective:1800px}
-.book-underlay{position:relative;max-height:74vh;overflow-y:auto}
+.book-underlay{position:relative;max-height:74vh;overflow-y:auto;overscroll-behavior:contain}
 .book-overlay{position:absolute;inset:0;max-height:74vh;overflow-y:auto;
+	overscroll-behavior:contain;
 	transform-origin:left center;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 /* 书页滚动条：深褐底 / 浅褐滑块 / 半透明细条 */
 .book-underlay,.book-overlay{
@@ -921,7 +917,18 @@ footer {
   </div>
   <div id="changelogEntries" style="margin-top:10px;color:var(--muted);font-size:13px;line-height:1.7;"></div>
 </div>
-<footer><div class="wrap" style="display:flex;gap:20px;justify-content:center;align-items:center;flex-wrap:wrap;">资料来源：16号螺旋酒馆；页面排版为归档展示用途。<a href="../menu/" class="foot-link">🍺 酒单</a><a href="../bar/" class="foot-link">🍸 吧台</a><a href="../achievements/" class="foot-link">🏆 成就</a><a href="../timeline/" class="foot-link">🕰️ 时间线</a><a href="../map/" class="foot-link">🗺️ 地图</a></div></footer>
+<!-- 页脚短条：资料来源那句先注释保留，想好文案后放回 <nav> 里即可
+资料来源：16号螺旋酒馆；页面排版为归档展示用途。
+-->
+<nav class="tavern-dock glass" aria-label="站点导航">
+    <a class="dock-link" href="../">档案袋</a>
+    <span class="dock-current">📖 旅客档案</span>
+    <a class="dock-link" href="../menu/">🍺 酒单</a>
+    <a class="dock-link" href="../bar/">🍸 吧台</a>
+    <a class="dock-link" href="../achievements/">🏆 成就</a>
+    <a class="dock-link" href="../timeline/">🕰️ 时间线</a>
+    <a class="dock-link" href="../map/">🗺️ 地图</a>
+</nav>
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="原始人物卡大图（点击或按 Esc 关闭）"><span class="close" aria-hidden="true">×</span><img id="lightboxImg" alt="原始人物卡"></div>
 <!-- 证件照/立绘轮播灯箱 -->
 <div class="carousel" id="carousel" role="dialog" aria-modal="true" aria-label="证件照与立绘轮播">
@@ -991,7 +998,7 @@ footer {
 ">📜 随机碎片</button>
 
 <!-- 碎片弹窗由 tavern-core.js 统一注入 -->
-<script src="../js/tavern-core.js?v=v2.5.0"></script>
+<script src="../js/tavern-core.js?v=v2.3.0"></script>
 <script>
 if (window.Tavern) Tavern.init('..');
 </script>
