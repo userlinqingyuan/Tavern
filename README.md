@@ -1,6 +1,6 @@
 # 🍺 16号螺旋酒馆 · Tavern
 
-异世界酒馆主题的角色档案站：一座「档案袋」封面入口 + 一本可翻看的旅客档案册，外加酒单、成就墙、时间线、地图四个附属页。全部由原生 HTML / CSS / JavaScript 实现，无框架、无构建步骤。
+异世界酒馆主题的角色档案站：一座「推门入场」封面 + 一本可翻看的旅客档案册，外加酒单、吧台、成就墙、时间线、地图五个附属页。全部由原生 HTML / CSS / JavaScript 实现，无框架、无构建步骤。
 
 > ⚠️ **打开方式**：请通过本地服务器访问（如 VS Code 的 Live Server），不要直接双击 HTML。
 > `drinker/`、`menu/`、`achievements/`、`map/` 等页面通过 `fetch` 加载 `data/*.json`，浏览器会拦截 `file://` 下的本地 JSON 请求。
@@ -27,9 +27,9 @@ Tavern/
 │   ├── map-v1.png      # 一楼地图
 │   └── map-v2.png      # 二楼地图
 ├── css/
-│   └── tavern.css      # 全站共享样式：颜色变量 / 滚动条 / 页脚链接 / 碎片弹窗
+│   └── tavern.css      # 全站共享样式：颜色变量 / 滚动条 / 页脚链接 / 通用弹窗 / 碎片弹窗 / 吧台组件
 ├── js/
-│   └── tavern-core.js  # 共享核心：埋点 / 到访统计 / 成就判定 / 弹窗组件 / 缓存 JSON 加载
+│   └── tavern-core.js  # 共享核心：埋点 / 到访统计 / 成就判定 / 转义与弹窗工具 / 缓存 JSON 加载
 ├── tools/
 │   └── check-data.cjs  # 数据校验器（npm run check，ERROR 退出码 1）
 ├── package.json        # 仅提供 npm run check 脚本（无依赖、无构建）
@@ -40,7 +40,7 @@ Tavern/
 │   ├── events.json       # 时间线事件（分类标签 + 关联人物）
 │   ├── notes.json        # 酒保手记（每日一篇，人物关联）
 │   ├── fragments.json    # 随机碎片 + 故事碎片（收集玩法）
-│   ├── mixing.json       # 吧台调酒数据（基酒 / 配料 / 风味短句 / 隐藏配方）
+│   ├── raw.json          # 吧台调酒数据（基酒 / 配料 / 风味短句 / 隐藏配方）
 │   ├── dice.json         # 骰子桌数据（遇客事件 / 赌局台词）
 │   └── update_log.json   # 版本更新日志
 └── images/
@@ -57,13 +57,12 @@ Tavern/
 
 ### 封面入口页（`index.html`）
 
-- **档案袋**：可点击展开/收起，鼠标在袋面移动有暖色追光，悬停掀起
-- **随机欢迎语**：10 条氛围文案随机显示，淡入动画
-- **氛围装饰**：右下角壁炉火焰动画、飘浮光点粒子、照片背景 + 噪点
-- **随机碎片**：左下角按钮弹出酒馆氛围语录（弹窗由 `tavern-core.js` 注入）；**每累计抽 3 次必得一枚✦故事碎片，按钮旁「✦ n/6」徽标点开碎片集，集齐 6 枚拼出关于「？？？」的隐藏故事**（金色弹窗，收集进度存 `tavern_state_v1`）
+- **推门入场**：PC 端先播 Canvas 螺旋星系开场动画，底部「跳 过」可随时进店；移动端（≤620px）、二次访问（`tavern_door_opened`）与系统「减少动效」偏好都直接进内景
+- **内景氛围**：酒馆背景图 + 噪点 + 6 枚浮尘粒子；品牌区配随机欢迎语（10 条，淡入）
+- **九宫格入口**：🍺 酒单 / 🍸 吧台 / 🏆 成就 / 📖 酒客档案（主入口）/ 🕰️ 时间线 / 🗺️ 地图
 - **今日手记**：每日一篇酒保手记（年内第 N 天 % 手记数，与今日特供同款算法），来自 `data/notes.json`，手记中登记的人物名渲染成金色链接直达档案卡；「往期 ✎」弹窗翻看全部，当日篇标记「今日」
+- **随机碎片**：左下角按钮弹出酒馆氛围语录（弹窗由 `tavern-core.js` 注入）；**每累计抽 3 次必得一枚✦故事碎片，按钮旁「✦ n/6」徽标点开碎片集，集齐 6 枚拼出关于「？？？」的隐藏故事**（金色弹窗，收集进度存 `tavern_state_v1`）
 - **档案借阅记录**：显示来自档案页的借阅流水（最多展示最近 20 条，可清空）
-- **底部固定栏**：资料来源 + 🍺 酒单 + 🏆 成就 + 🕰️ 时间线 + 🗺️ 酒馆地图入口
 
 ### 旅客档案页（`drinker/index.html`）
 
@@ -90,15 +89,19 @@ Tavern/
 - **今日特供酒卡**：按「年内第几天 % 酒单总数」每日固定一款，展示表情/酒名/类型/酒精度/长文故事
 - **点一杯**：点击「🍺 点一杯今日特供」记录当天品鉴，按钮变为「今日已品鉴 ✓」（每天一次）
 - **酒单全录**：56 款酒网格展示，标记「今日特供 / 🍸 已品鉴」，每款显示短简介与主题色
+- **酒款放大窗**：点开任意一款（整张卡片是按钮，键盘 Enter / 空格同效）查看大号 emoji、酒名、类型 · 酒精度、徽章、`desc` 短简介与**完整 `story` 长文**；长文在弹窗内独立滚动（主题化滚动条 + 滚动链隔离），Esc / 点遮罩 / ✕ 均可关闭，关闭后焦点回到原卡片
+- **放大窗内品鉴**：当前酒正好是今日特供时，弹窗内也有「点一杯」按钮，与页面顶部按钮状态同步（已品鉴则禁用）
 
 ### 吧台页（`bar/index.html`）
 
-- **调酒台**：从 `data/mixing.json` 渲染基酒（15 种）与配料（58 种）chips，三槽选择（基酒 + 配料两味，A/B 两味不可相同，同名拦截轻提示）；「调一杯」生成酒名（`基酒名 · 诗眼A+诗眼B`）与评语（基酒开场白随机 1 条 + 风味标签去重前 2 各随机 1 句），同组合可重复调、文案有变化
-- **隐藏配方**：命中 `mixing.json` 的 `hidden` 组合时结果卡变金色（`.special`），显示专属酒名与文案，并计入「秘方收录」成就
+- **调酒台**：从 `data/raw.json` 渲染基酒（85 种）与配料（58 种）chips，三槽选择（基酒 + 配料两味，A/B 两味不可相同，同名拦截轻提示）；「调一杯」生成酒名（`基酒名 · 诗眼A+诗眼B`）与评语（基酒开场白随机 1 条 + 风味标签去重前 2 各随机 1 句），同组合可重复调、文案有变化
+- **基酒滚动区**：基酒一行条目多，容器固定高度（桌面 132px / ≤600px 108px）并带主题化滚动条，行头显示「n 种」；两行配料暂不加滚动条
+- **诗眼先藏后显**：选料时配料 chip 只显示 emoji 与名字，不剧透 `word`；调出这杯后，结果卡在酒名下多一行金色小字「诗眼 · A / B」（隐藏配方有专属酒名，不显示该行）
+- **隐藏配方**：命中 `raw.json` 的 `hidden` 组合时结果卡变金色（`.special`），显示专属酒名与文案，并计入「秘方收录」成就
 - **调酒日志**：标题行「📖 册 · 调酒日志（n）」点开弹窗，列表 = 日期 + 酒名 + ✦ 隐藏标记，最新在前、封顶 100 条，存于 `tavern_state_v1` 的 `mixLog`
 - **掷骰遇客**：🎭 模式下掷 2d6（翻滚动画 600ms），按总点数（2~12 全覆盖）从 `data/dice.json` 取遇客事件；带 `person` 的事件在卡底渲染语录（quote 优先，否则 intro 截断 60 字）与档案跳转链接
 - **骰子赌局**：⚔️ 模式下你与酒保各掷 2d6 比大小，胜负平台词取自 `dice.json` 的 `gamble` 池；连赢 3 把起改显 `streak3` 特别台词（连赢期间每次都显示，输一把归零）
-- **降级**：mixing.json / dice.json 加载失败时对应板块显示占位文案，互不影响、不白屏
+- **降级**：raw.json / dice.json 加载失败时对应板块显示占位文案，互不影响、不白屏
 
 ### 成就墙（`achievements/index.html`）
 
@@ -159,9 +162,9 @@ Tavern/
 
 `{ "drinks": [ ... ] }`，共 56 款（前 15 款为酒馆原创世界观，后 41 款整合自「现实与幻想名酒图鉴」），数组顺序即轮换顺序（需与档案页内置兜底名单 `FALLBACK_SPECIALS` 一致，校验器强制）。字段：`name / type / abv / emoji / color / desc（卡片短简介）/ story（当日酒卡长文，留空显示占位文案）`。扩充酒单时请同时：追加 JSON 条目 → 同步 `drinker/index.html` 的 `FALLBACK_SPECIALS` → 校验器会自动核对全尝成就目标。
 
-### `data/mixing.json`
+### `data/raw.json`
 
-吧台调酒数据，`{ bases, ingredients, tags, hidden }` 四段：
+吧台调酒数据（2026-09-12 由 `mixing.json` 改名而来），`{ bases, ingredients, tags, hidden }` 四段。`bases` 现有 **85 条** = 「基酒全典」81 条 + 酒馆原有 4 条（幽冥苦艾 / 晨露清酒 / 烬木威士忌 / 蜜月粉红金），顺序为文档顺序在前、原有条目在末尾：
 
 | 字段 | 说明 |
 |------|------|
@@ -171,6 +174,8 @@ Tavern/
 | `hidden` | 隐藏配方数组：`id / base（基酒 id）/ ingredients（恰好 2 个配料 id）/ name / text`；组合（基酒+两味配料）整体不可重复（校验器强制） |
 
 加配料 / 加基酒 / 加隐藏配方都只改这个文件；`word` 建议挑一个能当「诗眼」的字。
+
+> 📌 **基酒模块默认只做扩充**：新增基酒一律追加到 `bases` 数组末尾（沿用或新起英文 `id`），不要删除或改写既有条目——2026-09-12 用户确认的长期约定。需要替换/删除时请另行说明。
 
 ### `data/dice.json`
 
@@ -247,18 +252,18 @@ Tavern/
 
 ## 🔧 共享模块
 
-- **`css/tavern.css`**：颜色变量（`--ink / --muted / --gold / --line / --panel`）、基础重置、全局滚动条、页脚链接、随机碎片弹窗样式、吧台组件（选料 chips / 结果卡 / 骰子 / 模式胶囊 / 调酒日志列表）。页面自己的 `<style>` 在其后加载，可覆盖变量。
+- **`css/tavern.css`**：颜色变量（`--ink / --muted / --gold / --line / --panel`）、基础重置、全局滚动条、页脚链接、通用弹窗（`.tavern-modal-overlay / .tavern-modal / .tavern-modal-body`，自带主题化滚动条皮肤与滚动链隔离）、随机碎片弹窗样式、吧台组件（选料 chips / 结果卡 / 骰子 / 模式胶囊 / 调酒日志列表）。页面自己的 `<style>` 在其后加载，可覆盖变量。
 - **`js/tavern-core.js`**：所有页面共用的核心脚本。用法：
 
   ```html
-  <script src="../js/tavern-core.js?v=v2.3.0"></script>
+  <script src="../js/tavern-core.js?v=v2.4.0"></script>
   <script>
     Tavern.init('..');            // 根目录页传 ''，子页面传 '..'
     Tavern.track('cardflip');     // 埋点，驱动成就判定
   </script>
   ```
 
-  提供：`init(root)` / `track(event, data)` / `loadJSON(path)`（同页去重缓存，自动追加 `?v=`）/ `openFragment(fragment)`（支持 `special: true` 金色故事碎片样式）/ `closeFragment()` / `getMetrics()` / `getAchievements()` / `getStoryFragments()` / `getMixLog()` / `getHiddenRecipes()` / `pushMixLog(entry)`（调酒入册：最新在前、封顶 100）/ `todaysDrinkIndex(len)` / `hasTastedToday()` / `tastedDrinkIndices(len)`；`Tavern.v` 为从 `<script>` 标签解析出的站点版本号。
+  提供：`init(root)` / `track(event, data)` / `loadJSON(path)`（同页去重缓存，自动追加 `?v=`）/ `escapeHtml(text)`（不依赖 DOM，页面与 Node 单测共用）/ `openModal(overlay)` / `closeModal(overlay)`（统一 Esc、点遮罩、✕、背景滚动锁与焦点归还）/ `openFragment(fragment)`（支持 `special: true` 金色故事碎片样式）/ `closeFragment()` / `getMetrics()` / `getAchievements()` / `getStoryFragments()` / `getMixLog()` / `getHiddenRecipes()` / `pushMixLog(entry)`（调酒入册：最新在前、封顶 100）/ `todaysDrinkIndex(len)` / `hasTastedToday()` / `tastedDrinkIndices(len)`；`Tavern.v` 为从 `<script>` 标签解析出的站点版本号。
 
 ---
 
@@ -273,17 +278,18 @@ Tavern/
 - **加时间线事件**：改 `data/events.json`（模板见上文），`people` 写精确人名后时间线和档案卡「相关记录」会自动联动
 - **换/加地图**：`map/` 放图片，改 `map/index.html` 的 `maps` 数组
 - **补酒文案**：改 `data/drinks.json`，填 `desc`（卡片短简介）和 `story`（当日酒卡长文）即可，留空会显示占位文案
-- **加配料/基酒/隐藏配方**：改 `data/mixing.json`（字段表见上）；配料 `tags` 必须取自 `tags` 键集，隐藏配方组合不可重复
+- **加配料/基酒/隐藏配方**：改 `data/raw.json`（字段表见上）；配料 `tags` 必须取自 `tags` 键集，隐藏配方组合不可重复。**基酒只扩充不删改**——新基酒追加到 `bases` 末尾（`id` 起英文 slug），既有条目原样保留
 - **加遇客事件/赌局台词**：改 `data/dice.json`；`encounters` 必须覆盖 2~12 全部点数，`person` 写花名册精确姓名
 - **加/改成就**：往 `data/achievements.json` 加一条，指定 `metric / op / value`（指标清单见上）；不用动任何代码
 - **重置成就**：浏览器清掉 localStorage 的 `tavern_state_v1` 即可
 - **记版本**：往 `data/update_log.json` 顶部插一条 `{ date, version, entries }`，**并把 7 个页面里 `tavern.css` / `tavern-core.js` 引用的 `?v=` 改成同一个新版本号**（漏改会被校验器拦下；根治浏览器缓存旧代码）
+- **新增弹窗**：复用 `.tavern-modal-overlay` + `.tavern-modal`（标题行 `.tavern-modal-title`、滚动区 `.tavern-modal-body`），开关一律走 `Tavern.openModal/closeModal`——Esc、点遮罩、✕、背景滚动锁、关闭后焦点归还都自动生效，不要再手写事件绑定
 - **借阅记录**：由档案页点击自动写入，无需手动维护
 - **改完数据跑校验**：`npm run check`（或 `node tools/check-data.cjs`），有 ERROR 会以退出码 1 失败，可直接接 CI
 
 ### 数据校验器（`tools/check-data.cjs`）
 
-- **ERROR（必须修）**：JSON 解析失败、必填字段缺失、重名、`links/relations/events.people` 引用不存在的人或别称错字（冷钰/拉提菩/桃子）、relations 指向 links 之外、座位号不符 `A-3`/`B-10`/`未登记`、引用图片不存在、`map.floor/x/y` 非法、事件日期/必填字段问题、drinks 数量或顺序与档案页 `FALLBACK_SPECIALS` 不一致、成就 metric 不在 core 的指标表内或 op/value 非法、`notes.json` 的 `person` 引用不存在的人、`fragments.json` 的 story id 重复或条数与 `story-complete.value` 不一致、`mixing.json` 的字段缺失/标签越界/隐藏配方组合重复、`dice.json` 的遇客点数缺漏重复或 `person` 不在花名册、各页面 `?v=` 缺失/不一致/与 update_log 最新版本不符
+- **ERROR（必须修）**：JSON 解析失败、必填字段缺失、重名、`links/relations/events.people` 引用不存在的人或别称错字（冷钰/拉提菩/桃子）、relations 指向 links 之外、座位号不符 `A-3`/`B-10`/`未登记`、引用图片不存在、`map.floor/x/y` 非法、事件日期/必填字段问题、drinks 数量或顺序与档案页 `FALLBACK_SPECIALS` 不一致、成就 metric 不在 core 的指标表内或 op/value 非法、`notes.json` 的 `person` 引用不存在的人、`fragments.json` 的 story id 重复或条数与 `story-complete.value` 不一致、`raw.json` 的字段缺失/标签越界/隐藏配方组合重复、`dice.json` 的遇客点数缺漏重复或 `person` 不在花名册、各页面 `?v=` 缺失/不一致/与 update_log 最新版本不符
 - **WARNING（提醒，可能是有意的）**：未登记的单向 `links`（对方没写回；关系网中会画成箭头，若为有意在 `data/oneway_links.json` 登记）、同日多条事件
 - 新增 core 指标时，同步把名字加进校验器的 `KNOWN_METRICS` 列表
 

@@ -3,10 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="16号螺旋酒馆 · 旅客档案封面">
-    <title>16号螺旋酒馆 · 档案室</title>
+    <meta name="description" content="16号螺旋酒馆 · 推门入场">
+    <title>16号螺旋酒馆</title>
 
-    <link rel="stylesheet" href="css/tavern.css?v=v2.3.0">
+    <link rel="stylesheet" href="css/tavern.css?v=v2.5.0">
     <style>
         /* 琥珀金为封面专属强调色，其余颜色变量/滚动条见 css/tavern.css */
         :root { --amber: #e2a653; }
@@ -14,504 +14,287 @@
         /* ============================================
                    🧱 基础重置
                    ============================================ */
-        * {
-            box-sizing: border-box;
-        }
-        html,
-        body {
-            height: 100%;
-        }
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
         body {
             margin: 0;
             overflow-x: hidden;
-            overflow-y: auto;
             color: var(--ink);
             font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
             background: #0c0806;
         }
-        a {
-            color: inherit;
-            text-decoration: none;
+        a { color: inherit; text-decoration: none; }
+
+        /* ============================================
+                   🚪 星系开场动画（推门入场）
+                   ============================================ */
+        .door-scene {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: #000;
+            overflow: hidden;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
         }
-        
-        .bar {
+        .door-scene.opened {
+            opacity: 0;
+            visibility: hidden;
+        }
+        #galaxyCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .door-skip {
+            position: absolute;
+            bottom: 7%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(180,160,130,0.4);
+            font-size: 11px;
+            letter-spacing: 0.3em;
+            text-indent: 0.3em;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 101;
+            transition: color 0.3s ease;
+        }
+        .door-skip:hover { color: rgba(220,200,160,0.7); }
+
+        /* ============================================
+                   🏛️ 酒馆内景
+                   ============================================ */
+        .interior { position: relative; min-height: 100vh; }
+        .interior-bg {
             position: fixed;
             inset: 0;
             z-index: 0;
-            pointer-events: none;
             background: #0c0806 url('images/bar.jpg') center/cover no-repeat;
-            animation: fadein 1.2s ease both;
+            pointer-events: none;
+            animation: bgFadeIn 1.4s ease both;
         }
-        @keyframes fadein {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
-        /* 暗色渐变叠加 */
-        .bar::before {
+        @keyframes bgFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .interior-bg::before {
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(5, 3, 2, .48), rgba(5, 3, 2, .16) 42%, rgba(5, 3, 2, .62));
+            background: linear-gradient(180deg, rgba(5,3,2,0.72), rgba(5,3,2,0.28) 38%, rgba(5,3,2,0.72));
         }
-        /* 径向暗角 */
-        .bar::after {
+        .interior-bg::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: radial-gradient(ellipse 90% 78% at 50% 42%, transparent 36%, rgba(0, 0, 0, .72) 100%);
+            background: radial-gradient(ellipse 92% 80% at 50% 42%, transparent 34%, rgba(0,0,0,0.74) 100%);
         }
 
         /* 噪点纹理 */
         .grain {
             position: fixed;
             inset: 0;
-            z-index: 3;
+            z-index: 2;
             pointer-events: none;
             opacity: .10;
             mix-blend-mode: overlay;
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.55'/></svg>");
         }
 
+        /* 浮尘粒子 */
+        .dust-container {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .dust {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 30%, rgba(255, 220, 160, 0.5), rgba(255, 200, 150, 0.1) 60%, transparent);
+            opacity: 0;
+            animation: dustFloat var(--duration, 12s) ease-in-out infinite alternate;
+            animation-delay: var(--delay, 0s);
+            width: var(--size, 6px);
+            height: var(--size, 6px);
+            left: var(--x, 10%);
+            top: var(--y, 20%);
+        }
+        .dust-1 { --x: 12%; --y: 25%; --size: 5px; --duration: 14s; --delay: 0s; --tx: 60px; --ty: -100px; }
+        .dust-2 { --x: 78%; --y: 18%; --size: 8px; --duration: 18s; --delay: 2s; --tx: -80px; --ty: -140px; }
+        .dust-3 { --x: 45%; --y: 55%; --size: 4px; --duration: 13s; --delay: 4s; --tx: 100px; --ty: -80px; }
+        .dust-4 { --x: 92%; --y: 70%; --size: 6px; --duration: 20s; --delay: 1s; --tx: -50px; --ty: -160px; }
+        .dust-5 { --x: 8%; --y: 80%; --size: 7px; --duration: 16s; --delay: 3s; --tx: 70px; --ty: -110px; }
+        .dust-6 { --x: 60%; --y: 12%; --size: 4px; --duration: 15s; --delay: 5s; --tx: -90px; --ty: -130px; }
+        @keyframes dustFloat {
+            0% { opacity: 0; transform: translate(0, 0) scale(0.8); }
+            15% { opacity: 0.4; }
+            50% { opacity: 0.6; }
+            85% { opacity: 0.3; }
+            100% { opacity: 0; transform: translate(var(--tx, 80px), var(--ty, -120px)) scale(1.2); }
+        }
 
         /* ============================================
-                   📦 档案袋卡片
+                   📦 内容容器
                    ============================================ */
-        .stage {
+        .content {
             position: relative;
             z-index: 1;
-            min-height: 100%;
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 56px 36px 40px;
+            opacity: 0;
+            transition: opacity 0.9s ease 0.25s;
+        }
+        .content.show { opacity: 1; }
+
+        /* 品牌区 */
+        .brand-hero {
+            text-align: center;
+            margin-bottom: 48px;
+            animation: slideInLeft 0.9s cubic-bezier(0.2,0.8,0.2,1) both;
+        }
+        .brand-hero h1 {
+            font-size: clamp(34px, 6vw, 62px);
+            color: var(--gold);
+            letter-spacing: 0.14em;
+            margin: 0 0 10px;
+            font-weight: 400;
+            text-shadow: 0 2px 24px rgba(214,168,93,0.32);
+        }
+        .brand-hero .subtitle {
+            font-size: 11px;
+            letter-spacing: 0.52em;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-left: 0.52em;
+        }
+        .brand-hero .welcome {
+            margin-top: 18px;
+            font-size: 13px;
+            color: var(--muted);
+            font-style: italic;
+            letter-spacing: 0.06em;
+            min-height: 20px;
+            opacity: 0.8;
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-28px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* 主区域：九宫格 + 手记 */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* 功能九宫格 */
+        .portal-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-auto-rows: minmax(110px, auto);
+            gap: 14px;
+        }
+        .portal-card {
+            position: relative;
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
-            gap: 26px;
-            padding: 44px 24px 76px;
-        }
-
-        /* 光晕（装饰） */
-        .halo {
-            display: none;
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            width: min(780px, 95vw);
-            height: min(780px, 95vw);
-            pointer-events: none;
-            background: radial-gradient(circle, rgba(226, 166, 83, .12), rgba(226, 166, 83, .03) 38%, transparent 62%);
-            animation: breathe 7s ease-in-out infinite;
-        }
-        @keyframes breathe {
-            0%,
-            100% {
-                opacity: .8;
-                transform: translate(-50%, -50%) scale(1);
-            }
-            50% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1.04);
-            }
-        }
-
-        /* --- 档案袋主体 --- */
-        @property --mx { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
-        @property --my { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
-        .envelope {
-            position: relative;
-            width: min(430px, 86vw);
-            aspect-ratio: 4/5;
-            perspective: 1100px;
-            filter: drop-shadow(0 30px 44px rgba(0, 0, 0, .62));
-            cursor: pointer;
-            transition: transform .5s ease;
-            will-change: transform;
-            /* 新增：追光用到的自定义属性，由 JS 更新 */
-            --mx: 50%;
-            --my: 50%;
-        }
-        .envelope:hover {
-            transform: translateY(-5px);
-        }
-        .envelope:focus-visible {
-            outline: 2px solid var(--amber);
-            outline-offset: 8px;
-            border-radius: 8px;
-        }
-
-        /* --- 内层文件（案件卷宗） --- */
-        .case-file {
-            position: absolute;
-            left: 9%;
-            right: 9%;
-            top: 12%;
-            height: 76%;
-            z-index: 1;
-            overflow: visible;
-            transform: translateY(0) rotate(-1deg);
-            transform-origin: 50% 100%;
-            transition: transform .6s ease-out, filter .6s ease-out;
-            filter: drop-shadow(0 14px 12px rgba(0, 0, 0, .35));
-        }
-        .case-file::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: rgba(9, 9, 9, .78);
-            border-radius: 2px;
-        }
-        .case-file::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 15%;
-            z-index: 2;
-            background: rgba(9, 9, 9, .9);
-            pointer-events: none;
-        }
-
-        /* --- 文件纸张 --- */
-        .document {
-            position: absolute;
-            left: 13%;
-            right: 13%;
-            top: 2%;
-            height: 62%;
-            padding: 7% 7% 0;
-            color: #29251f;
-            background: linear-gradient(165deg, #e5e1d3, #bcb9ac);
-            clip-path: polygon(4% 0, 96% 4%, 100% 100%, 0 94%);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, .3);
-            font-family: Arial, sans-serif;
-            font-weight: 700;
-            transform: translateY(0) rotate(2deg);
-            transition: transform .6s ease-out;
-            z-index: 2;
-        }
-        .document::before {
-            content: "";
-            position: absolute;
-            left: -1%;
-            top: -1%;
-            width: 24%;
-            height: 22%;
-            background: linear-gradient(135deg, #fdf6e3 0 48%, #aaa79d 49% 60%, transparent 61%);
-            transform: rotate(-7deg);
-            filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, .22));
-        }
-        .document::after {
-            content: "阅后归档 · 16号螺旋酒馆";
-            position: absolute;
-            right: 8%;
-            bottom: 9%;
-            color: #8d4a3f;
-            font: italic 10px/1.2 "Segoe Print", "KaiTi", cursive;
-            transform: rotate(-7deg);
-            opacity: .8;
-        }
-        .document strong {
-            display: block;
-            font-size: clamp(14px, 3.6vw, 24px);
-            letter-spacing: .04em;
-        }
-        .document small {
-            display: block;
-            margin-top: 5%;
-            font-size: 6px;
-            letter-spacing: .08em;
-        }
-        .document .rule {
-            display: block;
-            height: 4px;
-            margin-top: 9%;
-            background: #2a2824;
-            box-shadow: 0 14px 0 #d0cdc1, 0 28px 0 #292722;
-        }
-        .document .closed {
-            position: absolute;
-            left: 8%;
-            right: 8%;
-            bottom: 13%;
-            padding: 5px 0;
-            border-top: 2px solid #25231f;
-            border-bottom: 2px solid #25231f;
-            text-align: center;
-            font-size: clamp(12px, 3vw, 19px);
-        }
-
-        /* --- 档案袋封面（外层） --- */
-        .archive-cover {
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 25%;
-            bottom: -18%;
-            z-index: 3;
-            border: 1px solid rgba(74, 52, 31, .8);
-            background:
-                /* 追光：鼠标位置控制的径向渐变光晕 */
-                radial-gradient(
-                    circle at var(--mx) var(--my),
-                    rgba(255, 220, 160, 0.25) 0%,
-                    rgba(255, 200, 150, 0.08) 25%,
-                    transparent 55%
-                ),
-                repeating-linear-gradient(108deg, rgba(73, 52, 32, .12) 0 1px, transparent 1px 5px),
-                linear-gradient(165deg, #c9a77b, #ad895e 72%, #896744);
-            box-shadow:
-                inset 0 1px rgba(255, 233, 190, .55),
-                inset 0 -12px 20px rgba(55, 34, 18, .28),
-                0 5px 8px rgba(0, 0, 0, .38);
-            transform: rotate(-1deg);
-            transition: transform .35s ease-out, background .08s ease;
-            pointer-events: none;
-        }
-        .archive-cover::before {
-            content: "";
-            position: absolute;
-            left: 7%;
-            right: 7%;
-            top: 11%;
-            height: 1px;
-            background: rgba(67, 45, 25, .45);
-            box-shadow: 0 3px rgba(255, 227, 177, .18);
-        }
-        .archive-cover::after {
-            content: "ARCHIVE · 16";
-            position: absolute;
-            left: 12%;
-            right: 12%;
-            top: 23%;
-            padding: 7px 4px;
-            border: 1px solid rgba(67, 45, 25, .55);
-            color: rgba(52, 36, 23, .82);
-            text-align: center;
-            font: 700 clamp(9px, 2.2vw, 13px)/1.2 Georgia, serif;
-            letter-spacing: .2em;
-        }
-
-        /* --- 悬停/打开动画 --- */
-        .envelope:hover .archive-cover,
-        .envelope:focus-visible .archive-cover,
-        .envelope.is-open .archive-cover {
-            transform: translateY(-6px) rotate(-2deg);
-        }
-        .envelope:hover .document,
-        .envelope:focus-visible .document,
-        .envelope.is-open .document {
-            transform: translateY(-60px) rotate(2deg);
-        }
-
-        /* --- 档案袋底纹 --- */
-        .face {
-            position: absolute;
-            inset: 0;
-            border: 1px solid rgba(83, 51, 18, .65);
-            border-radius: 8px;
-            overflow: hidden;
-            background:
-                repeating-linear-gradient(90deg, rgba(119, 77, 29, .10) 0 1px, transparent 1px 9px),
-                linear-gradient(160deg, #d8b070, #c29553 46%, #ab7c3e 100%);
-            box-shadow:
-                inset 0 1px 0 rgba(255, 236, 200, .55),
-                inset 0 -1px 0 rgba(74, 45, 14, .6),
-                inset 0 0 0 1px rgba(83, 51, 18, .55);
-        }
-        .face::before {
-            content: "";
-            position: absolute;
-            left: 6%;
-            right: 6%;
-            top: 52%;
-            height: 48%;
-            background: linear-gradient(180deg, rgba(120, 74, 28, .14), transparent 12%, transparent 88%, rgba(120, 74, 28, .12));
-        }
-
-        /* --- 档案袋翻盖 --- */
-        .flap {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 56%;
-            z-index: 4;
-            transform: rotateX(-48deg);
-            transform-origin: 50% 0;
-            clip-path: polygon(0 0, 100% 0, 100% 84%, 50% 100%, 0 84%);
-            background:
-                repeating-linear-gradient(90deg, rgba(119, 77, 29, .08) 0 1px, transparent 1px 9px),
-                linear-gradient(165deg, #dcb677, #c0914d 80%);
-            border-radius: 8px 8px 0 0;
-            box-shadow:
-                inset 0 1px 0 rgba(255, 236, 200, .5),
-                inset 0 -16px 26px -20px rgba(74, 45, 14, .6);
-        }
-
-        /* --- 绳结装饰（SVG） --- */
-        .tie {
-            position: absolute;
-            inset: 0;
-            z-index: 3;
-            pointer-events: none;
-        }
-        .tie path {
-            fill: none;
-            stroke: #5d3d1f;
-            stroke-width: 4;
-            stroke-linecap: round;
-            vector-effect: non-scaling-stroke;
-        }
-
-        /* --- 品牌文字（档案袋正面） --- */
-        .brand {
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 59.5%;
-            text-align: center;
-            z-index: 1;
-        }
-        .brand .sub {
-            font-size: 12px;
-            letter-spacing: .58em;
-            color: #6f4a1e;
-            margin-left: .58em;
-            text-shadow: 0 1px 0 rgba(255, 238, 205, .4);
-        }
-        .brand h1 {
-            margin: 9px 0 11px;
-            font-size: clamp(28px, 5.6vw, 40px);
-            color: #3e2410;
-            letter-spacing: .1em;
-            text-shadow: 0 1px 0 rgba(255, 238, 205, .45);
-        }
-        .brand .en {
-            font: 700 9px/1.4 "Arial Narrow", sans-serif;
-            letter-spacing: .32em;
-            color: #6f4a1e;
-            text-transform: uppercase;
-            margin-left: .32em;
-        }
-        .foot {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 10px;
-            text-align: center;
-            z-index: 1;
-            font-size: 10px;
-            letter-spacing: .26em;
-            color: #6f4a1e;
-            margin-left: .26em;
-        }
-
-
-        /* ============================================
-                   🚪 入口按钮
-                   ============================================ */
-        .enter {
-            position: relative;
-            z-index: 6;
-            display: inline-flex;
             align-items: center;
-            gap: 12px;
-            padding: 15px 34px;
-            border: 1px solid rgba(234, 220, 192, .42);
+            padding: 22px 14px;
+            background: rgba(20,12,8,0.55);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(214,168,93,0.18);
+            border-radius: 10px;
             color: var(--ink);
-            font-size: 15px;
-            letter-spacing: .42em;
-            text-indent: .42em;
-            border-radius: 2px;
-            background: rgba(20, 12, 8, .45);
-            backdrop-filter: blur(4px);
-            transition: .35s ease;
-            transform: translateY(-110px);
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
         }
-        .enter:hover {
-            background: rgba(234, 220, 192, .12);
-            border-color: var(--ink);
-            box-shadow: 0 0 28px rgba(234, 220, 192, .14);
-        }
-        .enter .arr {
-            display: inline-block;
-            transition: transform .35s ease;
-        }
-        .enter:hover .arr {
-            transform: translateX(5px);
-        }
-
-        /* 悬停入口时联动档案袋动画 */
-        .stage:has(.enter:hover) .archive-cover {
-            transform: translateY(-6px) rotate(-2deg);
-        }
-        .stage:has(.enter:hover) .document {
-            transform: translateY(-60px) rotate(2deg);
-        }
-
-        .caption {
-            margin-top: -16px;
-            font-size: 11px;
-            letter-spacing: .22em;
-            color: var(--muted);
-            text-align: center;
-        }
-
-
-        /* ============================================
-                   📱 移动端适配
-                   ============================================ */
-        @media(max-width:620px) {
-            .stage {
-                gap: 22px;
-                padding: 36px 20px;
-            }
-            .envelope {
-                width: min(340px, 84vw);
-            }
-            .counter {
-                height: 16vh;
-            }
-        }
-
-        /* 减少动画（辅助功能） */
-        @media(prefers-reduced-motion:reduce) {
-            * {
-                animation: none !important;
-                transition: none !important;
-            }
-        }
-        /* 欢迎语淡入 */
-        #welcome {
+        .portal-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(214,168,93,0.1), transparent 60%);
             opacity: 0;
-            animation: welcomeFadeIn 2s ease 0.6s forwards;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
         }
-        @keyframes welcomeFadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 0.7; transform: translateY(0); }
+        .portal-card:hover,
+        .portal-card:focus-visible {
+            border-color: rgba(214,168,93,0.5);
+            transform: translateY(-4px);
+            box-shadow: 0 14px 34px rgba(0,0,0,0.55);
+            outline: none;
         }
+        .portal-card:hover::before,
+        .portal-card:focus-visible::before { opacity: 1; }
+        .portal-card .icon {
+            font-size: 30px;
+            margin-bottom: 8px;
+            transition: transform 0.3s ease;
+        }
+        .portal-card:hover .icon { transform: scale(1.12); }
+        .portal-card .title {
+            font-size: 15px;
+            letter-spacing: 0.1em;
+            color: var(--gold);
+            margin-bottom: 3px;
+        }
+        .portal-card .desc {
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 0.05em;
+        }
+        /* 主入口：酒客档案 */
+        .portal-card.primary {
+            grid-row: span 2;
+            grid-column: 2;
+            background: linear-gradient(160deg, rgba(214,168,93,0.14), rgba(20,12,8,0.65));
+            border-color: rgba(214,168,93,0.38);
+        }
+        .portal-card.primary .icon { font-size: 52px; }
+        .portal-card.primary .title { font-size: 20px; }
+        .portal-card.primary .desc { font-size: 12px; }
+
+        /* 手记栏 */
+        .note-wrap {
+            position: sticky;
+            top: 24px;
+            animation: slideInRight 0.9s cubic-bezier(0.2,0.8,0.2,1) 0.15s both;
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(28px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* 借阅记录 */
+        .borrow-section {
+            margin-top: 28px;
+            animation: fadeInUp 0.8s ease 0.35s both;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* ============================================
-           🔥 壁炉火焰
-           ============================================ */
+                   🔥 壁炉火焰（保留）
+                   ============================================ */
         .fireplace {
             position: fixed;
-            bottom: 76px;
+            bottom: 24px;
             right: 24px;
-            z-index: 0;
+            z-index: 1;
             pointer-events: none;
             opacity: 0.35;
             transform: scale(0.9);
             transform-origin: bottom right;
             transition: opacity 0.4s ease;
         }
-        .fireplace:hover {
-            opacity: 0.55;
-        }
+        .fireplace:hover { opacity: 0.55; }
         .flame-container {
             position: relative;
             width: 80px;
@@ -525,51 +308,11 @@
             transform-origin: bottom center;
             animation: burn 0.8s ease-in-out infinite alternate;
         }
-        .flame-1 {
-            left: 30px;
-            width: 28px;
-            height: 60px;
-            background: radial-gradient(ellipse at 50% 100%, #ff6b00, #ff3300 50%, #cc2200 80%, transparent);
-            animation-duration: 0.6s;
-            animation-delay: 0s;
-            filter: blur(2px);
-        }
-        .flame-2 {
-            left: 22px;
-            width: 20px;
-            height: 45px;
-            background: radial-gradient(ellipse at 50% 100%, #ff8800, #ff4400 50%, #cc2200 80%, transparent);
-            animation-duration: 0.7s;
-            animation-delay: 0.15s;
-            filter: blur(3px);
-        }
-        .flame-3 {
-            left: 42px;
-            width: 22px;
-            height: 50px;
-            background: radial-gradient(ellipse at 50% 100%, #ffaa00, #ff5500 50%, #cc3300 80%, transparent);
-            animation-duration: 0.55s;
-            animation-delay: 0.3s;
-            filter: blur(3px);
-        }
-        .flame-4 {
-            left: 18px;
-            width: 16px;
-            height: 35px;
-            background: radial-gradient(ellipse at 50% 100%, #ffcc44, #ff8800 50%, #cc4400 80%, transparent);
-            animation-duration: 0.9s;
-            animation-delay: 0.1s;
-            filter: blur(2px);
-        }
-        .flame-5 {
-            left: 48px;
-            width: 16px;
-            height: 38px;
-            background: radial-gradient(ellipse at 50% 100%, #ffcc44, #ff8800 50%, #cc4400 80%, transparent);
-            animation-duration: 0.75s;
-            animation-delay: 0.45s;
-            filter: blur(2px);
-        }
+        .flame-1 { left: 30px; width: 28px; height: 60px; background: radial-gradient(ellipse at 50% 100%, #ff6b00, #ff3300 50%, #cc2200 80%, transparent); animation-duration: 0.6s; filter: blur(2px); }
+        .flame-2 { left: 22px; width: 20px; height: 45px; background: radial-gradient(ellipse at 50% 100%, #ff8800, #ff4400 50%, #cc2200 80%, transparent); animation-duration: 0.7s; animation-delay: 0.15s; filter: blur(3px); }
+        .flame-3 { left: 42px; width: 22px; height: 50px; background: radial-gradient(ellipse at 50% 100%, #ffaa00, #ff5500 50%, #cc3300 80%, transparent); animation-duration: 0.55s; animation-delay: 0.3s; filter: blur(3px); }
+        .flame-4 { left: 18px; width: 16px; height: 35px; background: radial-gradient(ellipse at 50% 100%, #ffcc44, #ff8800 50%, #cc4400 80%, transparent); animation-duration: 0.9s; animation-delay: 0.1s; filter: blur(2px); }
+        .flame-5 { left: 48px; width: 16px; height: 38px; background: radial-gradient(ellipse at 50% 100%, #ffcc44, #ff8800 50%, #cc4400 80%, transparent); animation-duration: 0.75s; animation-delay: 0.45s; filter: blur(2px); }
         .glow {
             position: absolute;
             bottom: -10px;
@@ -593,9 +336,7 @@
         .log::before {
             content: "";
             position: absolute;
-            top: 2px;
-            left: 12px;
-            right: 12px;
+            top: 2px; left: 12px; right: 12px;
             height: 2px;
             background: linear-gradient(90deg, transparent, rgba(160, 110, 60, 0.2), transparent);
             border-radius: 50%;
@@ -603,138 +344,61 @@
         .log::after {
             content: "";
             position: absolute;
-            top: 6px;
-            left: 25%;
-            width: 8px;
-            height: 3px;
+            top: 6px; left: 25%;
+            width: 8px; height: 3px;
             background: rgba(80, 50, 30, 0.4);
             border-radius: 50%;
             transform: rotate(8deg);
             box-shadow: 20px 0 0 rgba(80, 50, 30, 0.3), 35px -2px 0 rgba(80, 50, 30, 0.2);
         }
         @keyframes burn {
-            0% {
-                transform: scaleY(0.85) scaleX(0.95) translateY(0);
-            }
-            25% {
-                transform: scaleY(1.05) scaleX(1.02) translateY(-3px);
-            }
-            50% {
-                transform: scaleY(0.90) scaleX(0.98) translateY(-1px);
-            }
-            75% {
-                transform: scaleY(1.08) scaleX(1.04) translateY(-4px);
-            }
-            100% {
-                transform: scaleY(0.92) scaleX(0.96) translateY(0);
-            }
+            0% { transform: scaleY(0.85) scaleX(0.95) translateY(0); }
+            25% { transform: scaleY(1.05) scaleX(1.02) translateY(-3px); }
+            50% { transform: scaleY(0.90) scaleX(0.98) translateY(-1px); }
+            75% { transform: scaleY(1.08) scaleX(1.04) translateY(-4px); }
+            100% { transform: scaleY(0.92) scaleX(0.96) translateY(0); }
         }
         @keyframes glowPulse {
             0% { opacity: 0.5; transform: translateX(-50%) scaleX(1); }
             100% { opacity: 0.9; transform: translateX(-50%) scaleX(1.2); }
         }
+
+        /* ============================================
+                   📱 移动端适配
+                   ============================================ */
         @media (max-width: 620px) {
+            .door-scene { display: none; }
+            .content {
+                opacity: 1;
+                padding: 30px 16px 120px;
+            }
+            .main-grid { grid-template-columns: 1fr; }
+            .note-wrap { position: static; }
+            .portal-grid {
+                grid-template-columns: 1fr;
+                grid-auto-rows: auto;
+            }
+            .portal-card.primary {
+                grid-row: auto;
+                grid-column: auto;
+                padding: 28px 14px;
+            }
+            .portal-card { padding: 20px 14px; }
             .fireplace {
                 transform: scale(0.55);
-                bottom: 60px;
+                bottom: 12px;
                 right: 8px;
                 opacity: 0.3;
             }
+            .dust-3, .dust-5, .dust-6 { display: none; }
         }
-        /* ============================================
-           ✨ 浮尘粒子
-           ============================================ */
-        .dust-container {
-            position: fixed;
-            inset: 0;
-            z-index: 1;
-            pointer-events: none;
-            overflow: hidden;
+
+        /* 减少动画（辅助功能） */
+        @media (prefers-reduced-motion: reduce) {
+            .content { transition: none; }
+            * { animation: none !important; }
         }
-        .dust {
-            position: absolute;
-            border-radius: 50%;
-            background: radial-gradient(circle at 40% 30%, rgba(255, 220, 160, 0.5), rgba(255, 200, 150, 0.1) 60%, transparent);
-            opacity: 0;
-            animation: dustFloat var(--duration, 12s) ease-in-out infinite alternate;
-            animation-delay: var(--delay, 0s);
-            width: var(--size, 6px);
-            height: var(--size, 6px);
-            left: var(--x, 10%);
-            top: var(--y, 20%);
-        }
-        .dust-1 {
-            --x: 12%;
-            --y: 25%;
-            --size: 5px;
-            --duration: 14s;
-            --delay: 0s;
-        }
-        .dust-2 {
-            --x: 78%;
-            --y: 18%;
-            --size: 8px;
-            --duration: 18s;
-            --delay: 2s;
-        }
-        .dust-3 {
-            --x: 45%;
-            --y: 55%;
-            --size: 4px;
-            --duration: 13s;
-            --delay: 4s;
-        }
-        .dust-4 {
-            --x: 92%;
-            --y: 70%;
-            --size: 6px;
-            --duration: 20s;
-            --delay: 1s;
-        }
-        .dust-5 {
-            --x: 8%;
-            --y: 80%;
-            --size: 7px;
-            --duration: 16s;
-            --delay: 3s;
-        }
-        .dust-6 {
-            --x: 60%;
-            --y: 12%;
-            --size: 4px;
-            --duration: 15s;
-            --delay: 5s;
-        }
-        @keyframes dustFloat {
-            0% {
-                opacity: 0;
-                transform: translate(0, 0) scale(0.8);
-            }
-            15% {
-                opacity: 0.4;
-            }
-            50% {
-                opacity: 0.6;
-            }
-            85% {
-                opacity: 0.3;
-            }
-            100% {
-                opacity: 0;
-                transform: translate(var(--tx, 80px), var(--ty, -120px)) scale(1.2);
-            }
-        }
-        .dust-1 { --tx: 60px; --ty: -100px; }
-        .dust-2 { --tx: -80px; --ty: -140px; }
-        .dust-3 { --tx: 100px; --ty: -80px; }
-        .dust-4 { --tx: -50px; --ty: -160px; }
-        .dust-5 { --tx: 70px; --ty: -110px; }
-        .dust-6 { --tx: -90px; --ty: -130px; }
-        @media (max-width: 620px) {
-            .dust-3, .dust-5, .dust-6 {
-                display: none;
-            }
-        }
+
         #fragment-trigger:hover {
             background: var(--gold);
             color: #171311;
@@ -745,70 +409,118 @@
 
 <body>
     <!-- ============================================
-    🎬 页面结构
+    🚪 门场景（PC 端推门入场）
     ============================================ -->
-
-    <!-- 背景图 -->
-    <div class="bar" aria-hidden="true"></div>
-    <!-- 浮尘粒子 -->
-    <div class="dust-container" aria-hidden="true">
-        <div class="dust dust-1"></div>
-        <div class="dust dust-2"></div>
-        <div class="dust dust-3"></div>
-        <div class="dust dust-4"></div>
-        <div class="dust dust-5"></div>
-        <div class="dust dust-6"></div>
+    <div class="door-scene" id="doorScene" aria-label="螺旋星系开场动画">
+        <canvas id="galaxyCanvas"></canvas>
+        <button class="door-skip" id="doorSkip" type="button">跳 过</button>
     </div>
-    <!-- 噪点 -->
-    <div class="grain" aria-hidden="true"></div>
 
-    <main class="stage">
-        <!-- 光晕 -->
-        <div class="halo" aria-hidden="true"></div>
-
-        <!-- ============================================
-        📦 档案袋（点击可展开）
-        ============================================ -->
-        <div class="envelope" id="envelope" tabindex="0" role="button" aria-expanded="false" aria-label="展开旅客档案封面">
-
-            <!-- 内层文件 -->
-            <div class="case-file" aria-hidden="true">
-                <div class="document">
-                    <strong>BAR-00016</strong>
-                    <small>INTERVIEW QUESTIONNAIRE · FIELD REPORT</small>
-                    <span class="rule"></span>
-                    <div class="closed">CASE FILE CLOSED</div>
-                </div>
-                <div class="archive-cover"></div>
-            </div>
-
+    <!-- ============================================
+    🏛️ 酒馆内景
+    ============================================ -->
+    <div class="interior">
+        <div class="interior-bg" aria-hidden="true"></div>
+        <div class="grain" aria-hidden="true"></div>
+        <div class="dust-container" aria-hidden="true">
+            <div class="dust dust-1"></div>
+            <div class="dust dust-2"></div>
+            <div class="dust dust-3"></div>
+            <div class="dust dust-4"></div>
+            <div class="dust dust-5"></div>
+            <div class="dust dust-6"></div>
         </div>
 
-        <!-- ============================================
-        🚪 入口按钮（跳转到 /drinker/）
-        ============================================ -->
-        <a class="enter" href="drinker/">
-            打 开 档 案
-            <span class="arr">→</span>
-        </a>
+        <main class="content" id="content">
+            <!-- 品牌区 -->
+            <header class="brand-hero">
+                <h1>16号螺旋酒馆</h1>
+                <div class="subtitle">TAVERN NO.16 SPIRAL</div>
+                <div class="welcome" id="welcome"></div>
+            </header>
 
-        <p class="caption">16号螺旋酒馆 · 旅客档案</p>
-                <!-- 欢迎语 -->
-        <div id="welcome" style="
-            margin-top: 18px;
-            padding: 10px 20px;
-            font-size: 14px;
-            color: var(--muted);
-            letter-spacing: 0.08em;
-            text-align: center;
-            border-top: 1px solid rgba(160, 141, 114, 0.15);
-            border-bottom: 1px solid rgba(160, 141, 114, 0.15);
-            max-width: 480px;
-            min-height: 40px;
-            font-style: italic;
-            opacity: 0;
-            transition: opacity 0.8s ease;
-        "></div>
+            <!-- 主区域：九宫格 + 手记 -->
+            <div class="main-grid">
+                <div class="portal-grid">
+                    <a class="portal-card" href="menu/" tabindex="0">
+                        <span class="icon">🍺</span>
+                        <span class="title">酒单</span>
+                        <span class="desc">今日特供</span>
+                    </a>
+                    <a class="portal-card" href="bar/" tabindex="0">
+                        <span class="icon">🍸</span>
+                        <span class="title">吧台</span>
+                        <span class="desc">调酒与骰子</span>
+                    </a>
+                    <a class="portal-card" href="achievements/" tabindex="0">
+                        <span class="icon">🏆</span>
+                        <span class="title">成就</span>
+                        <span class="desc">酒馆荣誉</span>
+                    </a>
+                    <a class="portal-card primary" href="drinker/" tabindex="0">
+                        <span class="icon">📖</span>
+                        <span class="title">酒客档案</span>
+                        <span class="desc">推开第一扇门</span>
+                    </a>
+                    <a class="portal-card" href="timeline/" tabindex="0">
+                        <span class="icon">🕰️</span>
+                        <span class="title">时间线</span>
+                        <span class="desc">往事回顾</span>
+                    </a>
+                    <a class="portal-card" href="map/" tabindex="0">
+                        <span class="icon">🗺️</span>
+                        <span class="title">地图</span>
+                        <span class="desc">酒馆布局</span>
+                    </a>
+                </div>
+
+                <!-- 今日手记 -->
+                <aside class="note-wrap">
+                    <div id="today-note" class="tavern-note-card">
+                        <div class="note-head">
+                            <span class="note-title">📖 今日手记</span>
+                            <button id="note-past" class="note-past">往期 ✎</button>
+                        </div>
+                        <div id="note-text" class="note-text"></div>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- 借阅记录 -->
+            <section class="borrow-section" id="borrow-log" style="
+                max-width: 100%;
+                padding: 16px 20px 20px;
+                background: rgba(20, 12, 8, 0.4);
+                backdrop-filter: blur(4px);
+                border: 1px solid rgba(214, 168, 93, 0.15);
+                border-radius: 10px;
+            ">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+                    <h3 style="margin:0;color:var(--gold);font-weight:400;font-size:14px;letter-spacing:0.08em;">📚 档案借阅记录</h3>
+                    <span id="borrow-count" style="color:var(--gold);font-size:11px;opacity:0.6;"></span>
+                </div>
+                <div id="borrow-list" style="
+                    max-height:160px;
+                    overflow-y:auto;
+                    font-size:13px;
+                    line-height:1.6;
+                    padding-right:4px;
+                    scrollbar-width:thin;
+                    scrollbar-color:rgba(214,168,93,0.2) transparent;
+                ">
+                    <div style="color:var(--gold);font-size:12px;text-align:center;padding:12px 0;opacity:0.4;">暂无借阅记录。</div>
+                </div>
+                <div style="text-align:right;margin-top:8px;">
+                    <button id="borrow-clear" style="
+                        background:none;border:none;
+                        color:rgba(214,168,93,0.25);
+                        font-size:11px;cursor:pointer;
+                        transition:0.3s;padding:2px 6px;
+                    ">清空记录</button>
+                </div>
+            </section>
+        </main>
+
         <!-- 壁炉火焰 -->
         <div class="fireplace" aria-hidden="true">
             <div class="flame-container">
@@ -821,77 +533,12 @@
             </div>
             <div class="log"></div>
         </div>
-    </main>
-
-    <!-- ============================================
-    📖 今日手记（每日一篇，人物名可跳档案卡）
-    ============================================ -->
-    <div id="today-note" class="tavern-note-card">
-        <div class="note-head">
-            <span class="note-title">📖 今日手记</span>
-            <button id="note-past" class="note-past">往期 ✎</button>
-        </div>
-        <div id="note-text" class="note-text"></div>
     </div>
-
-    <!-- ============================================
-    📚 档案借阅记录
-    ============================================ -->
-    <div id="borrow-log" style="
-        margin: 20px auto 90px;
-        max-width: 600px;
-        width: calc(100% - 40px);
-        padding: 16px 20px 20px;
-        background: rgba(20, 12, 8, 0.35);
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(214, 168, 93, 0.15);
-        border-radius: 8px;
-    ">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
-            <h3 style="margin:0;color:var(--gold);font-weight:400;font-size:14px;letter-spacing:0.08em;">📚 档案借阅记录</h3>
-            <span id="borrow-count" style="color:var(--gold);font-size:11px;opacity:0.6;"></span>
-        </div>
-
-        <div id="borrow-list" style="
-            max-height:160px;
-            overflow-y:auto;
-            font-size:13px;
-            line-height:1.6;
-            padding-right:4px;
-            scrollbar-width:thin;
-            scrollbar-color:rgba(214,168,93,0.2) transparent;
-        ">
-            <div style="color:var(--gold);font-size:12px;text-align:center;padding:12px 0;opacity:0.4;">暂无借阅记录。</div>
-        </div>
-
-        <div style="text-align:right;margin-top:8px;">
-            <button id="borrow-clear" style="
-                background:none;
-                border:none;
-                color:rgba(214,168,93,0.25);
-                font-size:11px;
-                cursor:pointer;
-                transition:0.3s;
-                padding:2px 6px;
-            ">清空记录</button>
-        </div>
-    </div>
-
-    <footer style="position:fixed;bottom:0;left:0;right:0;z-index:5;background:rgba(12,8,6,.88);backdrop-filter:blur(4px);border-top:1px solid rgba(214,168,93,.15);">
-        <div class="wrap" style="display:flex;gap:20px;justify-content:center;align-items:center;flex-wrap:wrap;padding:14px 16px;">
-            <span>资料来源：16号螺旋酒馆</span>
-            <a href="menu/" class="foot-link">🍺 酒单</a>
-            <a href="bar/" class="foot-link">🍸 吧台</a>
-            <a href="achievements/" class="foot-link">🏆 成就</a>
-            <a href="timeline/" class="foot-link">🕰️ 时间线</a>
-            <a href="map/" class="foot-link">酒馆地图</a>
-        </div>
-    </footer>
 
     <!-- 随机碎片触发器 + 碎片集徽标 -->
     <div id="fragment-dock" style="
         position: fixed;
-        bottom: 80px;
+        bottom: 24px;
         left: 24px;
         z-index: 10;
         display: flex;
@@ -917,47 +564,383 @@
 
     <!-- 碎片弹窗由 tavern-core.js 统一注入 -->
 
-    <!-- ============================================
-    📜 JavaScript：点击档案袋切换 .is-open
-    ============================================ -->
-    <script src="js/tavern-core.js?v=v2.3.0"></script>
+    <script src="js/tavern-core.js?v=v2.5.0"></script>
     <script>
         // 到访统计 + 成就系统（根目录页 rootPath 传 ''）
         if (window.Tavern) Tavern.init('');
 
-        const envelope = document.querySelector('.envelope');
-        envelope.addEventListener('click', () => {
-            const isOpen = envelope.classList.toggle('is-open');
-            envelope.setAttribute('aria-expanded', String(isOpen));
-        });
-        envelope.addEventListener('keydown', event => {
-            if (event.key !== 'Enter' && event.key !== ' ') return;
-            event.preventDefault();
-            envelope.click();
-        });
+        /* ============================================
+           🚪 螺旋星系开场动画
+           ============================================ */
+        const doorScene = document.getElementById('doorScene');
+        const content = document.getElementById('content');
+        const doorSkip = document.getElementById('doorSkip');
+        const galaxyCanvas = document.getElementById('galaxyCanvas');
 
-        // ============================================
-        // 🕯️ 鼠标追光效果
-        // ============================================
-        envelope.addEventListener('mousemove', function(e) {
-            const rect = this.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / rect.width * 100;
-            const y = (e.clientY - rect.top) / rect.height * 100;
-            this.style.setProperty('--mx', x + '%');
-            this.style.setProperty('--my', y + '%');
-        });
+        // 移动端直接进内景；二次访问也直接进
+        const isMobile = window.matchMedia('(max-width: 620px)').matches;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let visited = false;
+        try { visited = localStorage.getItem('tavern_door_opened') === '1'; } catch (e) {}
 
-        // 鼠标离开时，光晕缓缓回到中心
-        envelope.addEventListener('mouseleave', function() {
-            this.style.transition = '--mx 0.8s ease, --my 0.8s ease';
-            this.style.setProperty('--mx', '50%');
-            this.style.setProperty('--my', '50%');
-            // 过渡结束后移除 transition，避免干扰后续快速移动
-            setTimeout(() => {
-                this.style.transition = '';
-            }, 800);
-        });
+        function enterTavern() {
+            try { localStorage.setItem('tavern_door_opened', '1'); } catch (e) {}
+            doorScene.classList.add('opened');
+            content.classList.add('show');
+            setTimeout(function () { doorScene.style.display = 'none'; }, 800);
+        }
 
+        if (isMobile || visited || reduceMotion) {
+            content.classList.add('show');
+            doorScene.style.display = 'none';
+        } else {
+            // --- 螺旋星系粒子动画 ---
+            const gctx = galaxyCanvas.getContext('2d');
+            let GW, GH, GCX, GCY, GMAX_R;
+
+            function galaxyResize() {
+                GW = galaxyCanvas.width = window.innerWidth;
+                GH = galaxyCanvas.height = window.innerHeight;
+                GCX = GW / 2;
+                GCY = GH / 2;
+                GMAX_R = GW * 0.42;
+            }
+            galaxyResize();
+            window.addEventListener('resize', galaxyResize);
+
+            const NUM_ARMS = 2;
+            const PER_ARM = 32;
+            const ARM_SPARKLE_COUNT = 40;
+            const STARDUST_COUNT = 80;
+            const T_HOLD_START = 700;
+            const T_DURATION = 1400;
+            const T_HOLD_END = 400;
+            const SPIRAL_THETA_MAX = Math.PI * 1.8;
+
+            let gParticles = [], gSparkles = [], gStardust = [];
+            let galaxyDone = false;
+
+            function initGalaxy() {
+                gParticles = []; gSparkles = []; gStardust = [];
+
+                for (let arm = 0; arm < NUM_ARMS; arm++) {
+                    const armOffset = (Math.PI * 2 / NUM_ARMS) * arm;
+                    for (let i = 0; i < PER_ARM; i++) {
+                        const t = i / (PER_ARM - 1);
+                        const ft = Math.pow(t, 0.5);
+                        const theta = ft * SPIRAL_THETA_MAX;
+                        const rStart = GMAX_R * (0.80 - ft * 0.75);
+                        const angle = armOffset + theta;
+                        const lateral = (Math.random() - 0.5) * GMAX_R * 0.012;
+                        gParticles.push({
+                            baseR: rStart, baseA: angle, armOffset: armOffset,
+                            baseTheta: theta, lateral: lateral,
+                            r: rStart, a: angle, trail: [],
+                            size: (0.6 + Math.random() * 0.4) * (1.2 - ft * 0.3),
+                            bright: 0.28 + Math.random() * 0.20,
+                            delay: ft * 0.03 + Math.random() * 0.03,
+                            colorVar: Math.random(),
+                        });
+                    }
+                    for (let i = 0; i < ARM_SPARKLE_COUNT; i++) {
+                        const t = Math.random();
+                        const ft = Math.pow(t, 0.5);
+                        const theta = ft * SPIRAL_THETA_MAX;
+                        const rStart = GMAX_R * (0.80 - ft * 0.75);
+                        const angle = armOffset + theta;
+                        const sideOffset = (Math.random() - 0.5) * GMAX_R * 0.06;
+                        gSparkles.push({
+                            baseR: rStart, baseA: angle, armOffset: armOffset,
+                            baseTheta: theta, lateral: sideOffset,
+                            r: rStart, a: angle,
+                            size: 0.3 + Math.random() * 0.4,
+                            bright: 0.10 + Math.random() * 0.15,
+                            twinkle: Math.random() * Math.PI * 2,
+                            twinkleSpeed: 1.0 + Math.random() * 2.5,
+                            delay: ft * 0.03 + Math.random() * 0.04,
+                            colorVar: Math.random(),
+                        });
+                    }
+                }
+                for (let i = 0; i < STARDUST_COUNT; i++) {
+                    gStardust.push({
+                        x: (Math.random() - 0.5) * GW * 1.2,
+                        y: (Math.random() - 0.5) * GH * 1.2,
+                        size: 0.3 + Math.random() * 0.6,
+                        bright: 0.08 + Math.random() * 0.12,
+                        twinkle: Math.random() * Math.PI * 2,
+                        twinkleSpeed: 0.5 + Math.random() * 1.5,
+                    });
+                }
+            }
+
+            function particleColor(cv, progress) {
+                let r, g, b;
+                if (cv < 0.5) {
+                    const t = cv / 0.5;
+                    r = 255; g = 245 - t * 15; b = 220 - t * 50;
+                } else {
+                    const t = (cv - 0.5) / 0.5;
+                    r = 255 - t * 25; g = 230 - t * 50; b = 170 - t * 70;
+                }
+                if (progress > 0.7) {
+                    const wt = (progress - 0.7) / 0.3;
+                    r = r + (255 - r) * wt * 0.4;
+                    g = g + (250 - g) * wt * 0.35;
+                    b = b + (220 - b) * wt * 0.30;
+                }
+                return [Math.round(r), Math.round(g), Math.round(b)];
+            }
+
+            function smoothstep(t) { return t * t * (3 - 2 * t); }
+            function ultraSoft(t) { return smoothstep(smoothstep(t)); }
+
+            let gStartTime = 0;
+
+            function galaxyFrame(ts) {
+                if (galaxyDone) return;
+                if (!gStartTime) gStartTime = ts;
+                let elapsed = ts - gStartTime;
+
+                if (elapsed >= T_HOLD_START + T_DURATION + T_HOLD_END) {
+                    galaxyDone = true;
+                    enterTavern();
+                    return;
+                }
+
+                let phase, prog;
+                if (elapsed < T_HOLD_START) { phase = 'show'; prog = 0; }
+                else { phase = 'collapse'; prog = Math.min(1, (elapsed - T_HOLD_START) / T_DURATION); }
+
+                const cp = ultraSoft(prog);
+                const sp = smoothstep(prog);
+
+                let rotSpeed, shrink, trailLen, camZ, coreGlow, darkness, ringAlpha, ringPulse;
+
+                if (phase === 'show') {
+                    rotSpeed = 0.00030; shrink = 1; trailLen = 5; camZ = 1.0;
+                    coreGlow = 0; darkness = 0;
+                    ringAlpha = 0.15 + 0.05 * Math.sin(elapsed * 0.003);
+                    ringPulse = 1 + 0.02 * Math.sin(elapsed * 0.002);
+                } else {
+                    rotSpeed = 0.0005 + cp * 0.006;
+                    shrink = 1 - cp * 0.98;
+                    trailLen = 5 + cp * 14;
+                    camZ = 1.0 + sp * 0.35;
+                    if (prog < 0.60) coreGlow = 0;
+                    else if (prog < 0.88) coreGlow = ultraSoft((prog - 0.60) / 0.28) * 0.25;
+                    else if (prog < 0.96) coreGlow = 0.25 + (prog - 0.88) / 0.08 * 0.15;
+                    else {
+                        const p = (prog - 0.96) / 0.04;
+                        coreGlow = 0.40 * (1 - p) + 0.01 * Math.sin(p * Math.PI * 3);
+                    }
+                    darkness = prog > 0.96 ? (prog - 0.96) / 0.04 * 0.65 : 0;
+                    ringAlpha = (0.15 + 0.05 * Math.sin(elapsed * 0.003)) * (1 - cp * 0.8);
+                    ringPulse = 1 + 0.02 * Math.sin(elapsed * 0.002);
+                }
+
+                let fadeAlpha;
+                if (phase === 'show') fadeAlpha = 0.12;
+                else if (prog < 0.88) fadeAlpha = 0.06 - cp * 0.03;
+                else fadeAlpha = 0.10;
+
+                gctx.fillStyle = 'rgba(4,3,2,' + fadeAlpha + ')';
+                gctx.fillRect(0, 0, GW, GH);
+
+                // 背景星尘
+                for (let i = 0; i < gStardust.length; i++) {
+                    const s = gStardust[i];
+                    s.twinkle += 0.02 * s.twinkleSpeed;
+                    const tw = 0.5 + 0.5 * Math.sin(s.twinkle);
+                    const alpha = s.bright * tw * (phase === 'show' ? 1 : (1 - cp * 0.5));
+                    if (alpha > 0.01) {
+                        gctx.fillStyle = 'rgba(230,220,200,' + alpha + ')';
+                        gctx.beginPath();
+                        gctx.arc(s.x + GCX, s.y + GCY, s.size, 0, Math.PI * 2);
+                        gctx.fill();
+                    }
+                }
+
+                gctx.save();
+                gctx.translate(GCX, GCY);
+                gctx.scale(camZ, camZ);
+
+                // 圆环
+                if (ringAlpha > 0.01) {
+                    const ringR = GMAX_R * 0.85 * ringPulse;
+                    gctx.beginPath();
+                    gctx.arc(0, 0, ringR, 0, Math.PI * 2);
+                    gctx.strokeStyle = 'rgba(255,240,200,' + (ringAlpha * 0.3) + ')';
+                    gctx.lineWidth = 8;
+                    gctx.stroke();
+                    gctx.beginPath();
+                    gctx.arc(0, 0, ringR, 0, Math.PI * 2);
+                    gctx.strokeStyle = 'rgba(255,245,220,' + ringAlpha + ')';
+                    gctx.lineWidth = 1.5;
+                    gctx.stroke();
+                    gctx.beginPath();
+                    gctx.arc(0, 0, ringR * 0.98, 0, Math.PI * 2);
+                    gctx.strokeStyle = 'rgba(255,255,240,' + (ringAlpha * 0.5) + ')';
+                    gctx.lineWidth = 0.5;
+                    gctx.stroke();
+                }
+
+                // 臂光带
+                if (shrink > 0.02) {
+                    for (let arm = 0; arm < NUM_ARMS; arm++) {
+                        const firstIdx = arm * PER_ARM;
+                        if (firstIdx >= gParticles.length) continue;
+                        const firstPt = gParticles[firstIdx];
+                        const armRot = firstPt.a - firstPt.baseA;
+                        const armOffset = (Math.PI * 2 / NUM_ARMS) * arm + armRot;
+                        gctx.beginPath();
+                        const steps = 60;
+                        for (let s = 0; s <= steps; s++) {
+                            const theta = (s / steps) * SPIRAL_THETA_MAX;
+                            const r = GMAX_R * (0.80 - (theta / SPIRAL_THETA_MAX) * 0.75) * shrink;
+                            const angle = armOffset + theta;
+                            const x = Math.cos(angle) * r;
+                            const y = Math.sin(angle) * r;
+                            if (s === 0) gctx.moveTo(x, y);
+                            else gctx.lineTo(x, y);
+                        }
+                        const glowAlpha = phase === 'show' ? 0.12 : 0.10 * (1 - cp * 0.5);
+                        gctx.strokeStyle = 'rgba(200,180,140,' + (glowAlpha * 0.6) + ')';
+                        gctx.lineWidth = 6; gctx.lineCap = 'round';
+                        gctx.stroke();
+                        gctx.strokeStyle = 'rgba(240,225,180,' + (glowAlpha * 0.5) + ')';
+                        gctx.lineWidth = 2.5; gctx.stroke();
+                        gctx.strokeStyle = 'rgba(255,250,230,' + (glowAlpha * 0.6) + ')';
+                        gctx.lineWidth = 0.8; gctx.stroke();
+                    }
+                }
+
+                // 臂两侧散粒
+                for (let i = 0; i < gSparkles.length; i++) {
+                    const sp = gSparkles[i];
+                    if (phase === 'show') { sp.a += rotSpeed * 16; sp.r = sp.baseR; }
+                    else {
+                        const indP = Math.max(0, Math.min(1, (prog - sp.delay) / (1 - sp.delay)));
+                        const indCp = ultraSoft(indP);
+                        if (prog < 0.96) { sp.a += rotSpeed * 16; sp.r = sp.baseR * Math.max(0, 1 - indCp * 0.98); }
+                        else { sp.r = 0; }
+                    }
+                    const px = Math.cos(sp.a) * sp.r + Math.cos(sp.a + Math.PI / 2) * sp.lateral;
+                    const py = Math.sin(sp.a) * sp.r + Math.sin(sp.a + Math.PI / 2) * sp.lateral;
+                    sp.twinkle += 0.03 * sp.twinkleSpeed;
+                    const tw = 0.4 + 0.6 * Math.sin(sp.twinkle);
+                    const visAlpha = phase === 'show' ? 1 : (1 - cp * 0.7);
+                    const alpha = sp.bright * tw * visAlpha;
+                    if (alpha > 0.01 && sp.r > 0.5) {
+                        const cc = particleColor(sp.colorVar, prog);
+                        const glow = sp.size * 1.5;
+                        const grad = gctx.createRadialGradient(px, py, 0, px, py, Math.max(0.5, glow));
+                        grad.addColorStop(0, 'rgba(' + cc[0] + ',' + cc[1] + ',' + cc[2] + ',' + alpha + ')');
+                        grad.addColorStop(0.4, 'rgba(' + cc[0] + ',' + cc[1] + ',' + cc[2] + ',' + (alpha * 0.3) + ')');
+                        grad.addColorStop(1, 'rgba(' + cc[0] + ',' + cc[1] + ',' + cc[2] + ',0)');
+                        gctx.fillStyle = grad;
+                        gctx.beginPath();
+                        gctx.arc(px, py, Math.max(0.5, glow), 0, Math.PI * 2);
+                        gctx.fill();
+                    }
+                }
+
+                // 主粒子
+                for (let i = 0; i < gParticles.length; i++) {
+                    const pt = gParticles[i];
+                    if (phase === 'show') { pt.a += rotSpeed * 16; pt.r = pt.baseR; }
+                    else {
+                        const indP = Math.max(0, Math.min(1, (prog - pt.delay) / (1 - pt.delay)));
+                        const indCp = ultraSoft(indP);
+                        if (prog < 0.96) { pt.a += rotSpeed * 16; pt.r = pt.baseR * Math.max(0, 1 - indCp * 0.98); }
+                        else { pt.r = 0; }
+                    }
+                    const px = Math.cos(pt.a) * pt.r + Math.cos(pt.a + Math.PI / 2) * pt.lateral;
+                    const py = Math.sin(pt.a) * pt.r + Math.sin(pt.a + Math.PI / 2) * pt.lateral;
+                    pt.trail.push({ x: px, y: py });
+                    const maxT = Math.floor(trailLen);
+                    if (pt.trail.length > maxT) pt.trail.shift();
+                    const cc = particleColor(pt.colorVar, prog);
+                    const alpha = pt.bright;
+                    if (pt.trail.length > 2 && maxT > 2) {
+                        gctx.beginPath();
+                        gctx.moveTo(pt.trail[0].x, pt.trail[0].y);
+                        for (let j = 1; j < pt.trail.length; j++) gctx.lineTo(pt.trail[j].x, pt.trail[j].y);
+                        gctx.strokeStyle = 'rgba(' + cc[0] + ',' + cc[1] + ',' + cc[2] + ',' + (alpha * 0.16) + ')';
+                        gctx.lineWidth = pt.size * 0.5; gctx.lineCap = 'round'; gctx.lineJoin = 'round';
+                        gctx.stroke();
+                    }
+                    const glow = pt.size * (phase === 'show' ? 1.0 : 1.0 + cp * 0.6);
+                    const grad = gctx.createRadialGradient(px, py, 0, px, py, Math.max(0.5, glow));
+                    grad.addColorStop(0, 'rgba(' + cc[0] + ',' + cc[1] + ',' + cc[2] + ',' + alpha + ')');
+                    grad.addColorStop(0.35, 'rgba(' + cc[0] + ',' + cc[1] + ',' + cc[2] + ',' + (alpha * 0.4) + ')');
+                    grad.addColorStop(1, 'rgba(' + cc[0] + ',' + cc[1] + ',' + cc[2] + ',0)');
+                    gctx.fillStyle = grad;
+                    gctx.beginPath();
+                    gctx.arc(px, py, Math.max(0.5, glow), 0, Math.PI * 2);
+                    gctx.fill();
+                }
+
+                // 中心核心
+                if (coreGlow > 0.01) {
+                    const coreR = Math.max(1, 2 + coreGlow * 25);
+                    const cg2 = gctx.createRadialGradient(0, 0, 0, 0, 0, coreR);
+                    if (prog > 0.88) {
+                        cg2.addColorStop(0, 'rgba(255,252,235,' + (coreGlow * 0.7) + ')');
+                        cg2.addColorStop(0.2, 'rgba(255,240,200,' + (coreGlow * 0.5) + ')');
+                        cg2.addColorStop(0.5, 'rgba(220,190,120,' + (coreGlow * 0.25) + ')');
+                        cg2.addColorStop(1, 'rgba(100,70,30,0)');
+                    } else {
+                        cg2.addColorStop(0, 'rgba(245,235,200,' + (coreGlow * 0.5) + ')');
+                        cg2.addColorStop(0.3, 'rgba(220,190,120,' + (coreGlow * 0.25) + ')');
+                        cg2.addColorStop(1, 'rgba(80,55,20,0)');
+                    }
+                    gctx.fillStyle = cg2;
+                    gctx.beginPath();
+                    gctx.arc(0, 0, coreR, 0, Math.PI * 2);
+                    gctx.fill();
+                }
+
+                gctx.restore();
+
+                if (darkness > 0) {
+                    gctx.fillStyle = 'rgba(2,1,1,' + darkness + ')';
+                    gctx.fillRect(0, 0, GW, GH);
+                    if (coreGlow > 0.01) {
+                        const pr = 2 + coreGlow * 5;
+                        const pg = gctx.createRadialGradient(GCX, GCY, 0, GCX, GCY, pr);
+                        pg.addColorStop(0, 'rgba(255,240,200,' + (coreGlow * 0.3) + ')');
+                        pg.addColorStop(0.5, 'rgba(220,190,120,' + (coreGlow * 0.12) + ')');
+                        pg.addColorStop(1, 'rgba(80,55,20,0)');
+                        gctx.fillStyle = pg;
+                        gctx.beginPath();
+                        gctx.arc(GCX, GCY, pr, 0, Math.PI * 2);
+                        gctx.fill();
+                    }
+                }
+
+                const vg = gctx.createRadialGradient(GCX, GCY, GW * 0.15, GCX, GCY, GW * 0.65);
+                vg.addColorStop(0, 'rgba(0,0,0,0)');
+                vg.addColorStop(1, 'rgba(6,4,2,0.75)');
+                gctx.fillStyle = vg;
+                gctx.fillRect(0, 0, GW, GH);
+
+                requestAnimationFrame(galaxyFrame);
+            }
+
+            initGalaxy();
+            requestAnimationFrame(galaxyFrame);
+
+            // 跳过按钮
+            doorSkip.addEventListener('click', function () {
+                galaxyDone = true;
+                enterTavern();
+            });
+        }
+
+        /* ============================================
+           💬 欢迎语
+           ============================================ */
         const welcomeMessages = [
             "你推门时，风铃响了三声。",
             "柜台上有半杯没人认领的麦酒。",
@@ -970,26 +953,22 @@
             "门在你身后轻轻合上，发出沉闷的一声。",
             "墙上的烛火跳了跳，像是在打招呼。"
         ];
-
-        // 随机选一条
         function getRandomWelcome() {
-            const randomIndex = Math.floor(Math.random() * welcomeMessages.length);
-            return welcomeMessages[randomIndex];
+            return welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
         }
-
-        // 显示欢迎语
         function displayWelcome() {
             const el = document.getElementById('welcome');
-            if (!el) return;
-            el.textContent = getRandomWelcome();
+            if (el) el.textContent = getRandomWelcome();
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', displayWelcome);
+        } else {
+            displayWelcome();
         }
 
-        // 页面加载完成后执行
-        document.addEventListener('DOMContentLoaded', displayWelcome);
-
-        // ============================================
-        // 📖 今日手记（data/notes.json，每日一篇）
-        // ============================================
+        /* ============================================
+           📖 今日手记（data/notes.json，每日一篇）
+           ============================================ */
         let notesPool = [];
         const NOTE_FALLBACK_HTML = '<span class="note-empty">（手记被风吹走了……）</span>';
 
@@ -1003,12 +982,10 @@
             });
             return html;
         }
-
         function todayNote() {
             if (!notesPool.length || !window.Tavern) return null;
             return notesPool[Tavern.todaysDrinkIndex(notesPool.length)];
         }
-
         function renderTodayNote() {
             const el = document.getElementById('note-text');
             const note = todayNote();
@@ -1016,18 +993,13 @@
             el.innerHTML = noteToHtml(note, 'drinker/index.html');
             Tavern.track('notesRead');
         }
-
         async function loadNotes() {
             try {
                 const data = await Tavern.loadJSON('data/notes.json');
                 notesPool = Array.isArray(data) ? data : [];
-            } catch (e) {
-                notesPool = [];
-            }
+            } catch (e) { notesPool = []; }
             renderTodayNote();
         }
-
-        // 往期手记弹窗
         function openPastNotes() {
             let overlay = document.getElementById('note-past-overlay');
             if (!overlay) {
@@ -1040,15 +1012,6 @@
                     '<div id="note-past-list"></div>' +
                     '</div>';
                 document.body.appendChild(overlay);
-                overlay.addEventListener('click', function (e) {
-                    if (e.target === overlay) overlay.classList.remove('open');
-                });
-                overlay.querySelector('.tavern-modal-close').addEventListener('click', function () {
-                    overlay.classList.remove('open');
-                });
-                document.addEventListener('keydown', function (e) {
-                    if (e.key === 'Escape') overlay.classList.remove('open');
-                });
             }
             const today = todayNote();
             const list = document.getElementById('note-past-list');
@@ -1057,17 +1020,16 @@
                 const tag = isToday ? '<span class="note-tag">今日</span>' : '';
                 return '<div class="tavern-note-item"><div class="note-text">' + tag + noteToHtml(n, 'drinker/index.html') + '</div></div>';
             }).join('');
-            overlay.classList.add('open');
+            /* Esc / 点遮罩 / ✕ / 背景滚动锁 / 焦点归还：统一由 tavern-core 处理 */
+            Tavern.openModal(overlay);
         }
-
         document.getElementById('note-past').addEventListener('click', function () {
             if (window.Tavern && notesPool.length) openPastNotes();
         });
 
-        // ============================================
-        // 📜 随机碎片 + ✦ 故事碎片收集（data/fragments.json）
-        // 规则：每累计抽 3 次，必出下一枚未收集的故事碎片
-        // ============================================
+        /* ============================================
+           📜 随机碎片 + ✦ 故事碎片收集（data/fragments.json）
+           ============================================ */
         let fragPool = [];
         let storyPool = [];
         const FRAG_FALLBACK = [
@@ -1075,7 +1037,6 @@
             { text: "每一杯酒里都泡着一个秘密。", source: "吧台" },
             { text: "酒馆的门永远为你敞开。", source: "门牌" }
         ];
-
         async function loadFragments() {
             try {
                 const data = await Tavern.loadJSON('data/fragments.json');
@@ -1087,7 +1048,6 @@
             }
             updateFragBadge();
         }
-
         function updateFragBadge() {
             const badge = document.getElementById('fragment-collection');
             if (!badge) return;
@@ -1097,7 +1057,6 @@
             document.getElementById('frag-count').textContent = got;
             badge.classList.toggle('all', got >= storyPool.length);
         }
-
         function showRandomFragment() {
             if (!window.Tavern || !Tavern.openFragment) return;
             Tavern.track('fragment');
@@ -1112,10 +1071,8 @@
             }
             updateFragBadge();
         }
-
         document.getElementById('fragment-trigger').addEventListener('click', showRandomFragment);
 
-        // ✦ 碎片集弹窗
         function fragGridHtml(got) {
             return '<div class="tavern-frag-grid">' + storyPool.map(function (s, i) {
                 if (got.indexOf(s.id) !== -1) {
@@ -1124,7 +1081,6 @@
                 return '<div class="tavern-frag-cell locked"><div class="cell-no">✦ ' + (i + 1) + '</div><div class="cell-text">？？？</div></div>';
             }).join('') + '</div>';
         }
-
         function openFragmentCollection() {
             let overlay = document.getElementById('frag-collection-overlay');
             if (!overlay) {
@@ -1137,15 +1093,6 @@
                     '<div id="coll-body"></div>' +
                     '</div>';
                 document.body.appendChild(overlay);
-                overlay.addEventListener('click', function (e) {
-                    if (e.target === overlay) overlay.classList.remove('open');
-                });
-                overlay.querySelector('.tavern-modal-close').addEventListener('click', function () {
-                    overlay.classList.remove('open');
-                });
-                document.addEventListener('keydown', function (e) {
-                    if (e.key === 'Escape') overlay.classList.remove('open');
-                });
             }
             const got = Tavern.getStoryFragments();
             document.getElementById('coll-count').textContent = got.length + '/' + storyPool.length;
@@ -1155,68 +1102,60 @@
             } else {
                 body.innerHTML = fragGridHtml(got);
             }
-            overlay.classList.add('open');
+            /* Esc / 点遮罩 / ✕ / 背景滚动锁 / 焦点归还：统一由 tavern-core 处理 */
+            Tavern.openModal(overlay);
         }
-
         document.getElementById('fragment-collection').addEventListener('click', function () {
             if (window.Tavern && storyPool.length) openFragmentCollection();
         });
 
-        // 📦 初始化：加载手记与碎片
+        /* ============================================
+           📚 档案借阅记录渲染
+           ============================================ */
+        const BORROW_KEY = 'tavern_borrow_log';
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text == null ? '' : String(text);
+            return div.innerHTML;
+        }
+        function renderBorrowLog() {
+            const list = document.getElementById('borrow-list');
+            const count = document.getElementById('borrow-count');
+            let logs = [];
+            try { logs = JSON.parse(localStorage.getItem(BORROW_KEY) || '[]'); }
+            catch (e) { logs = []; }
+            if (!logs.length) {
+                list.innerHTML = '<div style="color:var(--gold);font-size:12px;text-align:center;padding:12px 0;opacity:0.4;">还没有借阅记录。点击人物卡片的"查看原始卡片"开始记录。</div>';
+                count.textContent = '0 次';
+                return;
+            }
+            count.textContent = logs.length + ' 次';
+            list.innerHTML = logs.slice(0, 20).map(function (log) {
+                return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(214,168,93,0.06);">' +
+                    '<span style="color:#f5e68a;">' + escapeHtml(log.name) + '</span>' +
+                    '<span style="font-size:11px;color:rgba(245,230,138,0.5);">' + escapeHtml(log.time) + '</span>' +
+                    '</div>';
+            }).join('');
+        }
+        document.getElementById('borrow-clear').addEventListener('click', function () {
+            if (confirm('确定要清空所有借阅记录吗？')) {
+                localStorage.setItem(BORROW_KEY, '[]');
+                renderBorrowLog();
+            }
+        });
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', renderBorrowLog);
+        } else {
+            renderBorrowLog();
+        }
+
+        // 初始化数据
         if (window.Tavern) {
             loadNotes();
             loadFragments();
         } else {
             document.getElementById('note-text').innerHTML = NOTE_FALLBACK_HTML;
         }
-
-        // ============================================
-        // 📚 档案借阅记录渲染
-        // ============================================
-
-        const BORROW_KEY = 'tavern_borrow_log';
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function renderBorrowLog() {
-            const list = document.getElementById('borrow-list');
-            const count = document.getElementById('borrow-count');
-
-            let logs = [];
-            try {
-                logs = JSON.parse(localStorage.getItem(BORROW_KEY) || '[]');
-            } catch { logs = []; }
-
-            if (logs.length === 0) {
-                list.innerHTML = `<div style="color:var(--gold);font-size:12px;text-align:center;padding:12px 0;opacity:0.4;">还没有借阅记录。点击人物卡片的“查看原始卡片”开始记录。</div>`;
-                count.textContent = '0 次';
-                return;
-            }
-
-            count.textContent = `${logs.length} 次`;
-
-            list.innerHTML = logs.slice(0, 20).map(log => `
-                <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(214,168,93,0.06);">
-                    <span style="color:#f5e68a;">${escapeHtml(log.name)}</span>
-                    <span style="font-size:11px;color:rgba(245,230,138,0.5);">${escapeHtml(log.time)}</span>
-                </div>
-            `).join('');
-        }
-
-        // 清空借阅记录
-        document.getElementById('borrow-clear').addEventListener('click', function() {
-            if (confirm('确定要清空所有借阅记录吗？')) {
-                localStorage.setItem(BORROW_KEY, '[]');
-                renderBorrowLog();
-            }
-        });
-
-        // 在页面加载时渲染
-        document.addEventListener('DOMContentLoaded', renderBorrowLog);
     </script>
 </body>
 </html>

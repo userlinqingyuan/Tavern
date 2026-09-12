@@ -23,6 +23,7 @@
   var STATE_KEY = 'tavern_state_v1';
   var BORROW_KEY = 'tavern_borrow_log';
   var FAV_KEY = 'tavern_favorites';
+  /* 旧存档兜底：仅当 state.drinkTotal 没记录过时才会用到（酒单总数见 data/drinks.json） */
   var DRINK_COUNT = 15;
 
   var state = null;
@@ -46,10 +47,11 @@
   function dayOfYear(d) {
     return Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
   }
+  /* 转义：不依赖 DOM，页面与 Node 单测可共用同一份实现 */
   function escapeHtml(text) {
-    var div = document.createElement('div');
-    div.textContent = text == null ? '' : String(text);
-    return div.innerHTML;
+    return String(text == null ? '' : text).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
   }
   function readJsonArray(key) {
     try {
@@ -315,6 +317,52 @@
     if (fragOverlay) fragOverlay.classList.remove('open');
   }
 
+  /* ---------- 🗔 通用弹窗（.tavern-modal-overlay） ----------
+     统一处理：Esc / 点遮罩 / ✕ 按钮 / 背景滚动锁 / 焦点归还。
+     页面只需要 Tavern.openModal(overlay) 与 Tavern.closeModal(overlay)。 */
+  var openedModal = null;
+  var modalLastFocus = null;
+  var modalBound = false;
+
+  function bindModalEvents() {
+    if (modalBound) return;
+    modalBound = true;
+    document.addEventListener('click', function (e) {
+      if (!openedModal) return;
+      if (e.target === openedModal) { closeModal(); return; }
+      if (e.target.closest && e.target.closest('.tavern-modal-close')) closeModal();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && openedModal) closeModal();
+    });
+  }
+
+  function openModal(overlay) {
+    if (!overlay) return;
+    bindModalEvents();
+    if (openedModal && openedModal !== overlay) closeModal();
+    openedModal = overlay;
+    modalLastFocus = document.activeElement;
+    overlay.classList.add('open');
+    /* 锁背景滚动：移动端在弹窗内滑到底不再带动背后的页面 */
+    document.body.style.overflow = 'hidden';
+    var target = overlay.querySelector('[data-modal-focus]') || overlay.querySelector('.tavern-modal-close');
+    if (target && target.focus) target.focus();
+  }
+
+  function closeModal(overlay) {
+    /* 允许直接当事件处理器用（此时第一个参数是 Event，不是弹窗元素） */
+    var el = (overlay && overlay.classList) ? overlay : openedModal;
+    if (!el) return;
+    el.classList.remove('open');
+    if (el === openedModal) openedModal = null;
+    if (!openedModal) document.body.style.overflow = '';
+    if (modalLastFocus && modalLastFocus.focus && document.body.contains(modalLastFocus)) {
+      modalLastFocus.focus();
+    }
+    modalLastFocus = null;
+  }
+
   /* ---------- 初始化（每页一次） ---------- */
   function init(root) {
     // 规范化根路径：'..' → '../'，'' 保持 ''
@@ -372,6 +420,9 @@
     init: init,
     track: track,
     loadJSON: loadJSON,
+    escapeHtml: escapeHtml,
+    openModal: openModal,
+    closeModal: closeModal,
     openFragment: openFragment,
     closeFragment: closeFragment,
     v: CORE_VERSION,

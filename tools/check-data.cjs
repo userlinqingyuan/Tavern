@@ -30,7 +30,10 @@ const people = readJSON('data/people.json');
 const drinksDoc = readJSON('data/drinks.json');
 const eventsDoc = readJSON('data/events.json');
 const achievements = readJSON('data/achievements.json');
-const mixingDoc = readJSON('data/mixing.json');
+/* 吧台调酒数据（原 mixing.json，2026-09-12 改名为 raw.json） */
+const MIXING_FILE = 'data/raw.json';
+const MIXING_TAG = 'raw.json';
+const mixingDoc = readJSON(MIXING_FILE);
 const diceDoc = readJSON('data/dice.json');
 const onewayDoc = readJSON('data/oneway_links.json');
 
@@ -272,17 +275,17 @@ if (Array.isArray(achievements)) {
   error('[achievements.json] 顶层应为数组');
 }
 
-/* ---------- mixing.json（吧台调酒：基酒/配料/风味短句/隐藏配方） ---------- */
+/* ---------- raw.json（吧台调酒：基酒/配料/风味短句/隐藏配方） ---------- */
 if (mixingDoc) {
   const m = mixingDoc;
   if (!m.bases || !m.ingredients || typeof m.tags !== 'object' || m.tags === null) {
-    error('[mixing.json] 顶层应包含 bases / ingredients / tags');
+    error(`[${MIXING_TAG}] 顶层应包含 bases / ingredients / tags`);
   } else {
     const tagKeys = Object.keys(m.tags);
-    if (!tagKeys.length) error('[mixing.json] tags 短句池为空');
+    if (!tagKeys.length) error(`[${MIXING_TAG}] tags 短句池为空`);
     else tagKeys.forEach(t => {
       if (!Array.isArray(m.tags[t]) || !m.tags[t].length || m.tags[t].some(x => !x || !String(x).trim())) {
-        error(`[mixing.json] tags.${t} 应为非空字符串数组`);
+        error(`[${MIXING_TAG}] tags.${t} 应为非空字符串数组`);
       }
     });
     const baseIds = new Set();
@@ -299,7 +302,7 @@ if (mixingDoc) {
         error(`${tag} openers 应为非空字符串数组`);
       }
     });
-    if (!Array.isArray(m.bases) || !m.bases.length) error('[mixing.json] bases 不应为空');
+    if (!Array.isArray(m.bases) || !m.bases.length) error(`[${MIXING_TAG}] bases 不应为空`);
 
     const ingIds = new Set();
     (Array.isArray(m.ingredients) ? m.ingredients : []).forEach((g, i) => {
@@ -317,7 +320,7 @@ if (mixingDoc) {
         ingIds.add(g.id);
       }
     });
-    if (!Array.isArray(m.ingredients) || !m.ingredients.length) error('[mixing.json] ingredients 不应为空');
+    if (!Array.isArray(m.ingredients) || !m.ingredients.length) error(`[${MIXING_TAG}] ingredients 不应为空`);
 
     const seenCombo = new Set();
     (Array.isArray(m.hidden) ? m.hidden : []).forEach((h, i) => {

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>16号螺旋酒馆 · 吧台</title>
-    <link rel="stylesheet" href="../css/tavern.css?v=v2.3.0">
+    <link rel="stylesheet" href="../css/tavern.css?v=v2.5.0">
     <style>
         /* 颜色变量/重置/滚动条见 ../css/tavern.css；
            吧台组件（tavern-bar-* / tavern-mix-* / tavern-dice-* / tavern-gamble-*）同样在其内 */
@@ -104,7 +104,7 @@
     </div>
 </div>
 
-<script src="../js/tavern-core.js?v=v2.3.0"></script>
+<script src="../js/tavern-core.js?v=v2.5.0"></script>
 <script>
 (function () {
     'use strict';
@@ -135,12 +135,13 @@
             arr.slice().sort().join('|') === ids.slice().sort().join('|');
     }
 
-    function buildChipRow(headText, items, slotKey, withWord) {
+    /* slotKey: 'base' | 'a' | 'b'；基酒条目多，容器单独加滚动条（配料暂不加） */
+    function buildChipRow(headText, items, slotKey, scrollable) {
         var head = document.createElement('div');
         head.className = 'tavern-bar-slot-head';
-        head.textContent = headText;
+        head.innerHTML = escapeHtml(headText) + '<span class="slot-count">' + items.length + ' 种</span>';
         var chips = document.createElement('div');
-        chips.className = 'tavern-bar-chips';
+        chips.className = 'tavern-bar-chips' + (scrollable ? ' tavern-bar-chips-scroll' : '');
         chips.setAttribute('role', 'group');
         chips.setAttribute('aria-label', headText);
         items.forEach(function (it) {
@@ -153,8 +154,7 @@
             b.title = it.desc || '';
             b.innerHTML =
                 '<span class="chip-emoji">' + escapeHtml(it.emoji || '🍺') + '</span>' +
-                '<span>' + escapeHtml(it.name) + '</span>' +
-                (withWord && it.word ? '<span class="chip-word">' + escapeHtml(it.word) + '</span>' : '');
+                '<span>' + escapeHtml(it.name) + '</span>';
             b.addEventListener('click', function () { selectChip(slotKey, it, chips); });
             chips.appendChild(b);
         });
@@ -207,9 +207,9 @@
 
         var slots = document.createElement('div');
         slots.className = 'tavern-bar-slots';
-        slots.appendChild(buildChipRow('① 基酒 · 选一', mixing.bases || [], 'base', false));
-        slots.appendChild(buildChipRow('② 配料 · 第一味', mixing.ingredients || [], 'a', true));
-        slots.appendChild(buildChipRow('③ 配料 · 第二味', mixing.ingredients || [], 'b', true));
+        slots.appendChild(buildChipRow('① 基酒 · 选一', mixing.bases || [], 'base', true));
+        slots.appendChild(buildChipRow('② 配料 · 第一味', mixing.ingredients || [], 'a', false));
+        slots.appendChild(buildChipRow('③ 配料 · 第二味', mixing.ingredients || [], 'b', false));
         panel.appendChild(slots);
 
         var hint = document.createElement('div');
@@ -267,10 +267,14 @@
         }
         Tavern.pushMixLog({ d: todayStr(), n: name, h: hidden ? hidden.id : null });
 
+        /* 诗眼在选料时不剧透，调出这杯才揭晓 */
+        var eyes = hidden ? '' :
+            '<div class="mix-eyes">诗眼 · ' + escapeHtml(a.word) + ' / ' + escapeHtml(b.word) + '</div>';
         document.getElementById('mixResultZone').innerHTML =
             '<div class="tavern-mix-result' + (hidden ? ' special' : '') + '">' +
             '<div class="mix-meta">' + escapeHtml(meta) + '</div>' +
             '<div class="mix-name">' + (hidden ? '✦ ' : '') + escapeHtml(name) + '</div>' +
+            eyes +
             '<div class="mix-text">' + textHtml + '</div>' +
             '</div>';
         refreshMixlogCount();
@@ -296,19 +300,9 @@
     }
     function openMixlog() {
         renderMixlogList();
-        document.getElementById('mixlogOverlay').classList.add('open');
-        document.getElementById('mixlogClose').focus();
+        /* Esc / 点遮罩 / ✕ / 背景滚动锁 / 焦点归还：统一由 tavern-core 处理 */
+        Tavern.openModal(document.getElementById('mixlogOverlay'));
     }
-    function closeMixlog() {
-        document.getElementById('mixlogOverlay').classList.remove('open');
-    }
-    document.getElementById('mixlogClose').addEventListener('click', closeMixlog);
-    document.getElementById('mixlogOverlay').addEventListener('click', function (e) {
-        if (e.target === this) closeMixlog();
-    });
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeMixlog();
-    });
 
     /* ============================================================
        🎲 骰子桌（🎭 遇客 / ⚔️ 赌局）
@@ -470,7 +464,7 @@
     /* ============================================================
        数据加载（两板块互不影响）
        ============================================================ */
-    Tavern.loadJSON('../data/mixing.json')
+    Tavern.loadJSON('../data/raw.json')
         .then(function (data) { mixing = data; renderMixPanel(); })
         .catch(function () {
             document.getElementById('mixPanel').innerHTML =

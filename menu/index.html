@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>16号螺旋酒馆 · 酒单</title>
-    <link rel="stylesheet" href="../css/tavern.css?v=v2.3.0">
+    <link rel="stylesheet" href="../css/tavern.css?v=v2.5.0">
     <style>
         /* 颜色变量/重置/滚动条见 ../css/tavern.css */
         body {
@@ -87,6 +87,12 @@
         }
         .drink-card {
             position: relative;
+            display: block;
+            width: 100%;
+            text-align: left;
+            font: inherit;
+            color: inherit;
+            cursor: pointer;
             padding: 20px 20px 18px;
             background: rgba(26,21,19,.6);
             border: 1px solid rgba(90,72,59,.35);
@@ -95,12 +101,13 @@
             transition: 0.3s;
         }
         .drink-card:hover { border-color: rgba(214,168,93,.3); background: rgba(26,21,19,.9); transform: translateY(-2px); }
+        .drink-card:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
         .drink-card.is-today { border-color: rgba(214,168,93,.55); box-shadow: 0 0 22px rgba(214,168,93,.12); }
         .drink-head { display: flex; align-items: center; gap: 12px; }
         .drink-emoji { font-size: 30px; line-height: 1; }
-        .drink-name { font-size: 18px; color: var(--ink); }
-        .drink-meta { margin-top: 2px; font-size: 12px; color: var(--muted); letter-spacing: .05em; }
-        .drink-desc { margin-top: 12px; font-size: 13.5px; color: var(--muted); line-height: 1.8; }
+        .drink-name { display: block; font-size: 18px; color: var(--ink); }
+        .drink-meta { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); letter-spacing: .05em; }
+        .drink-desc { display: block; margin-top: 12px; font-size: 13.5px; color: var(--muted); line-height: 1.8; }
         .drink-desc.placeholder { opacity: .5; }
         .drink-badge {
             position: absolute; top: 12px; right: 12px;
@@ -116,11 +123,51 @@
             border: 1px dashed rgba(90,72,59,.5); border-radius: 8px;
         }
 
+        /* ---------- 🔍 酒款放大窗 ---------- */
+        .drink-modal .tavern-modal-body {
+            max-height: min(62vh, 560px);
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+        .drink-detail {
+            padding: 18px 18px 16px;
+            background: rgba(0,0,0,.22);
+            border-top: 3px solid var(--dc, var(--gold));
+            border-radius: 4px;
+        }
+        .drink-detail-hero { display: flex; align-items: center; gap: 16px; }
+        .drink-detail-emoji {
+            font-size: clamp(54px, 12vw, 76px); line-height: 1;
+            filter: drop-shadow(0 6px 14px rgba(0,0,0,.5));
+        }
+        .drink-detail-name { display: block; font-size: clamp(20px, 5vw, 26px); color: var(--ink); letter-spacing: .04em; }
+        .drink-detail-meta { display: block; margin-top: 4px; color: var(--gold); font-size: 12.5px; letter-spacing: .08em; }
+        .drink-detail-badges {
+            margin-top: 8px; display: flex; align-items: center; gap: 8px;
+            flex-wrap: wrap; font-size: 11px; letter-spacing: .1em;
+        }
+        .drink-detail-desc { margin-top: 16px; color: var(--muted); font-size: 14px; line-height: 1.8; }
+        .drink-detail-story {
+            margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(160,141,114,.15);
+            color: var(--ink); font-size: 14.5px; line-height: 1.95; font-style: italic;
+        }
+        .drink-detail-story.placeholder { color: var(--muted); font-style: normal; opacity: .6; }
+        .drink-detail-actions { margin-top: 18px; }
+
         /* 页脚 */
         .footer {
             margin-top: 50px; padding-top: 20px; border-top: 1px solid rgba(90,72,59,.4);
             display: flex; gap: 18px; justify-content: center; align-items: center; flex-wrap: wrap;
             font-size: 13px; color: var(--muted);
+        }
+
+        @media (max-width: 600px) {
+            .drink-modal .tavern-modal-body { max-height: 64vh; }
+            .drink-detail { padding: 14px 14px 15px; }
+            .drink-detail-emoji { font-size: 54px; }
+            .drink-detail-hero { gap: 13px; }
+            .drink-detail-story { font-size: 14px; }
+            .drink-detail-actions .taste-btn { width: 100%; }
         }
 
         @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
@@ -131,7 +178,7 @@
     <header class="header">
         <a class="back" href="../">← 返回酒馆</a>
         <h1>🍺 酒馆酒单</h1>
-        <p class="sub">十五款特供按日子轮换，每天一款今日特供。点一杯，在酒单上留下你的品鉴印。</p>
+        <p class="sub">酒单按日子轮换，每天一款今日特供。点开任意一款可以看它的完整故事，点一杯，就在酒单上留下你的品鉴印。</p>
     </header>
 
     <section class="today-card" id="todayCard">
@@ -152,6 +199,17 @@
         <div class="empty">酒单还没挂出来，稍后再来看看。</div>
     </section>
 
+    <!-- 🔍 酒款放大窗 -->
+    <div class="tavern-modal-overlay" id="drinkOverlay">
+        <div class="tavern-modal drink-modal" role="dialog" aria-modal="true" aria-label="酒款详情">
+            <div class="tavern-modal-title">
+                <span id="drinkDetailKicker">🍺 酒单</span>
+                <button class="tavern-modal-close" id="drinkDetailClose" aria-label="关闭酒款详情">✕</button>
+            </div>
+            <div class="tavern-modal-body" id="drinkDetailBody"></div>
+        </div>
+    </div>
+
     <div class="footer">
         <a class="foot-link" href="../">档案袋</a>
         <a class="foot-link" href="../drinker/">旅客档案</a>
@@ -163,42 +221,85 @@
     </div>
 </div>
 
-<script src="../js/tavern-core.js?v=v2.3.0"></script>
+<script src="../js/tavern-core.js?v=v2.5.0"></script>
 <script>
 (function () {
     'use strict';
 
-    if (window.Tavern) Tavern.init('..');
+    if (!window.Tavern) {
+        document.getElementById('menuGrid').innerHTML =
+            '<div class="empty">酒单被酒保收走了，稍后再来看看。</div>';
+        return;
+    }
+    Tavern.init('..');
 
-    var currentDrinkTotal = 0;
+    /* 转义走 core：同一份实现，Node 单测里也能跑 */
+    function esc(text) { return Tavern.escapeHtml(text); }
 
-    function escapeHtml(text) {
-        var div = document.createElement('div');
-        div.textContent = text == null ? '' : String(text);
-        return div.innerHTML;
+    var drinksCache = [];   // 当前酒单
+    var tastedSet = {};     // 已品鉴的酒索引
+    var openedIndex = -1;   // 放大窗里正在看的酒
+
+    function todayIndex() {
+        return drinksCache.length ? Tavern.todaysDrinkIndex(drinksCache.length) : 0;
+    }
+    function isTasted(index) { return !!tastedSet[index]; }
+    function badgesFor(index) {
+        if (index === todayIndex()) return '<span class="badge-today">今日特供</span>';
+        if (isTasted(index)) return '<span class="badge-tasted">🍸 已品鉴</span>';
+        return '';
+    }
+
+    /* ============================================
+       🔍 酒款放大窗内容（纯字符串生成，便于单测）
+       ============================================ */
+    function buildDrinkDetailHtml(drink, opts) {
+        opts = opts || {};
+        var badges = opts.isToday ? '<span class="badge-today">今日特供</span>' : '';
+        if (opts.isTasted) badges += '<span class="badge-tasted">🍸 已品鉴</span>';
+
+        var story = drink.story
+            ? '<div class="drink-detail-story">' + esc(drink.story) + '</div>'
+            : '<div class="drink-detail-story placeholder">酒保还没为这款酒写下注脚……也许你该亲口尝尝。</div>';
+
+        var actions = '';
+        if (opts.isToday) {
+            actions = '<div class="drink-detail-actions">' +
+                '<button type="button" class="taste-btn" data-taste' + (opts.isTasted ? ' disabled' : '') + '>' +
+                (opts.isTasted ? '今日已品鉴 ✓' : '🍺 点一杯今日特供') +
+                '</button></div>';
+        }
+
+        return '<div class="drink-detail" style="--dc:' + esc(drink.color || '#d6a85d') + '">' +
+            '<div class="drink-detail-hero">' +
+                '<span class="drink-detail-emoji">' + esc(drink.emoji || '🍺') + '</span>' +
+                '<span>' +
+                    '<span class="drink-detail-name">' + esc(drink.name) + '</span>' +
+                    '<span class="drink-detail-meta">' + esc(drink.type || '特供') + ' · 酒精度 ' + esc(drink.abv || '？') + '</span>' +
+                    '<span class="drink-detail-badges">' + badges + '</span>' +
+                '</span>' +
+            '</div>' +
+            '<div class="drink-detail-desc">' +
+                (drink.desc ? esc(drink.desc) : '酒保还没为这款酒写下注脚……') +
+            '</div>' +
+            story + actions +
+            '</div>';
     }
 
     function refreshTasteButton() {
         var btn = document.getElementById('tasteBtn');
-        if (!window.Tavern) return;
-        if (Tavern.hasTastedToday()) {
-            btn.disabled = true;
-            btn.textContent = '今日已品鉴 ✓';
-        } else {
-            btn.disabled = false;
-            btn.textContent = '🍺 点一杯今日特供';
-        }
+        var tasted = Tavern.hasTastedToday();
+        btn.disabled = tasted;
+        btn.textContent = tasted ? '今日已品鉴 ✓' : '🍺 点一杯今日特供';
     }
 
-    function render(drinks) {
-        currentDrinkTotal = drinks.length;
-        var todayIdx = window.Tavern ? Tavern.todaysDrinkIndex(drinks.length) : 0;
-        var tastedSet = {};
-        if (window.Tavern) Tavern.tastedDrinkIndices(drinks.length).forEach(function (i) { tastedSet[i] = true; });
-        document.getElementById('menuCount').textContent = drinks.length;
+    function render() {
+        if (!drinksCache.length) return;
+        var today = todayIndex();
+        document.getElementById('menuCount').textContent = drinksCache.length;
 
         /* 当日酒卡 */
-        var t = drinks[todayIdx];
+        var t = drinksCache[today];
         document.getElementById('todayEmoji').textContent = t.emoji || '🍺';
         document.getElementById('todayName').textContent = t.name;
         document.getElementById('todayMeta').textContent = (t.type || '特供') + ' · 酒精度 ' + (t.abv || '？');
@@ -213,42 +314,79 @@
         document.getElementById('todayCard').style.setProperty('--dc', t.color || '#d6a85d');
         refreshTasteButton();
 
-        /* 酒单网格 */
-        var grid = document.getElementById('menuGrid');
-        grid.innerHTML = drinks.map(function (d, i) {
-            var badges = '';
-            if (i === todayIdx) badges += '<span class="badge-today">今日特供</span>';
-            else if (tastedSet[i]) badges += '<span class="badge-tasted">🍸 已品鉴</span>';
+        /* 酒单网格：整张卡片可点开放大窗（button 自带键盘与焦点） */
+        document.getElementById('menuGrid').innerHTML = drinksCache.map(function (d, i) {
             var desc = d.desc
-                ? escapeHtml(d.desc)
+                ? esc(d.desc)
                 : '<span style="opacity:.5">酒保还没为这款酒写下注脚……</span>';
-            return '<div class="drink-card' + (i === todayIdx ? ' is-today' : '') + '" style="--dc:' + escapeHtml(d.color || '#d6a85d') + '">' +
-                '<div class="drink-badge">' + badges + '</div>' +
-                '<div class="drink-head">' +
-                    '<span class="drink-emoji">' + escapeHtml(d.emoji || '🍺') + '</span>' +
-                    '<div><div class="drink-name">' + escapeHtml(d.name) + '</div>' +
-                    '<div class="drink-meta">' + escapeHtml(d.type || '特供') + ' · ' + escapeHtml(d.abv || '？') + '</div></div>' +
-                '</div>' +
-                '<div class="drink-desc">' + desc + '</div>' +
-                '</div>';
+            return '<button type="button" class="drink-card' + (i === today ? ' is-today' : '') + '"' +
+                ' data-index="' + i + '" style="--dc:' + esc(d.color || '#d6a85d') + '">' +
+                '<span class="drink-badge">' + badgesFor(i) + '</span>' +
+                '<span class="drink-head">' +
+                    '<span class="drink-emoji">' + esc(d.emoji || '🍺') + '</span>' +
+                    '<span>' +
+                        '<span class="drink-name">' + esc(d.name) + '</span>' +
+                        '<span class="drink-meta">' + esc(d.type || '特供') + ' · ' + esc(d.abv || '？') + '</span>' +
+                    '</span>' +
+                '</span>' +
+                '<span class="drink-desc">' + desc + '</span>' +
+                '</button>';
         }).join('');
     }
 
-    document.getElementById('tasteBtn').addEventListener('click', function () {
-        if (!window.Tavern) return;
-        Tavern.track('tasting', { total: currentDrinkTotal });
-        refreshTasteButton();
-        /* 重新渲染以刷新已品鉴印记（走缓存，不重复请求） */
-        Tavern.loadJSON('../data/drinks.json')
-            .then(function (data) { if (data.drinks) render(data.drinks); })
-            .catch(function () {});
+    /* ---------- 🔍 放大窗 ---------- */
+    function refreshDrinkDetail() {
+        var drink = drinksCache[openedIndex];
+        if (!drink) return;
+        var body = document.getElementById('drinkDetailBody');
+        var keepFocus = body.contains(document.activeElement);
+        body.innerHTML = buildDrinkDetailHtml(drink, {
+            isToday: openedIndex === todayIndex(),
+            isTasted: isTasted(openedIndex)
+        });
+        /* 重绘后把焦点留在弹窗内（品鉴按钮可能已变禁用，退回关闭按钮） */
+        if (keepFocus) {
+            var next = body.querySelector('[data-taste]:not([disabled])') || document.getElementById('drinkDetailClose');
+            if (next) next.focus();
+        }
+    }
+
+    function openDrinkDetail(index) {
+        if (!drinksCache[index]) return;
+        openedIndex = index;
+        document.getElementById('drinkOverlay').querySelector('.tavern-modal')
+            .setAttribute('aria-label', drinksCache[index].name + ' · 酒款详情');
+        document.getElementById('drinkDetailKicker').textContent =
+            index === todayIndex() ? '🍺 今日特供' : '🍺 酒单 · 第 ' + (index + 1) + ' 款';
+        refreshDrinkDetail();
+        Tavern.openModal(document.getElementById('drinkOverlay'));
+    }
+
+    /* 品鉴入口两处共用：今日大卡 + 放大窗（仅今日特供那杯有） */
+    function doTaste() {
+        if (Tavern.hasTastedToday()) return;
+        Tavern.track('tasting', { total: drinksCache.length });
+        render();
+        if (openedIndex >= 0) refreshDrinkDetail();
+    }
+
+    document.getElementById('tasteBtn').addEventListener('click', doTaste);
+    document.getElementById('menuGrid').addEventListener('click', function (e) {
+        var card = e.target.closest('.drink-card');
+        if (card) openDrinkDetail(Number(card.dataset.index));
+    });
+    document.getElementById('drinkDetailBody').addEventListener('click', function (e) {
+        if (e.target.closest('[data-taste]')) doTaste();
     });
 
     Tavern.loadJSON('../data/drinks.json')
         .then(function (data) {
             if (!data.drinks || !data.drinks.length) throw new Error('empty');
-            if (window.Tavern) Tavern.track('menuview');
-            render(data.drinks);
+            drinksCache = data.drinks;
+            Tavern.track('menuview');
+            tastedSet = {};
+            Tavern.tastedDrinkIndices(drinksCache.length).forEach(function (i) { tastedSet[i] = true; });
+            render();
         })
         .catch(function () {
             document.getElementById('menuGrid').innerHTML =

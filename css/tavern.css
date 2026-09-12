@@ -212,6 +212,31 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(214, 168, 93, .7); }
   padding: 22px 24px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
 }
+/* 弹窗滚动条皮肤 + 滚动链隔离：
+   滚动发生在 .tavern-modal 本体或内部 .tavern-modal-body 时都生效；
+   overscroll-behavior 防止在弹窗内滑到底后继续带动背景页面（移动端）。 */
+.tavern-modal,
+.tavern-modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 168, 120, .45) rgba(72, 50, 28, .25);
+  overscroll-behavior: contain;
+}
+.tavern-modal::-webkit-scrollbar,
+.tavern-modal-body::-webkit-scrollbar { width: 7px; }
+.tavern-modal::-webkit-scrollbar-track,
+.tavern-modal-body::-webkit-scrollbar-track {
+  background: rgba(72, 50, 28, .25);
+  border-radius: 4px;
+}
+.tavern-modal::-webkit-scrollbar-thumb,
+.tavern-modal-body::-webkit-scrollbar-thumb {
+  background: rgba(200, 168, 120, .5);
+  border-radius: 4px;
+}
+.tavern-modal::-webkit-scrollbar-thumb:hover,
+.tavern-modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(214, 168, 93, .7);
+}
 .tavern-modal-title {
   color: var(--gold);
   font-size: 13px;
@@ -350,6 +375,10 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(214, 168, 93, .7); }
     gap: 6px;
     padding: 10px 14px;
   }
+  /* 通用弹窗：收窄内边距、放宽高度上限、放大关闭按钮触摸区 */
+  .tavern-modal-overlay { padding: 16px; }
+  .tavern-modal { padding: 18px 16px; max-height: 82vh; }
+  .tavern-modal-close { font-size: 20px; padding: 11px; margin: -7px -5px 0 0; }
 }
 
 /* ---------- 减少动效偏好 ---------- */
@@ -385,10 +414,37 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(214, 168, 93, .7); }
   height: 1px;
   background: rgba(214, 168, 93, .18);
 }
+.tavern-bar-slot-head .slot-count {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: none;
+}
 .tavern-bar-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+/* 基酒条目多（80+），这一行单独给滚动条；配料两行暂不加 */
+.tavern-bar-chips-scroll {
+  max-height: 132px;
+  overflow-y: auto;
+  padding-right: 6px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 168, 120, .45) rgba(72, 50, 28, .25);
+}
+.tavern-bar-chips-scroll::-webkit-scrollbar { width: 7px; }
+.tavern-bar-chips-scroll::-webkit-scrollbar-track {
+  background: rgba(72, 50, 28, .25);
+  border-radius: 4px;
+}
+.tavern-bar-chips-scroll::-webkit-scrollbar-thumb {
+  background: rgba(200, 168, 120, .5);
+  border-radius: 4px;
+}
+.tavern-bar-chips-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(214, 168, 93, .7);
 }
 .tavern-bar-chip {
   display: inline-flex;
@@ -415,17 +471,6 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(214, 168, 93, .7); }
   box-shadow: 0 0 12px rgba(214, 168, 93, .18);
 }
 .tavern-bar-chip .chip-emoji { font-size: 15px; line-height: 1; }
-.tavern-bar-chip .chip-word {
-  color: var(--muted);
-  font-size: 11px;
-  border: 1px solid rgba(160, 141, 114, .3);
-  border-radius: 3px;
-  padding: 0 4px;
-}
-.tavern-bar-chip[aria-pressed="true"] .chip-word {
-  color: #f0c987;
-  border-color: rgba(214, 168, 93, .5);
-}
 
 /* ---------- 调一杯按钮（与 menu 页 taste-btn 同视觉语言） ---------- */
 .tavern-mix-btn {
@@ -494,6 +539,13 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(214, 168, 93, .7); }
   font-size: 13px;
   line-height: 1.7;
   font-style: italic;
+}
+/* 诗眼：选料时不显示，调出这一杯才揭晓 */
+.tavern-mix-result .mix-eyes {
+  margin: -2px 0 10px;
+  color: rgba(214, 168, 93, .8);
+  font: 700 11px/1.4 'Arial Narrow', sans-serif;
+  letter-spacing: .14em;
 }
 /* 隐藏配方金色变体（与 .tavern-frag-card.special 同语言） */
 .tavern-mix-result.special {
@@ -623,6 +675,7 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(214, 168, 93, .7); }
 /* ---------- 吧台移动端适配 ---------- */
 @media (max-width: 600px) {
   .tavern-bar-chips { gap: 6px; }
+  .tavern-bar-chips-scroll { max-height: 108px; }
   .tavern-bar-chip { padding: 6px 10px; font-size: 12px; }
   .tavern-mix-result { padding: 16px 18px; }
   .tavern-dice { font-size: 34px; }
