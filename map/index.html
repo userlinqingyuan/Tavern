@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>16号螺旋酒馆 · 地图</title>
-    <link rel="stylesheet" href="../css/tavern.css">
+    <link rel="stylesheet" href="../css/tavern.css?v=v2.3.0">
     <style>
         /* 颜色变量/重置/滚动条见 ../css/tavern.css */
         body {
@@ -458,6 +458,7 @@
         <a class="foot-link" href="../">档案袋</a>
         <a class="foot-link" href="../drinker/">旅客档案</a>
         <a class="foot-link" href="../menu/">🍺 酒单</a>
+        <a class="foot-link" href="../bar/">🍸 吧台</a>
         <a class="foot-link" href="../achievements/">🏆 成就</a>
         <a class="foot-link" href="../timeline/">🕰️ 时间线</a>
         <span>🗺️ 地图 · 点击图片放大</span>
@@ -465,8 +466,8 @@
 </div>
 
 <!-- 灯箱 -->
-<div class="lightbox-map" id="lightboxMap">
-    <button class="close-btn" id="lightboxClose">✕</button>
+<div class="lightbox-map" id="lightboxMap" role="dialog" aria-modal="true" aria-label="楼层地图与旅客足迹">
+    <button class="close-btn" id="lightboxClose" aria-label="关闭地图">✕</button>
     <div class="lightbox-body">
         <div class="lightbox-mapview">
             <img id="lightboxImg" src="" alt="酒馆地图">
@@ -477,7 +478,7 @@
     <div class="caption" id="lightboxCaption">地图</div>
 </div>
 
-<script src="../js/tavern-core.js"></script>
+<script src="../js/tavern-core.js?v=v2.3.0"></script>
 <script>
     if (window.Tavern) Tavern.init('..');
 </script>

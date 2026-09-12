@@ -1,28 +1,327 @@
 [
-  { "id": "first-door", "icon": "🚪", "name": "欢迎光临", "desc": "第一次推开酒馆的门", "group": "visit", "metric": "visitDays", "op": ">=", "value": 1 },
-  { "id": "visitor-7", "icon": "📅", "name": "酒馆常客", "desc": "累计到访 7 天", "group": "visit", "metric": "visitDays", "op": ">=", "value": 7 },
-  { "id": "visitor-30", "icon": "🗓️", "name": "酒馆的一部分", "desc": "累计到访 30 天", "group": "visit", "metric": "visitDays", "op": ">=", "value": 30 },
-  { "id": "streak-3", "icon": "🔥", "name": "连饮三日", "desc": "连续 3 天都来酒馆坐坐", "group": "visit", "metric": "visitStreak", "op": ">=", "value": 3 },
-  { "id": "streak-7", "icon": "🌟", "name": "七日之约", "desc": "连续 7 天到访酒馆", "group": "visit", "metric": "visitStreak", "op": ">=", "value": 7 },
-  { "id": "night-owl", "icon": "🦉", "name": "深夜酒客", "desc": "在深夜 22 点之后推开酒馆的门", "group": "visit", "metric": "lateNightVisit", "op": "==", "value": true },
-  { "id": "new-year", "icon": "🎆", "name": "跨年钟声", "desc": "在跨年之夜（1 月 1 日）到访酒馆", "group": "visit", "metric": "newYearVisit", "op": "==", "value": true },
-
-  { "id": "first-archive", "icon": "📖", "name": "第一位酒客", "desc": "查看第一位旅客的档案", "group": "archive", "metric": "peopleViewed", "op": ">=", "value": 1 },
-  { "id": "archive-8", "icon": "📚", "name": "交游广阔", "desc": "查看 8 位旅客的档案", "group": "archive", "metric": "peopleViewed", "op": ">=", "value": 8 },
-  { "id": "archive-all", "icon": "🏺", "name": "阅档人", "desc": "查看全部 15 位旅客的档案", "group": "archive", "metric": "peopleViewed", "op": ">=", "value": 15 },
-  { "id": "flip-10", "icon": "🔄", "name": "卡片的另一面", "desc": "翻转卡片阅读语录 10 次", "group": "archive", "metric": "cardFlips", "op": ">=", "value": 10 },
-  { "id": "network-open", "icon": "🕸️", "name": "牵丝绊藤", "desc": "打开一次人物关系网", "group": "archive", "metric": "networkOpens", "op": ">=", "value": 1 },
-  { "id": "book-open", "icon": "📕", "name": "翻书人", "desc": "使用一次翻页阅读", "group": "archive", "metric": "bookReads", "op": ">=", "value": 1 },
-  { "id": "dice-use", "icon": "🎲", "name": "命运一瞥", "desc": "使用一次随机酒客", "group": "archive", "metric": "diceUses", "op": ">=", "value": 1 },
-  { "id": "first-fav", "icon": "⭐", "name": "情有独钟", "desc": "收藏第一位旅客", "group": "archive", "metric": "favoritesAdded", "op": ">=", "value": 1 },
-
-  { "id": "menu-view", "icon": "🍺", "name": "酒保，酒单", "desc": "打开一次酒单", "group": "drink", "metric": "menuViews", "op": ">=", "value": 1 },
-  { "id": "first-taste", "icon": "🍸", "name": "第一口", "desc": "品鉴第一杯今日特供", "group": "drink", "metric": "tastingCount", "op": ">=", "value": 1 },
-  { "id": "taste-streak-3", "icon": "🥂", "name": "三日微醺", "desc": "连续 3 天品鉴今日特供", "group": "drink", "metric": "tastingStreak", "op": ">=", "value": 3 },
-  { "id": "taste-streak-7", "icon": "🍷", "name": "七日酒途", "desc": "连续 7 天品鉴今日特供", "group": "drink", "metric": "tastingStreak", "op": ">=", "value": 7 },
-  { "id": "all-15", "icon": "🍯", "name": "尝遍酒单", "desc": "尝过全部 15 款特供", "group": "drink", "metric": "drinksTasted", "op": ">=", "value": 15 },
-
-  { "id": "fragments-10", "icon": "📜", "name": "碎片拾荒者", "desc": "翻看 10 条随机档案碎片", "group": "secret", "hidden": true, "metric": "fragmentsDrawn", "op": ">=", "value": 10 },
-  { "id": "borrow-20", "icon": "🖋️", "name": "借阅大户", "desc": "累计 20 次档案借阅", "group": "secret", "hidden": true, "metric": "borrows", "op": ">=", "value": 20 },
-  { "id": "blank-card", "icon": "❓", "name": "第 16 位酒客", "desc": "翻开那张空白的档案", "group": "secret", "hidden": true, "metric": "sawBlankCard", "op": "==", "value": true }
+  {
+    "id": "first-door",
+    "icon": "🚪",
+    "name": "欢迎光临",
+    "desc": "第一次推开酒馆的门",
+    "group": "visit",
+    "metric": "visitDays",
+    "op": ">=",
+    "value": 1
+  },
+  {
+    "id": "visitor-7",
+    "icon": "📅",
+    "name": "酒馆常客",
+    "desc": "累计到访 7 天",
+    "group": "visit",
+    "metric": "visitDays",
+    "op": ">=",
+    "value": 7
+  },
+  {
+    "id": "visitor-30",
+    "icon": "🗓️",
+    "name": "酒馆的一部分",
+    "desc": "累计到访 30 天",
+    "group": "visit",
+    "metric": "visitDays",
+    "op": ">=",
+    "value": 30
+  },
+  {
+    "id": "streak-3",
+    "icon": "🔥",
+    "name": "连饮三日",
+    "desc": "连续 3 天都来酒馆坐坐",
+    "group": "visit",
+    "metric": "visitStreak",
+    "op": ">=",
+    "value": 3
+  },
+  {
+    "id": "streak-7",
+    "icon": "🌟",
+    "name": "七日之约",
+    "desc": "连续 7 天到访酒馆",
+    "group": "visit",
+    "metric": "visitStreak",
+    "op": ">=",
+    "value": 7
+  },
+  {
+    "id": "night-owl",
+    "icon": "🦉",
+    "name": "深夜酒客",
+    "desc": "在深夜 22 点之后推开酒馆的门",
+    "group": "visit",
+    "metric": "lateNightVisit",
+    "op": "==",
+    "value": true
+  },
+  {
+    "id": "new-year",
+    "icon": "🎆",
+    "name": "跨年钟声",
+    "desc": "在跨年之夜（1 月 1 日）到访酒馆",
+    "group": "visit",
+    "metric": "newYearVisit",
+    "op": "==",
+    "value": true
+  },
+  {
+    "id": "first-archive",
+    "icon": "📖",
+    "name": "第一位酒客",
+    "desc": "查看第一位旅客的档案",
+    "group": "archive",
+    "metric": "peopleViewed",
+    "op": ">=",
+    "value": 1
+  },
+  {
+    "id": "archive-8",
+    "icon": "📚",
+    "name": "交游广阔",
+    "desc": "查看 8 位旅客的档案",
+    "group": "archive",
+    "metric": "peopleViewed",
+    "op": ">=",
+    "value": 8
+  },
+  {
+    "id": "archive-all",
+    "icon": "🏺",
+    "name": "阅档人",
+    "desc": "查看全部 15 位旅客的档案",
+    "group": "archive",
+    "metric": "peopleViewed",
+    "op": ">=",
+    "value": 15
+  },
+  {
+    "id": "flip-10",
+    "icon": "🔄",
+    "name": "卡片的另一面",
+    "desc": "翻转卡片阅读语录 10 次",
+    "group": "archive",
+    "metric": "cardFlips",
+    "op": ">=",
+    "value": 10
+  },
+  {
+    "id": "network-open",
+    "icon": "🕸️",
+    "name": "牵丝绊藤",
+    "desc": "打开一次人物关系网",
+    "group": "archive",
+    "metric": "networkOpens",
+    "op": ">=",
+    "value": 1
+  },
+  {
+    "id": "book-open",
+    "icon": "📕",
+    "name": "翻书人",
+    "desc": "使用一次翻页阅读",
+    "group": "archive",
+    "metric": "bookReads",
+    "op": ">=",
+    "value": 1
+  },
+  {
+    "id": "dice-use",
+    "icon": "🎲",
+    "name": "命运一瞥",
+    "desc": "使用一次随机酒客",
+    "group": "archive",
+    "metric": "diceUses",
+    "op": ">=",
+    "value": 1
+  },
+  {
+    "id": "first-fav",
+    "icon": "⭐",
+    "name": "情有独钟",
+    "desc": "收藏第一位旅客",
+    "group": "archive",
+    "metric": "favoritesAdded",
+    "op": ">=",
+    "value": 1
+  },
+  {
+    "id": "first-note",
+    "icon": "📝",
+    "name": "听酒保说话",
+    "desc": "读一次酒保手记",
+    "group": "archive",
+    "metric": "notesRead",
+    "op": ">=",
+    "value": 1
+  },
+  {
+    "id": "note-10",
+    "icon": "📖",
+    "name": "手记常客",
+    "desc": "累计阅读酒保手记 10 次",
+    "group": "archive",
+    "metric": "notesRead",
+    "op": ">=",
+    "value": 10
+  },
+  {
+    "id": "menu-view",
+    "icon": "🍺",
+    "name": "酒保，酒单",
+    "desc": "打开一次酒单",
+    "group": "drink",
+    "metric": "menuViews",
+    "op": ">=",
+    "value": 1
+  },
+  {
+    "id": "first-taste",
+    "icon": "🍸",
+    "name": "第一口",
+    "desc": "品鉴第一杯今日特供",
+    "group": "drink",
+    "metric": "tastingCount",
+    "op": ">=",
+    "value": 1
+  },
+  {
+    "id": "taste-streak-3",
+    "icon": "🥂",
+    "name": "三日微醺",
+    "desc": "连续 3 天品鉴今日特供",
+    "group": "drink",
+    "metric": "tastingStreak",
+    "op": ">=",
+    "value": 3
+  },
+  {
+    "id": "taste-streak-7",
+    "icon": "🍷",
+    "name": "七日酒途",
+    "desc": "连续 7 天品鉴今日特供",
+    "group": "drink",
+    "metric": "tastingStreak",
+    "op": ">=",
+    "value": 7
+  },
+  {
+    "id": "all-15",
+    "icon": "🍯",
+    "name": "尝遍酒单",
+    "desc": "尝过全部 56 款特供",
+    "group": "drink",
+    "metric": "drinksTasted",
+    "op": ">=",
+    "value": 56
+  },
+  {
+    "id": "fragments-10",
+    "icon": "📜",
+    "name": "碎片拾荒者",
+    "desc": "翻看 10 条随机档案碎片",
+    "group": "secret",
+    "hidden": true,
+    "metric": "fragmentsDrawn",
+    "op": ">=",
+    "value": 10
+  },
+  {
+    "id": "borrow-20",
+    "icon": "🖋️",
+    "name": "借阅大户",
+    "desc": "累计 20 次档案借阅",
+    "group": "secret",
+    "hidden": true,
+    "metric": "borrows",
+    "op": ">=",
+    "value": 20
+  },
+  {
+    "id": "blank-card",
+    "icon": "❓",
+    "name": "第 16 位酒客",
+    "desc": "翻开那张空白的档案",
+    "group": "secret",
+    "hidden": true,
+    "metric": "sawBlankCard",
+    "op": "==",
+    "value": true
+  },
+  {
+    "id": "story-complete",
+    "icon": "🔮",
+    "name": "拼合真相",
+    "desc": "集齐 6 枚故事碎片，拼出酒馆的秘密",
+    "group": "secret",
+    "hidden": true,
+    "metric": "storyFragments",
+    "op": ">=",
+    "value": 6
+  },
+  {
+    "id": "mix-1",
+    "icon": "🧪",
+    "name": "开杯",
+    "desc": "在吧台调出第一杯自己的酒",
+    "group": "bar",
+    "metric": "mixes",
+    "op": ">=",
+    "value": 1
+  },
+  {
+    "id": "mix-10",
+    "icon": "🍹",
+    "name": "吧台常客",
+    "desc": "累计调配 10 杯",
+    "group": "bar",
+    "metric": "mixes",
+    "op": ">=",
+    "value": 10
+  },
+  {
+    "id": "recipe-1",
+    "icon": "📓",
+    "name": "秘方收录",
+    "desc": "调出一杯藏在配方里的酒",
+    "group": "bar",
+    "hidden": true,
+    "metric": "hiddenRecipes",
+    "op": ">=",
+    "value": 1
+  },
+  {
+    "id": "dice-1",
+    "icon": "🎲",
+    "name": "骰子入局",
+    "desc": "在骰子桌掷第一次骰子",
+    "group": "bar",
+    "metric": "diceRolls",
+    "op": ">=",
+    "value": 1
+  },
+  {
+    "id": "encounter-10",
+    "icon": "🎭",
+    "name": "满座奇遇",
+    "desc": "累计遇客 10 次",
+    "group": "bar",
+    "metric": "encounters",
+    "op": ">=",
+    "value": 10
+  },
+  {
+    "id": "gamble-3",
+    "icon": "🪙",
+    "name": "手气不错",
+    "desc": "在骰子赌局连赢酒保 3 把",
+    "group": "bar",
+    "metric": "gambleStreak",
+    "op": ">=",
+    "value": 3
+  }
 ]

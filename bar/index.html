@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>16号螺旋酒馆 · 吧台</title>
+    <link rel="stylesheet" href="../css/tavern.css?v=v2.3.0">
+    <style>
+        /* 颜色变量/重置/滚动条见 ../css/tavern.css；
+           吧台组件（tavern-bar-* / tavern-mix-* / tavern-dice-* / tavern-gamble-*）同样在其内 */
+        body {
+            background: #0c0806;
+            color: var(--ink);
+            font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+            padding: 40px 20px 70px;
+            min-height: 100vh;
+            line-height: 1.65;
+        }
+        .wrap { max-width: 860px; margin: 0 auto; }
+
+        /* 页眉 */
+        .header { margin-bottom: 34px; border-bottom: 1px solid var(--line); padding-bottom: 20px; }
+        .header .back {
+            display: inline-block; margin-bottom: 14px; color: var(--muted); font-size: 14px;
+            text-decoration: none; border-bottom: 1px dotted transparent; transition: .3s;
+        }
+        .header .back:hover { border-bottom-color: var(--gold); color: var(--gold); }
+        .header h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 400; color: var(--gold); letter-spacing: .06em; }
+        .header .sub { margin-top: 10px; color: var(--muted); font-size: 14px; }
+
+        .section-title {
+            margin: 10px 0 18px; color: var(--gold); font-weight: 400; font-size: 18px;
+            letter-spacing: .14em; display: flex; align-items: center; gap: 12px;
+        }
+        .section-title::after { content: ""; flex: 1; height: 1px; background: rgba(214,168,93,.18); }
+
+        .panel {
+            padding: 24px 26px;
+            background: linear-gradient(160deg, rgba(34,26,20,.9), rgba(19,14,11,.95));
+            border: 1px solid rgba(214,168,93,.22);
+            border-radius: 12px;
+            box-shadow: 0 14px 40px rgba(0,0,0,.4);
+        }
+        .panel-empty { color: var(--muted); font-style: italic; opacity: .7; text-align: center; padding: 22px 0; }
+
+        /* 调酒日志入口行 */
+        .mixlog-row { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+        .mixlog-btn {
+            background: none; border: none; cursor: pointer; color: var(--muted);
+            font: inherit; font-size: 13px; letter-spacing: .06em; padding: 2px 4px;
+            transition: color .2s ease;
+        }
+        .mixlog-btn:hover { color: var(--gold); }
+
+        /* 选料轻提示（A=B 拦截等） */
+        .slot-hint { min-height: 18px; margin-top: 10px; color: #c98a5d; font-size: 12px; opacity: 0; transition: opacity .25s ease; }
+        .slot-hint.show { opacity: 1; }
+
+        .dice-stage { min-height: 60px; display: flex; align-items: center; }
+        .dice-actions { margin-top: 18px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .dice-mode-row { margin-bottom: 22px; }
+
+        .footer { margin-top: 46px; text-align: center; color: var(--muted); font-size: 12.5px; }
+        .footer .foot-link { margin: 0 8px; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header class="header">
+        <a class="back" href="../">← 回到档案袋</a>
+        <h1>🍸 吧台</h1>
+        <div class="sub">基酒与配料都摆在明面上——调一杯自己的，或者掷骰子看看今晚谁在。</div>
+    </header>
+
+    <h2 class="section-title">🧪 调酒台</h2>
+    <section class="panel" id="mixPanel">
+        <div class="panel-empty">正在擦拭杯盏……</div>
+    </section>
+
+    <h2 class="section-title">🎲 骰子桌</h2>
+    <section class="panel" id="dicePanel">
+        <div class="panel-empty">骰子还在酒保口袋里……</div>
+    </section>
+
+    <div class="footer">
+        <a class="foot-link" href="../">档案袋</a>
+        <a class="foot-link" href="../drinker/">旅客档案</a>
+        <a class="foot-link" href="../menu/">🍺 酒单</a>
+        <a class="foot-link" href="../achievements/">🏆 成就</a>
+        <span>🍸 吧台</span>
+        <a class="foot-link" href="../timeline/">🕰️ 时间线</a>
+        <a class="foot-link" href="../map/">🗺️ 地图</a>
+    </div>
+</div>
+
+<!-- 📖 调酒日志弹窗 -->
+<div class="tavern-modal-overlay" id="mixlogOverlay">
+    <div class="tavern-modal" role="dialog" aria-modal="true" aria-label="调酒日志">
+        <div class="tavern-modal-title">
+            <span>📖 调酒日志 · <span id="mixlogTotal">0</span> 杯</span>
+            <button class="tavern-modal-close" id="mixlogClose" aria-label="关闭调酒日志">✕</button>
+        </div>
+        <div id="mixlogList"></div>
+    </div>
+</div>
+
+<script src="../js/tavern-core.js?v=v2.3.0"></script>
+<script>
+(function () {
+    'use strict';
+    if (!window.Tavern) return;
+    Tavern.init('..');
+
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text == null ? '' : String(text);
+        return div.innerHTML;
+    }
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function todayStr() {
+        var d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    /* ============================================================
+       🧪 调酒台
+       ============================================================ */
+    var mixing = null;
+    var sel = { base: null, a: null, b: null };   // 存 id
+
+    function findBase(id) { return (mixing.bases || []).find(function (x) { return x.id === id; }); }
+    function findIng(id) { return (mixing.ingredients || []).find(function (x) { return x.id === id; }); }
+    function sameSet(arr, ids) {
+        return arr.length === ids.length &&
+            arr.slice().sort().join('|') === ids.slice().sort().join('|');
+    }
+
+    function buildChipRow(headText, items, slotKey, withWord) {
+        var head = document.createElement('div');
+        head.className = 'tavern-bar-slot-head';
+        head.textContent = headText;
+        var chips = document.createElement('div');
+        chips.className = 'tavern-bar-chips';
+        chips.setAttribute('role', 'group');
+        chips.setAttribute('aria-label', headText);
+        items.forEach(function (it) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'tavern-bar-chip';
+            b.dataset.slot = slotKey;
+            b.dataset.id = it.id;
+            b.setAttribute('aria-pressed', 'false');
+            b.title = it.desc || '';
+            b.innerHTML =
+                '<span class="chip-emoji">' + escapeHtml(it.emoji || '🍺') + '</span>' +
+                '<span>' + escapeHtml(it.name) + '</span>' +
+                (withWord && it.word ? '<span class="chip-word">' + escapeHtml(it.word) + '</span>' : '');
+            b.addEventListener('click', function () { selectChip(slotKey, it, chips); });
+            chips.appendChild(b);
+        });
+        var box = document.createElement('div');
+        box.className = 'tavern-bar-slots-item';
+        box.appendChild(head);
+        box.appendChild(chips);
+        return box;
+    }
+
+    function selectChip(slotKey, item, chipsContainer) {
+        /* A/B 槽同池，禁止两味相同 */
+        if ((slotKey === 'a' && sel.b === item.id) || (slotKey === 'b' && sel.a === item.id)) {
+            flashHint('两味配料不能相同——酒保会皱眉的。');
+            return;
+        }
+        sel[slotKey] = item.id;
+        chipsContainer.querySelectorAll('.tavern-bar-chip').forEach(function (c) {
+            c.setAttribute('aria-pressed', String(c.dataset.id === sel[slotKey]));
+        });
+        refreshMixBtn();
+    }
+
+    var hintTimer = null;
+    function flashHint(text) {
+        var el = document.getElementById('slotHint');
+        if (!el) return;
+        el.textContent = text;
+        el.classList.add('show');
+        clearTimeout(hintTimer);
+        hintTimer = setTimeout(function () { el.classList.remove('show'); }, 2200);
+    }
+
+    function refreshMixBtn() {
+        var btn = document.getElementById('mixBtn');
+        if (!btn) return;
+        var ready = sel.base && sel.a && sel.b;
+        btn.disabled = !ready;
+        btn.textContent = ready ? '🍸 调一杯' : '🍸 选齐三味再调';
+    }
+
+    function renderMixPanel() {
+        var panel = document.getElementById('mixPanel');
+        panel.innerHTML = '';
+
+        var logRow = document.createElement('div');
+        logRow.className = 'mixlog-row';
+        logRow.innerHTML = '<button type="button" class="mixlog-btn" id="mixlogBtn" aria-haspopup="dialog">📖 册 · 调酒日志（<span id="mixlogCount">0</span>）</button>';
+        panel.appendChild(logRow);
+
+        var slots = document.createElement('div');
+        slots.className = 'tavern-bar-slots';
+        slots.appendChild(buildChipRow('① 基酒 · 选一', mixing.bases || [], 'base', false));
+        slots.appendChild(buildChipRow('② 配料 · 第一味', mixing.ingredients || [], 'a', true));
+        slots.appendChild(buildChipRow('③ 配料 · 第二味', mixing.ingredients || [], 'b', true));
+        panel.appendChild(slots);
+
+        var hint = document.createElement('div');
+        hint.className = 'slot-hint';
+        hint.id = 'slotHint';
+        hint.setAttribute('role', 'status');
+        panel.appendChild(hint);
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tavern-mix-btn';
+        btn.id = 'mixBtn';
+        btn.disabled = true;
+        panel.appendChild(btn);
+
+        var zone = document.createElement('div');
+        zone.id = 'mixResultZone';
+        zone.setAttribute('role', 'status');
+        zone.setAttribute('aria-live', 'polite');
+        panel.appendChild(zone);
+
+        btn.addEventListener('click', doMix);
+        document.getElementById('mixlogBtn').addEventListener('click', openMixlog);
+        refreshMixBtn();
+        refreshMixlogCount();
+    }
+
+    function doMix() {
+        var base = findBase(sel.base), a = findIng(sel.a), b = findIng(sel.b);
+        if (!base || !a || !b) return;
+
+        var hidden = (mixing.hidden || []).find(function (h) {
+            return h.base === base.id && sameSet(h.ingredients, [a.id, b.id]);
+        });
+        var name, textHtml, meta;
+        if (hidden) {
+            name = hidden.name;
+            textHtml = escapeHtml(hidden.text);
+            meta = '✦ 藏在配方里的酒';
+            Tavern.track('mix', { hidden: hidden.id });
+        } else {
+            name = base.name + ' · ' + a.word + b.word;
+            var tagList = [];
+            (a.tags || []).concat(b.tags || []).forEach(function (t) {
+                if (tagList.indexOf(t) === -1) tagList.push(t);
+            });
+            var lines = [escapeHtml(pick(base.openers))];
+            tagList.slice(0, 2).forEach(function (t) {
+                var pool = mixing.tags[t];
+                if (pool && pool.length) lines.push(escapeHtml(pick(pool)));
+            });
+            textHtml = lines.join('<br>');
+            meta = base.name + ' · ' + (base.abv || '');
+            Tavern.track('mix');
+        }
+        Tavern.pushMixLog({ d: todayStr(), n: name, h: hidden ? hidden.id : null });
+
+        document.getElementById('mixResultZone').innerHTML =
+            '<div class="tavern-mix-result' + (hidden ? ' special' : '') + '">' +
+            '<div class="mix-meta">' + escapeHtml(meta) + '</div>' +
+            '<div class="mix-name">' + (hidden ? '✦ ' : '') + escapeHtml(name) + '</div>' +
+            '<div class="mix-text">' + textHtml + '</div>' +
+            '</div>';
+        refreshMixlogCount();
+    }
+
+    /* ---------- 调酒日志弹窗 ---------- */
+    function refreshMixlogCount() {
+        var el = document.getElementById('mixlogCount');
+        if (el) el.textContent = Tavern.getMixLog().length;
+    }
+    function renderMixlogList() {
+        var log = Tavern.getMixLog();
+        document.getElementById('mixlogTotal').textContent = log.length;
+        document.getElementById('mixlogList').innerHTML = log.length
+            ? log.map(function (e) {
+                return '<div class="tavern-mixlog-item">' +
+                    '<span class="log-date">' + escapeHtml(e.d) + '</span>' +
+                    '<span class="log-name">' + escapeHtml(e.n) + '</span>' +
+                    (e.h ? '<span class="log-hidden" title="藏在配方里的酒">✦</span>' : '') +
+                    '</div>';
+            }).join('')
+            : '<div class="tavern-mixlog-empty">册子还是空的——去吧，调第一杯。</div>';
+    }
+    function openMixlog() {
+        renderMixlogList();
+        document.getElementById('mixlogOverlay').classList.add('open');
+        document.getElementById('mixlogClose').focus();
+    }
+    function closeMixlog() {
+        document.getElementById('mixlogOverlay').classList.remove('open');
+    }
+    document.getElementById('mixlogClose').addEventListener('click', closeMixlog);
+    document.getElementById('mixlogOverlay').addEventListener('click', function (e) {
+        if (e.target === this) closeMixlog();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeMixlog();
+    });
+
+    /* ============================================================
+       🎲 骰子桌（🎭 遇客 / ⚔️ 赌局）
+       ============================================================ */
+    var dice = null;
+    var pending = 0;   // 进行中的掷骰数（>0 时按钮禁用）
+    var DIE = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+    function setRollButtons(enabled) {
+        ['rollBtn', 'gambleBtn'].forEach(function (id) {
+            var b = document.getElementById(id);
+            if (b) b.disabled = !enabled;
+        });
+    }
+    function rollPair(diceEl, done) {
+        pending++;
+        setRollButtons(false);
+        diceEl.classList.add('rolling');
+        var dies = diceEl.querySelectorAll('.die');
+        var iv = setInterval(function () {
+            dies.forEach(function (d) { d.textContent = DIE[Math.floor(Math.random() * 6)]; });
+        }, 100);
+        setTimeout(function () {
+            clearInterval(iv);
+            diceEl.classList.remove('rolling');
+            var a = 1 + Math.floor(Math.random() * 6);
+            var b = 1 + Math.floor(Math.random() * 6);
+            dies[0].textContent = DIE[a - 1];
+            dies[1].textContent = DIE[b - 1];
+            done(a + b);
+            pending--;
+            if (!pending) setRollButtons(true);
+        }, 600);
+    }
+
+    function renderDicePanel() {
+        document.getElementById('dicePanel').innerHTML =
+            '<div class="dice-mode-row">' +
+            '<div class="tavern-dice-mode" role="group" aria-label="骰子桌模式">' +
+            '<button type="button" id="modeEncounter" aria-pressed="true">🎭 遇客</button>' +
+            '<button type="button" id="modeGamble" aria-pressed="false">⚔️ 赌局</button>' +
+            '</div></div>' +
+
+            '<div id="encounterPanel">' +
+            '<div class="dice-stage"><div class="tavern-dice" id="encDice" aria-label="两枚骰子">' +
+            '<span class="die">🎲</span><span class="die">🎲</span></div></div>' +
+            '<div class="dice-actions"><button type="button" class="tavern-mix-btn" id="rollBtn">🎲 掷骰</button></div>' +
+            '<div id="encResultZone" role="status" aria-live="polite"></div>' +
+            '</div>' +
+
+            '<div id="gamblePanel" hidden>' +
+            '<div class="tavern-gamble-vs">' +
+            '<div class="tavern-gamble-side"><div class="side-label">你</div>' +
+            '<div class="tavern-dice" id="myDice" aria-label="你的骰子"><span class="die">🎲</span><span class="die">🎲</span></div>' +
+            '<div class="side-sum" id="mySum"></div></div>' +
+            '<div class="tavern-gamble-mid">vs</div>' +
+            '<div class="tavern-gamble-side"><div class="side-label">酒保</div>' +
+            '<div class="tavern-dice" id="barDice" aria-label="酒保的骰子"><span class="die">🎲</span><span class="die">🎲</span></div>' +
+            '<div class="side-sum" id="barSum"></div></div>' +
+            '</div>' +
+            '<div class="dice-actions"><button type="button" class="tavern-mix-btn" id="gambleBtn">⚔️ 开赌</button></div>' +
+            '<div id="gambleResultZone" role="status" aria-live="polite"></div>' +
+            '</div>';
+
+        document.getElementById('modeEncounter').addEventListener('click', function () { setMode(true); });
+        document.getElementById('modeGamble').addEventListener('click', function () { setMode(false); });
+        document.getElementById('rollBtn').addEventListener('click', onRollEncounter);
+        document.getElementById('gambleBtn').addEventListener('click', onGamble);
+    }
+
+    function setMode(encounter) {
+        document.getElementById('modeEncounter').setAttribute('aria-pressed', String(encounter));
+        document.getElementById('modeGamble').setAttribute('aria-pressed', String(!encounter));
+        document.getElementById('encounterPanel').hidden = !encounter;
+        document.getElementById('gamblePanel').hidden = encounter;
+    }
+
+    /* ---------- 🎭 掷骰遇客 ---------- */
+    function personLink(name) {
+        return '<a class="tavern-person-link" href="../drinker/index.html?name=' +
+            encodeURIComponent(name) + '">' + escapeHtml(name) + ' 的档案 →</a>';
+    }
+    function loadPersonQuote(name) {
+        Tavern.loadJSON('../data/people.json').then(function (list) {
+            var qEl = document.getElementById('encQuote');
+            if (!qEl) return;
+            var p = (Array.isArray(list) ? list : []).find(function (x) { return x.name === name; });
+            var q = '';
+            if (p) {
+                if (p.quote && p.quote.trim()) q = p.quote.trim();
+                else if (p.intro) q = p.intro.slice(0, 60) + (p.intro.length > 60 ? '……' : '');
+            }
+            qEl.innerHTML = (q ? '「' + escapeHtml(q) + '」&nbsp;' : '') + personLink(name);
+        }).catch(function () {
+            var qEl = document.getElementById('encQuote');
+            if (qEl) qEl.innerHTML = personLink(name);
+        });
+    }
+    function onRollEncounter() {
+        Tavern.track('diceRoll');
+        rollPair(document.getElementById('encDice'), function (sum) {
+            var e = (dice.encounters || []).find(function (x) { return x.sum === sum; });
+            if (!e) return;
+            var html =
+                '<div class="tavern-mix-result">' +
+                '<div class="mix-meta">掷出 ' + sum + ' 点</div>' +
+                '<div class="mix-name">' + escapeHtml(e.icon || '🎲') + ' ' + escapeHtml(e.title) + '</div>' +
+                '<div class="mix-text">' + escapeHtml(e.text) + '</div>';
+            if (e.person) {
+                html += '<div class="mix-quote" id="encQuote">……</div>';
+                document.getElementById('encResultZone').innerHTML = html + '</div>';
+                Tavern.track('encounter');
+                loadPersonQuote(e.person);
+            } else {
+                document.getElementById('encResultZone').innerHTML = html + '</div>';
+            }
+        });
+    }
+
+    /* ---------- ⚔️ 骰子赌局 ---------- */
+    function onGamble() {
+        Tavern.track('diceRoll');
+        var mySum = null, barSum = null;
+        rollPair(document.getElementById('myDice'), function (s) {
+            mySum = s;
+            document.getElementById('mySum').textContent = s + ' 点';
+            settle();
+        });
+        rollPair(document.getElementById('barDice'), function (s) {
+            barSum = s;
+            document.getElementById('barSum').textContent = s + ' 点';
+            settle();
+        });
+        function settle() {
+            if (mySum === null || barSum === null) return;
+            var g = dice.gamble || {};
+            var meta, line;
+            if (mySum > barSum) {
+                Tavern.track('gambleWin');
+                var streak = Tavern.getMetrics().gambleStreak;
+                line = (streak >= 3 && g.streak3) ? g.streak3 : pick(g.win);
+                meta = '本局 · 你 ' + mySum + ' ： ' + barSum + ' 酒保 · 胜';
+            } else if (mySum < barSum) {
+                Tavern.track('gambleLose');
+                line = pick(g.lose);
+                meta = '本局 · 你 ' + mySum + ' ： ' + barSum + ' 酒保 · 负';
+            } else {
+                line = pick(g.tie);
+                meta = '本局 · 你 ' + mySum + ' ： ' + barSum + ' 酒保 · 平';
+            }
+            document.getElementById('gambleResultZone').innerHTML =
+                '<div class="tavern-mix-result">' +
+                '<div class="mix-meta">' + escapeHtml(meta) + '</div>' +
+                '<div class="mix-text">' + escapeHtml(line) + '</div>' +
+                '</div>';
+        }
+    }
+
+    /* ============================================================
+       数据加载（两板块互不影响）
+       ============================================================ */
+    Tavern.loadJSON('../data/mixing.json')
+        .then(function (data) { mixing = data; renderMixPanel(); })
+        .catch(function () {
+            document.getElementById('mixPanel').innerHTML =
+                '<div class="panel-empty">酒保去搬酒了……吧台暂不营业，稍后再来。</div>';
+        });
+    Tavern.loadJSON('../data/dice.json')
+        .then(function (data) { dice = data; renderDicePanel(); })
+        .catch(function () {
+            document.getElementById('dicePanel').innerHTML =
+                '<div class="panel-empty">骰子找不到了……稍后再来。</div>';
+        });
+})();
+</script>
+</body>
+</html>

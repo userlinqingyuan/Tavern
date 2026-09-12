@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>16号螺旋酒馆 · 酒客档案</title>
-<link rel="stylesheet" href="../css/tavern.css">
+<link rel="stylesheet" href="../css/tavern.css?v=v2.3.0">
 <style>
 /* 基础变量/滚动条/重置见 ../css/tavern.css；这里覆盖档案页专属调色板 */
 :root{
@@ -540,6 +540,46 @@ body{margin:0;color:var(--ink);
     color: var(--gold);
 }
 
+/* 🕰️ 卡内「相关记录」（与时间线联动） */
+.person-events {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(93, 72, 59, 0.4);
+}
+.person-events .pe-item {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    padding: 3px 0;
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+    transition: color 0.25s;
+}
+.person-events .pe-item:hover,
+.person-events .pe-all:hover {
+    color: var(--gold);
+}
+.person-events .pe-date {
+    flex: none;
+    color: rgba(214, 168, 93, 0.75);
+    font-family: "Arial Narrow", sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+}
+.person-events .pe-title {
+    min-width: 0;
+}
+.person-events .pe-all {
+    display: inline-block;
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 11px;
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(160, 141, 114, 0.5);
+}
+
 
 /* ============================================
    🈳 空状态（无卡片时）
@@ -787,6 +827,14 @@ footer {
 #graphCanvas:active{cursor:grabbing}
 .graph-tip{text-align:center;color:var(--muted);font-size:11px;
 	margin-top:10px;letter-spacing:.05em}
+.graph-focusbar{display:none;gap:10px;align-items:center;flex-wrap:wrap;
+	margin:0 0 10px;font-size:13px;color:var(--ink)}
+.graph-focusbar.show{display:flex}
+.graph-focusbar b{color:var(--gold);font-weight:700;letter-spacing:.05em}
+.graph-fbtn{font-family:inherit;font-size:12px;color:var(--gold);
+	background:rgba(214,168,93,.08);border:1px solid rgba(214,168,93,.4);
+	padding:3px 12px;border-radius:12px;cursor:pointer;transition:.25s}
+.graph-fbtn:hover{background:rgba(214,168,93,.2)}
 @media(max-width:600px){
 	#graphCanvas{height:340px}
 	.graph-modal-content{padding:16px}
@@ -865,7 +913,7 @@ footer {
 <div class="ink-corner ink-corner--tl" aria-hidden="true"></div>
 <div class="ink-corner ink-corner--br" aria-hidden="true"></div>
 <header class="masthead"><div class="wrap"><div class="kicker">16th Spiral Tavern · Archive 01</div><!-- 今日特供 --><div id="todays-special" style="display:inline-block;margin-top:6px;padding:4px 14px;background:rgba(214,168,93,.12);border:1px solid rgba(214,168,93,.25);border-radius:20px;font-size:12px;color:var(--gold);letter-spacing:.08em;font-family:'Arial Narrow',sans-serif;text-transform:uppercase;">🍺 今日特供 · 深岩麦酒</div><h1>16号螺旋酒馆</h1><div id="loadingIndicator" style="font-size:12px;color:var(--muted);margin-top:4px;">📂 正在加载档案...</div><p>异世界旅客登记簿。每一张档案都保留了原始人物卡作为底稿；页面文字仅做结构化摘录，姓名、数值、涂改与留白均按原件呈现。</p><div class="seal">旅客录</div></div></header>
-<main class="wrap"><div class="toolbar"><input id="search" type="search" placeholder="搜索姓名、能力、关系……"><select id="seat"><option value="">全部座位</option><option value="A">A 区</option><option value="B">B 区</option><option value="?">未登记</option></select><button id="randomBtn" style="background: #171311d9; border: 1px solid var(--gold); color: var(--gold); padding: 11px 18px; border-radius: 2px; cursor: pointer; font: inherit; transition: 0.3s;">🎲 随机</button><button id="bookBtn" style="background:#171311d9;border:1px solid var(--line);color:var(--gold);padding:11px 14px;border-radius:2px;font:inherit;cursor:pointer;transition:0.3s;">📖 翻页阅读</button><a href="../timeline/" style="background:#171311d9;border:1px solid var(--line);color:var(--gold);padding:11px 14px;border-radius:2px;font:inherit;text-decoration:none;white-space:nowrap;transition:0.3s;">🕰️ 时间线</a><span class="count" id="count"></span></div><div class="note"><strong>档案说明：</strong>红色涂改、问号和空白信息没有被推测或补写。点击人物图可查看证件照与立绘大图。</div><section class="grid" id="cards"></section></main>
+<main class="wrap"><div class="tavern-note-banner" id="today-note-banner" style="display:none;margin-bottom:14px;"><span class="note-label">📖 今日手记</span><div class="note-text"></div></div><div class="toolbar"><input id="search" type="search" aria-label="搜索旅客姓名、能力或关系" placeholder="搜索姓名、能力、关系……"><select id="seat" aria-label="按座位区筛选"><option value="">全部座位</option><option value="A">A 区</option><option value="B">B 区</option><option value="?">未登记</option></select><button id="randomBtn" style="background: #171311d9; border: 1px solid var(--gold); color: var(--gold); padding: 11px 18px; border-radius: 2px; cursor: pointer; font: inherit; transition: 0.3s;">🎲 随机</button><button id="bookBtn" style="background:#171311d9;border:1px solid var(--line);color:var(--gold);padding:11px 14px;border-radius:2px;font:inherit;cursor:pointer;transition:0.3s;">📖 翻页阅读</button><a href="../timeline/" style="background:#171311d9;border:1px solid var(--line);color:var(--gold);padding:11px 14px;border-radius:2px;font:inherit;text-decoration:none;white-space:nowrap;transition:0.3s;">🕰️ 时间线</a><span class="count" id="count"></span></div><div class="note"><strong>档案说明：</strong>红色涂改、问号和空白信息没有被推测或补写。点击人物图可查看证件照与立绘大图。</div><section class="grid" id="cards"></section></main>
 <div id="changelog" style="margin:40px auto 20px;padding:20px 24px;max-width:1380px;width:calc(100% - 40px);background:#1a1513;border-left:3px solid var(--gold);border-radius:4px;">
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
     <h3 style="margin:0;color:var(--gold);font-weight:400;letter-spacing:.1em;font-size:16px;">📜 档案更新记录</h3>
@@ -873,22 +921,22 @@ footer {
   </div>
   <div id="changelogEntries" style="margin-top:10px;color:var(--muted);font-size:13px;line-height:1.7;"></div>
 </div>
-<footer><div class="wrap" style="display:flex;gap:20px;justify-content:center;align-items:center;flex-wrap:wrap;">资料来源：16号螺旋酒馆；页面排版为归档展示用途。<a href="../menu/" class="foot-link">🍺 酒单</a><a href="../achievements/" class="foot-link">🏆 成就</a><a href="../timeline/" class="foot-link">🕰️ 时间线</a><a href="../map/" class="foot-link">🗺️ 地图</a></div></footer>
-<div class="lightbox" id="lightbox"><span class="close">×</span><img id="lightboxImg" alt="原始人物卡"></div>
+<footer><div class="wrap" style="display:flex;gap:20px;justify-content:center;align-items:center;flex-wrap:wrap;">资料来源：16号螺旋酒馆；页面排版为归档展示用途。<a href="../menu/" class="foot-link">🍺 酒单</a><a href="../bar/" class="foot-link">🍸 吧台</a><a href="../achievements/" class="foot-link">🏆 成就</a><a href="../timeline/" class="foot-link">🕰️ 时间线</a><a href="../map/" class="foot-link">🗺️ 地图</a></div></footer>
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="原始人物卡大图（点击或按 Esc 关闭）"><span class="close" aria-hidden="true">×</span><img id="lightboxImg" alt="原始人物卡"></div>
 <!-- 证件照/立绘轮播灯箱 -->
-<div class="carousel" id="carousel">
+<div class="carousel" id="carousel" role="dialog" aria-modal="true" aria-label="证件照与立绘轮播">
     <button class="carousel-close" id="carouselClose" aria-label="关闭">×</button>
     <div class="carousel-viewport" id="carouselViewport">
         <div class="carousel-track" id="carouselTrack"></div>
     </div>
     <button class="carousel-nav prev" id="carouselPrev" aria-label="上一张">‹</button>
     <button class="carousel-nav next" id="carouselNext" aria-label="下一张">›</button>
-    <div class="carousel-dots" id="carouselDots"></div>
+    <div class="carousel-dots" id="carouselDots" aria-hidden="true"></div>
     <div class="carousel-caption" id="carouselCaption"></div>
 </div>
 
 <!-- 电子书翻页阅读 -->
-<div class="book-reader" id="bookReader">
+<div class="book-reader" id="bookReader" role="dialog" aria-modal="true" aria-label="翻页阅读模式" tabindex="-1">
     <div class="book-header">
         <span>📖 翻页阅读</span>
         <span class="book-counter" id="bookCounter">1 / 1</span>
@@ -899,9 +947,9 @@ footer {
     </div>
     <div class="book-hint">点击左/右边缘翻页 · 也可左右滑动</div>
 </div>
-<div class="note-modal" id="noteModal"><div class="note-modal-box"><button class="note-close" aria-label="关闭">×</button><div class="note-modal-head"><h3>BACKGROUND NOTE</h3><span class="who" id="noteModalName"></span></div><div class="note-modal-body" id="noteModalBody"></div></div></div>
+<div class="note-modal" id="noteModal" role="dialog" aria-modal="true" aria-label="BACKGROUND NOTE 原文阅读"><div class="note-modal-box"><button class="note-close" aria-label="关闭">×</button><div class="note-modal-head"><h3>BACKGROUND NOTE</h3><span class="who" id="noteModalName"></span></div><div class="note-modal-body" id="noteModalBody"></div></div></div>
 <button id="graphBtn" aria-label="打开人物关系图" title="人物关系图">🔗</button>
-<div class="graph-modal" id="graphModal">
+<div class="graph-modal" id="graphModal" role="dialog" aria-modal="true" aria-label="人物关系网">
     <div class="graph-modal-content">
         <div class="graph-modal-header">
             <h2>🔗 人物关系网</h2>
@@ -909,11 +957,18 @@ footer {
         </div>
         <div class="graph-legend">
             <span><span style="color:var(--gold);">●</span> 人物</span>
-            <span><span style="color:var(--wine);">━</span> 关联</span>
+            <span><span style="color:var(--wine);">━</span> 双向</span>
+            <span><span style="color:var(--wine);">➤</span> 单向</span>
+            <span><span style="color:var(--gold);font-size:11px;">金字</span> 关系类型</span>
             <span style="color:var(--muted);font-size:11px;">拖动节点 · 拖拽空白平移 · 滚轮缩放</span>
         </div>
-        <canvas id="graphCanvas"></canvas>
-        <div class="graph-tip">点击人物节点可跳转到对应档案</div>
+        <div class="graph-focusbar" id="graphFocusBar">
+            <span>聚焦：<b id="graphFocusName"></b></span>
+            <button type="button" class="graph-fbtn" id="graphFocusJump">📄 查看档案</button>
+            <button type="button" class="graph-fbtn" id="graphFocusClear">✕ 返回全图</button>
+        </div>
+        <canvas id="graphCanvas" role="img" aria-label="人物关系网络图：金色圆点是人物，实线表示双方互相写回的双向关联，箭头表示只有一方写回的单向关联，边上金字是关系类型。单击节点聚焦关系，双击查看档案。"></canvas>
+        <div class="graph-tip">单击聚焦关系 · 双击查看档案</div>
     </div>
 </div>
 <!-- 随机碎片触发器 -->
@@ -936,7 +991,7 @@ footer {
 ">📜 随机碎片</button>
 
 <!-- 碎片弹窗由 tavern-core.js 统一注入 -->
-<script src="../js/tavern-core.js"></script>
+<script src="../js/tavern-core.js?v=v2.3.0"></script>
 <script>
 if (window.Tavern) Tavern.init('..');
 </script>
@@ -947,12 +1002,38 @@ const ID_ROOT = '../images/ID/';
 // 每条档案保留原卡片字段：基础资料、简介、战斗信息、关系和总结。
 let people = [];
 let isLoading = true;
+// 人物名 → 相关时间线事件（按日期从旧到新），数据来自 data/events.json
+let personEvents = new Map();
+
+// 走 core 的带缓存加载；core 缺失时回退普通 fetch
+async function loadDataFile(path) {
+  if (window.Tavern && Tavern.loadJSON) return Tavern.loadJSON(path);
+  const response = await fetch(path);
+  if (!response.ok) throw new Error('网络请求失败');
+  return response.json();
+}
+
+function buildEventsByPerson(data) {
+  personEvents = new Map();
+  const list = data && Array.isArray(data.events) ? data.events : [];
+  list.forEach(ev => {
+    (Array.isArray(ev.people) ? ev.people : []).forEach(name => {
+      if (!personEvents.has(name)) personEvents.set(name, []);
+      personEvents.get(name).push(ev);
+    });
+  });
+  personEvents.forEach(arr => arr.sort((a, b) => new Date(a.date) - new Date(b.date)));
+}
 
 async function loadPeople() {
   try {
-    const response = await fetch('../data/people.json');
-    if (!response.ok) throw new Error('网络请求失败');
-    people = await response.json();
+    // 人物与时间线并行加载；事件失败不阻塞档案渲染（按空处理）
+    const [peopleData, eventsData] = await Promise.all([
+      loadDataFile('../data/people.json'),
+      loadDataFile('../data/events.json').catch(() => [])
+    ]);
+    people = peopleData;
+    buildEventsByPerson(eventsData);
     people.sort((a, b) => {
       const archiveA = getArchiveNumber(a.name);
       const archiveB = getArchiveNumber(b.name);
@@ -1020,6 +1101,7 @@ function getArchiveNumber(name) {
 
 async function loadChangelog() {
   try {
+    if (window.Tavern && Tavern.loadJSON) return await Tavern.loadJSON('../data/update_log.json');
     const response = await fetch('../data/update_log.json');
     if (!response.ok) throw new Error('日志加载失败');
     return await response.json();
@@ -1027,6 +1109,31 @@ async function loadChangelog() {
     return null;
   }
 }
+
+// 📖 今日手记横幅（与封面同一天同一篇；加载失败则不渲染）
+(async function initTodayNote() {
+  if (!window.Tavern || !Tavern.loadJSON) return;
+  try {
+    const notes = await Tavern.loadJSON('../data/notes.json');
+    if (!Array.isArray(notes) || !notes.length) return;
+    const note = notes[Tavern.todaysDrinkIndex(notes.length)];
+    const banner = document.getElementById('today-note-banner');
+    if (!banner || !note || !note.text) return;
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text == null ? '' : String(text);
+      return div.innerHTML;
+    }
+    let html = escapeHtml(note.text);
+    (note.person || []).forEach(function (name) {
+      const safe = escapeHtml(name);
+      html = html.split(safe).join('<a class="tavern-person-link" href="?name=' + encodeURIComponent(name) + '">' + safe + '</a>');
+    });
+    banner.querySelector('.note-text').innerHTML = html;
+    banner.style.display = '';
+    Tavern.track('notesRead');
+  } catch (e) { /* 手记加载失败：整条横幅不渲染 */ }
+})();
 
 async function renderChangelog() {
   const log = await loadChangelog();
@@ -1134,6 +1241,12 @@ function getCharacterQuote(person) {
   };
 }
 
+// 时间线事件卡片用的短日期：MM/DD
+function shortEventDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function card(person, index) {
   const image = `${CHARACTER_ROOT}${encodeURI(person.file)}`;
   const portraitSrc = person.portrait ? `${ID_ROOT}${encodeURI(person.portrait)}` : '';
@@ -1165,6 +1278,20 @@ function card(person, index) {
       ${noteActions}
     </div>`;
 
+  // 🕰️ 相关记录（来自时间线 events.json 的反向联动，无事件则不渲染）
+  const evs = personEvents.get(person.name) || [];
+  const timelineURL = `../timeline/?name=${encodeURIComponent(person.name)}`;
+  const personEventsBlock = evs.length ? `
+          <div class="section full person-events">
+            <h3>🕰️ 相关记录</h3>
+            ${evs.slice(0, 3).map(ev => `
+              <a class="pe-item" href="${timelineURL}">
+                <span class="pe-date">${shortEventDate(ev.date)}</span>
+                <span class="pe-title">${esc(ev.title)}</span>
+              </a>`).join('')}
+            ${evs.length > 3 ? `<a class="pe-all" href="${timelineURL}">全部 ${evs.length} 条 →</a>` : ''}
+          </div>` : '';
+
   return `<article class="card" data-text="${esc(Object.values(person).join(' '))}" data-seat="${esc(person.seat)}" data-name="${esc(person.name)}" style="animation-delay:${index * 40}ms">
     <div class="card-inner">
       <!-- 正面 -->
@@ -1191,6 +1318,7 @@ function card(person, index) {
           <p class="intro">${esc(person.intro)}</p>
           <div class="sections">${renderSections(person)}</div>
           ${background}
+          ${personEventsBlock}
           <a class="source" href="${image}" target="_blank" rel="noreferrer">查看原始卡片 ↗</a>
         </div>
         <!-- 翻转提示 -->
@@ -1402,8 +1530,14 @@ noteModal.addEventListener('click', event => {
 });
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
+  // 关系网开启且处于聚焦态时，第一次 Esc 只退出聚焦
+  if (document.getElementById('graphModal').classList.contains('open') && focusedNodeId) {
+    setGraphFocus(null);
+    return;
+  }
   noteModal.classList.remove('open');
   document.getElementById('graphModal').classList.remove('open');
+  focusedNodeId = null;
   if (window.Tavern) Tavern.closeFragment();
   closeCarousel();
 });
@@ -1443,9 +1577,16 @@ let downY = 0;
 let dragStartX = 0;
 let dragStartY = 0;
 let hoveredNode = null;
+let focusedNodeId = null; // 关系网聚焦态的中心人物 id，null = 全图
 let draggingNode = null;
 let nodeDragStartX = 0;
 let nodeDragStartY = 0;
+
+// 节点半径与箭头尺寸（图坐标，随画布缩放一起变化）
+const GRAPH_NODE_R = 22;
+const GRAPH_NODE_R_HOVER = 28;
+const GRAPH_ARROW_LEN = 12;
+const GRAPH_ARROW_HALF = 5.5;
 
 function normalizeName(raw) {
   const name = String(raw).replace(/^([^（(]+)/, '$1').trim();
@@ -1483,25 +1624,62 @@ function buildGraph() {
     });
   });
 
-  // 从 links 字段创建边
+  // 有向对集合：判断一条边是双向（双方互相写回）还是单向
+  const directed = new Set();
+  validPeople.forEach(p => {
+    if (!Array.isArray(p.links)) return;
+    p.links.forEach(target => {
+      if (nodeMap.has(target) && target !== p.name) directed.add(`${p.name}|${target}`);
+    });
+  });
+
+  // 从 links 字段创建边（按名字排序去重成一条）
+  const seenPairs = new Set();
   validPeople.forEach(p => {
     // 如果 links 不存在或不是数组，跳过
     if (!p.links || !Array.isArray(p.links) || p.links.length === 0) return;
 
     p.links.forEach(target => {
       // 只保留 nodeMap 里真实存在的名字，且不能是自己
-      if (nodeMap.has(target) && target !== p.name) {
-        const key = [p.name, target].sort().join('|');
-        // 避免重复边
-        if (!edges.some(e => e.key === key)) {
-          edges.push({
-            source: p.name,
-            target: target,
-            key: key
-          });
-        }
-      }
+      if (!nodeMap.has(target) || target === p.name) return;
+      const key = [p.name, target].sort().join('|');
+      if (seenPairs.has(key)) return; // 避免重复边
+      seenPairs.add(key);
+
+      // source/target 固定为排序后的顺序（力导向布局用）；
+      // from/to 记录真实指向，仅单向边画箭头时使用
+      const pair = [p.name, target].sort();
+      const forward = directed.has(`${pair[0]}|${pair[1]}`);
+      const backward = directed.has(`${pair[1]}|${pair[0]}`);
+      edges.push({
+        key: key,
+        source: pair[0],
+        target: pair[1],
+        oneWay: !(forward && backward),
+        from: forward ? pair[0] : pair[1],
+        to: forward ? pair[1] : pair[0]
+      });
     });
+  });
+
+  // relations 边标签：按 key（名字排序）记录双方视角；两边都填则「甲 / 乙」
+  const relSides = new Map();
+  validPeople.forEach(p => {
+    if (!Array.isArray(p.relations)) return;
+    p.relations.forEach(rel => {
+      if (!rel || !rel.name || !rel.label || rel.name === p.name) return;
+      if (!nodeMap.has(rel.name)) return; // 不在花名册/links 无法成边，忽略（交给校验脚本）
+      const pair = [p.name, rel.name].sort();
+      const key = pair.join('|');
+      const sides = relSides.get(key) || {};
+      sides[pair[0] === p.name ? 'a' : 'b'] = String(rel.label);
+      relSides.set(key, sides);
+    });
+  });
+  edges.forEach(edge => {
+    const sides = relSides.get(edge.key);
+    if (!sides) return;
+    edge.label = (sides.a && sides.b) ? `${sides.a} / ${sides.b}` : (sides.a || sides.b);
   });
 
   graphNodes = Array.from(nodeMap.values());
@@ -1535,8 +1713,10 @@ function layoutGraph(iterations = 150) {
     return;
   }
 
-  const repulsion = spread * 0.38;
-  const attraction = 0.01;
+  // 斥力随画布缩放；吸引与向心大幅减弱，避免节点被拉成一团、连线互相压住
+  const repulsion = spread * 1.4;
+  const attraction = 0.0004;
+  const centerGravity = 0.5 / spread;
   const damping = 0.85;
   const maxSpeed = 4;
 
@@ -1569,8 +1749,8 @@ function layoutGraph(iterations = 150) {
     });
 
     nodes.forEach(n => {
-      n.vx += (centerX - n.x) * 0.002;
-      n.vy += (centerY - n.y) * 0.002;
+      n.vx += (centerX - n.x) * centerGravity;
+      n.vy += (centerY - n.y) * centerGravity;
       const speed = Math.sqrt(n.vx * n.vx + n.vy * n.vy);
       if (speed > maxSpeed) {
         n.vx = (n.vx / speed) * maxSpeed;
@@ -1582,6 +1762,74 @@ function layoutGraph(iterations = 150) {
       n.vy *= damping;
     });
   }
+}
+
+// 边中点关系标签：深褐底金字药丸，沿线垂直方向微移 7px，尺寸随缩放补偿
+function drawEdgeLabel(ctx, a, b, label, lw) {
+  const mx = (a.x + b.x) / 2;
+  const my = (a.y + b.y) / 2;
+  let dx = b.x - a.x;
+  let dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  dx /= len;
+  dy /= len;
+  const ox = -dy * 7 * lw;
+  const oy = dx * 7 * lw;
+  const fs = 11 * lw;
+  ctx.font = `${fs}px "Noto Serif SC",serif`;
+  const w = ctx.measureText(label).width + 12 * lw;
+  const h = 17 * lw;
+  const x = mx + ox - w / 2;
+  const y = my + oy - h / 2;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, 8 * lw);
+  else ctx.rect(x, y, w, h);
+  ctx.fillStyle = 'rgba(20,15,12,.92)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(214,168,93,.55)';
+  ctx.lineWidth = lw;
+  ctx.stroke();
+  ctx.fillStyle = '#d6a85d';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, mx + ox, my + oy + 0.5 * lw);
+}
+
+// 单向边的箭头几何：尖端尽量贴住目标节点边缘，两点过近时按间距收缩
+function edgeArrowGeometry(from, to, targetRadius) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  // 尖端到目标圆心的距离：优先贴节点边缘，两点很近时不越过中点
+  const tipDist = Math.min(targetRadius + 2, len * 0.55);
+  // 箭头长度不超过剩余空隙，保证整支箭头都落在两点之间
+  const arrowLen = Math.max(5, Math.min(GRAPH_ARROW_LEN, len - tipDist));
+  const tipX = to.x - ux * tipDist;
+  const tipY = to.y - uy * tipDist;
+  return {
+    tipX: tipX,
+    tipY: tipY,
+    baseX: tipX - ux * arrowLen,
+    baseY: tipY - uy * arrowLen,
+    nx: -uy,
+    ny: ux,
+    // 空隙太小时只留箭头，不画线
+    hasLine: len - (tipDist + arrowLen) > 1.5
+  };
+}
+
+// 箭头填充：与连线同色系，透明度跟随聚焦/悬停联动
+function drawEdgeArrow(ctx, arrow, alpha) {
+  ctx.beginPath();
+  ctx.moveTo(arrow.tipX, arrow.tipY);
+  ctx.lineTo(arrow.baseX + arrow.nx * GRAPH_ARROW_HALF, arrow.baseY + arrow.ny * GRAPH_ARROW_HALF);
+  ctx.lineTo(arrow.baseX - arrow.nx * GRAPH_ARROW_HALF, arrow.baseY - arrow.ny * GRAPH_ARROW_HALF);
+  ctx.closePath();
+  // 按比例提亮（箭头面积小，需要比线略明显），淡化时同步变暗
+  ctx.fillStyle = `rgba(143, 57, 68, ${Math.min(1, alpha * 1.35)})`;
+  ctx.fill();
 }
 
 function drawGraph() {
@@ -1605,28 +1853,61 @@ function drawGraph() {
   ctx.scale(graphScale, graphScale);
   const lw = 1 / graphScale;
 
+  // 聚焦态：中心人物与其一跳邻居正常绘制，其余淡化
+  const focusId = focusedNodeId;
+  const neighborIds = new Set();
+  if (focusId) {
+    neighborIds.add(focusId);
+    edges.forEach(edge => {
+      if (edge.source === focusId) neighborIds.add(edge.target);
+      if (edge.target === focusId) neighborIds.add(edge.source);
+    });
+  }
+
+  const pendingArrows = []; // 单向箭头，节点画完后再叠加
   edges.forEach(edge => {
     const a = nodeMap.get(edge.source);
     const b = nodeMap.get(edge.target);
     if (!a || !b) return;
     const isHovered = hoveredNode && (hoveredNode.id === a.id || hoveredNode.id === b.id);
-    const alpha = isHovered ? 0.9 : 0.35;
+    const inFocus = !focusId || edge.source === focusId || edge.target === focusId;
+    const alpha = focusId ? (inFocus ? 0.9 : 0.06) : (isHovered ? 0.9 : 0.35);
+    const strong = (focusId && inFocus) || (!focusId && isHovered);
 
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.strokeStyle = `rgba(143, 57, 68, ${alpha})`;
-    ctx.lineWidth = (isHovered ? 2.5 : 1.2) * lw;
-    ctx.shadowColor = isHovered ? 'rgba(214,168,93,0.3)' : 'transparent';
-    ctx.shadowBlur = isHovered ? 12 : 0;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
+    // 双向边：圆心连圆心；单向边：线止于箭头根部，由箭头指向目标
+    const from = edge.oneWay ? (nodeMap.get(edge.from) || a) : a;
+    const to = edge.oneWay ? (nodeMap.get(edge.to) || b) : b;
+    const arrow = edge.oneWay
+      ? edgeArrowGeometry(from, to, hoveredNode && hoveredNode.id === to.id ? GRAPH_NODE_R_HOVER : GRAPH_NODE_R)
+      : null;
+    const lineEnd = arrow ? (arrow.hasLine ? { x: arrow.baseX, y: arrow.baseY } : null) : b;
+
+    if (lineEnd) {
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(lineEnd.x, lineEnd.y);
+      ctx.strokeStyle = `rgba(143, 57, 68, ${alpha})`;
+      ctx.lineWidth = (strong ? 2.5 : 1.2) * lw;
+      ctx.shadowColor = (!focusId && isHovered) ? 'rgba(214,168,93,0.3)' : 'transparent';
+      ctx.shadowBlur = (!focusId && isHovered) ? 12 : 0;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // 箭头延后到节点之后绘制，节点密集时也不会被圆点盖住
+    if (arrow) pendingArrows.push({ arrow: arrow, alpha: alpha });
+
+    if (edge.label && inFocus) drawEdgeLabel(ctx, a, b, edge.label, lw);
   });
 
   nodes.forEach(node => {
     const isHovered = hoveredNode && hoveredNode.id === node.id;
-    const radius = isHovered ? 28 : 22;
+    const dimmed = !!focusId && !neighborIds.has(node.id);
+    const radius = isHovered ? GRAPH_NODE_R_HOVER : GRAPH_NODE_R;
     const glow = isHovered ? 30 : 0;
+
+    ctx.save();
+    if (dimmed) ctx.globalAlpha = 0.12;
 
     if (glow > 0) {
       const glowGrad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glow);
@@ -1668,6 +1949,7 @@ function drawGraph() {
     ctx.shadowBlur = 2;
     ctx.fillText(node.label, node.x, node.y + 1);
     ctx.shadowBlur = 0;
+    ctx.restore();
   });
 
   if (nodes.length <= 1) {
@@ -1677,6 +1959,10 @@ function drawGraph() {
     ctx.textBaseline = 'middle';
     ctx.fillText('暂无足够的关系数据', graphW / 2, graphH / 2);
   }
+
+  // 单向箭头最后画：压在节点之上，密集时也不会被圆点遮住
+  pendingArrows.forEach(item => drawEdgeArrow(ctx, item.arrow, item.alpha));
+
   ctx.restore();
 }
 
@@ -1709,6 +1995,7 @@ function openGraph() {
   graphOffsetY = 0;
   hoveredNode = null;
   draggingNode = null;
+  setGraphFocus(null);
   buildGraph();
   layoutGraph(150);
   drawGraph();
@@ -1717,6 +2004,35 @@ function openGraph() {
 function closeGraph() {
   document.getElementById('graphModal').classList.remove('open');
   hoveredNode = null;
+  setGraphFocus(null);
+}
+
+// 聚焦子图：node=null 返回全图
+function setGraphFocus(node) {
+  focusedNodeId = node ? node.id : null;
+  const bar = document.getElementById('graphFocusBar');
+  if (node) {
+    document.getElementById('graphFocusName').textContent = node.label;
+    bar.classList.add('show');
+  } else {
+    bar.classList.remove('show');
+  }
+  // 打开关系网流程中会在 buildGraph 之前重置一次，那时无需重绘
+  if (document.getElementById('graphModal').classList.contains('open')) drawGraph();
+}
+
+// 跳转到档案卡（原单击节点行为，现供双击/工具条使用）
+function graphJumpToCard(node) {
+  if (!node) return;
+  closeGraph();
+  setTimeout(() => {
+    const card = document.querySelector(`.card[data-name="${CSS.escape(node.id)}"]`);
+    if (!card) return;
+    document.querySelectorAll('.card.highlight').forEach(c => c.classList.remove('highlight'));
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.add('highlight');
+    setTimeout(() => card.classList.remove('highlight'), 2000);
+  }, 350);
 }
 
 function graphMousePos(e) {
@@ -1751,15 +2067,14 @@ function handleGraphClick(e) {
   if (graphDragMoved) return;
   const node = graphNodeAt(graphMousePos(e));
   if (!node) return;
-  closeGraph();
-  setTimeout(() => {
-    const card = document.querySelector(`.card[data-name="${CSS.escape(node.id)}"]`);
-    if (!card) return;
-    document.querySelectorAll('.card.highlight').forEach(c => c.classList.remove('highlight'));
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    card.classList.add('highlight');
-    setTimeout(() => card.classList.remove('highlight'), 2000);
-  }, 350);
+  // 单击：点中心人物退出聚焦，点其他人切换聚焦
+  setGraphFocus(focusedNodeId === node.id ? null : node);
+}
+
+function handleGraphDblClick(e) {
+  if (graphDragMoved) return;
+  const node = graphNodeAt(graphMousePos(e));
+  if (node) graphJumpToCard(node);
 }
 
 const graphCanvas = document.getElementById('graphCanvas');
@@ -1831,9 +2146,15 @@ graphCanvas.addEventListener('mouseleave', () => {
   }
 });
 graphCanvas.addEventListener('click', handleGraphClick);
+graphCanvas.addEventListener('dblclick', handleGraphDblClick);
 
 document.getElementById('graphBtn').addEventListener('click', openGraph);
 document.getElementById('graphClose').addEventListener('click', closeGraph);
+document.getElementById('graphFocusJump').addEventListener('click', () => {
+  const node = graphNodes.find(n => n.id === focusedNodeId);
+  if (node) graphJumpToCard(node);
+});
+document.getElementById('graphFocusClear').addEventListener('click', () => setGraphFocus(null));
 document.getElementById('graphModal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeGraph();
 });
@@ -1960,6 +2281,7 @@ function openBook() {
   bookTurning = false;
   document.getElementById('bookReader').classList.add('open');
   document.body.style.overflow = 'hidden';
+  document.getElementById('bookReader').focus({ preventScroll: true });
   document.querySelector('.book-hint').textContent =
     isTouchDevice ? '左右滑动翻页 · 点击卡片翻转' : '点击边缘/左右滑动翻页 · 方向键 · 点击卡片翻转';
   renderBook();
@@ -2101,7 +2423,48 @@ const FALLBACK_SPECIALS = [
   "旅者之憩麦酒",
   "午夜玫瑰红酒",
   "铜壶威士忌",
-  "琥珀蜜酒"
+  "琥珀蜜酒",
+  "莫吉托",
+  "四海为家",
+  "椰林飘香",
+  "玛格丽特",
+  "血腥玛丽",
+  "新加坡司令",
+  "杰克玫瑰",
+  "艾雷岛单一麦芽",
+  "斯佩塞单一麦芽",
+  "比利时白啤",
+  "捷克皮尔森",
+  "爱尔兰世涛",
+  "赤霞珠",
+  "黑皮诺",
+  "长相思",
+  "雷司令",
+  "白色龙舌兰",
+  "黑色朗姆酒",
+  "伦敦干金酒",
+  "生命之水",
+  "干邑",
+  "大吟酿",
+  "芋烧酒",
+  "绍兴加饭酒",
+  "伪电气白兰",
+  "万艳同杯",
+  "千日酒",
+  "醉生梦死",
+  "永生之酒",
+  "咯咯酒",
+  "核子私酿",
+  "月光酒",
+  "阿斯彭啤酒",
+  "苏摩酒",
+  "玉膏",
+  "黑麦威士忌",
+  "泥煤怪兽",
+  "浑浊IPA",
+  "意大利苦味利口酒",
+  "野牛草伏特加",
+  "泡盛"
 ];
 
 // 基于日期取模，每天固定一款
@@ -2204,16 +2567,33 @@ function getFragments() {
   ];
 }
 
+// 故事碎片池（data/fragments.json，收集进度与封面共享，存于 tavern_state）
+let storyPool = [];
+if (window.Tavern && Tavern.loadJSON) {
+  Tavern.loadJSON('../data/fragments.json').then(function (d) {
+    storyPool = d && Array.isArray(d.story) ? d.story : [];
+  }).catch(function () { storyPool = []; });
+}
+
 // 显示随机碎片（弹窗由 tavern-core 统一提供）
 function showRandomFragment() {
-  const fragments = getFragments();
-  if (fragments.length === 0) {
-    if (window.Tavern) Tavern.openFragment({ text: '暂无碎片可显示。', source: '档案室' });
+  if (!window.Tavern) return;
+  Tavern.track('fragment');
+  // 保底：每累计抽 3 次必出下一枚未收集的故事碎片
+  const got = Tavern.getStoryFragments();
+  const next = storyPool.find(s => got.indexOf(s.id) === -1);
+  if (next && Tavern.getMetrics().fragmentsDrawn % 3 === 0) {
+    Tavern.track('storyFragment', { id: next.id });
+    const n = Tavern.getStoryFragments().length;
+    Tavern.openFragment({ text: next.text, source: '故事碎片 ' + n + '/' + storyPool.length, special: true });
     return;
   }
-  if (window.Tavern) Tavern.track('fragment');
-  const fragment = fragments[Math.floor(Math.random() * fragments.length)];
-  if (window.Tavern) Tavern.openFragment(fragment);
+  const fragments = getFragments();
+  if (fragments.length === 0) {
+    Tavern.openFragment({ text: '暂无碎片可显示。', source: '档案室' });
+    return;
+  }
+  Tavern.openFragment(fragments[Math.floor(Math.random() * fragments.length)]);
 }
 
 document.getElementById('fragment-trigger').addEventListener('click', showRandomFragment);

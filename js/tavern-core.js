@@ -11,6 +11,15 @@
 (function () {
   'use strict';
 
+  /* 站点版本号：从本文件 <script> 标签的 ?v= 参数解析（唯一来源见 data/update_log.json） */
+  var CORE_VERSION = (function () {
+    try {
+      var src = (document.currentScript && document.currentScript.src) || '';
+      var m = src.match(/[?&]v=([^&]+)/);
+      return m ? decodeURIComponent(m[1]) : '';
+    } catch (e) { return ''; }
+  })();
+
   var STATE_KEY = 'tavern_state_v1';
   var BORROW_KEY = 'tavern_borrow_log';
   var FAV_KEY = 'tavern_favorites';
@@ -58,9 +67,16 @@
       flags: { lateNightVisit: false, newYearVisit: false, sawBlankCard: false },
       counters: {
         cardFlips: 0, lightboxViews: 0, networkOpens: 0, bookReads: 0,
-        diceUses: 0, fragmentsDrawn: 0, menuViews: 0, favoritesAdded: 0
+        diceUses: 0, fragmentsDrawn: 0, menuViews: 0, favoritesAdded: 0,
+        notesRead: 0,
+        mixes: 0, diceRolls: 0, encounters: 0, gambleWins: 0
       },
       peopleViewed: [],
+      storyFragments: [],
+      drinkTotal: 0,
+      mixLog: [],
+      hiddenRecipes: [],
+      gambleStreak: 0,
       unlocked: {}
     };
   }
@@ -100,9 +116,10 @@
   }
 
   function calcMetrics() {
+    var drinkTotal = state.drinkTotal || DRINK_COUNT;
     var tastedSet = Object.create(null);
     state.tastedDates.forEach(function (ds) {
-      tastedSet[dayOfYear(parseDate(ds)) % DRINK_COUNT] = true;
+      tastedSet[dayOfYear(parseDate(ds)) % drinkTotal] = true;
     });
     var people = state.peopleViewed.filter(function (n) { return n && n !== '？？？'; });
     return {
@@ -122,7 +139,15 @@
       tastingStreak: calcStreak(state.tastedDates),
       drinksTasted: Object.keys(tastedSet).length,
       borrows: readJsonArray(BORROW_KEY).length,
-      sawBlankCard: !!state.flags.sawBlankCard
+      notesRead: state.counters.notesRead,
+      storyFragments: (state.storyFragments || []).length,
+      sawBlankCard: !!state.flags.sawBlankCard,
+      mixes: state.counters.mixes,
+      hiddenRecipes: (state.hiddenRecipes || []).length,
+      diceRolls: state.counters.diceRolls,
+      encounters: state.counters.encounters,
+      gambleWins: state.counters.gambleWins,
+      gambleStreak: state.gambleStreak || 0
     };
   }
 
@@ -215,14 +240,32 @@
       case 'book': state.counters.bookReads++; break;
       case 'dice': state.counters.diceUses++; break;
       case 'fragment': state.counters.fragmentsDrawn++; break;
+      case 'notesRead': state.counters.notesRead++; break;
+      case 'storyFragment':
+        if (data.id && state.storyFragments.indexOf(data.id) === -1) state.storyFragments.push(data.id);
+        break;
       case 'menuview': state.counters.menuViews++; break;
       case 'favorite': state.counters.favoritesAdded++; break;
       case 'tasting':
+        if (data.total > state.drinkTotal) state.drinkTotal = data.total;
         if (state.tastedDates.indexOf(today) === -1) state.tastedDates.push(today);
         break;
       case 'borrow':
         /* 借阅指标直接读 tavern_borrow_log，无需计数 */
         break;
+      case 'mix':
+        state.counters.mixes++;
+        if (data.hidden && state.hiddenRecipes.indexOf(data.hidden) === -1) {
+          state.hiddenRecipes.push(data.hidden);
+        }
+        break;
+      case 'diceRoll': state.counters.diceRolls++; break;
+      case 'encounter': state.counters.encounters++; break;
+      case 'gambleWin':
+        state.counters.gambleWins++;
+        state.gambleStreak = (state.gambleStreak || 0) + 1;
+        break;
+      case 'gambleLose': state.gambleStreak = 0; break;
       default: break;
     }
     saveState();
@@ -232,7 +275,9 @@
   /* ---------- 带缓存的 JSON 加载（同页只请求一次） ---------- */
   function loadJSON(path) {
     if (jsonCache[path]) return jsonCache[path];
-    jsonCache[path] = fetch(path)
+    var url = path;
+    if (CORE_VERSION) url += (path.indexOf('?') === -1 ? '?' : '&') + 'v=' + CORE_VERSION;
+    jsonCache[path] = fetch(url)
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .catch(function (e) { delete jsonCache[path]; throw e; });
     return jsonCache[path];
@@ -244,7 +289,7 @@
     fragOverlay = document.createElement('div');
     fragOverlay.className = 'tavern-frag-overlay';
     fragOverlay.innerHTML =
-      '<div class="tavern-frag-card" role="dialog" aria-modal="true">' +
+      '<div class="tavern-frag-card" role="dialog" aria-modal="true" aria-label="随机碎片">' +
       '<div class="tavern-frag-rule"></div>' +
       '<div class="tavern-frag-source"></div>' +
       '<div class="tavern-frag-text"></div>' +
@@ -263,6 +308,7 @@
     ensureFragDom();
     fragOverlay.querySelector('.tavern-frag-text').textContent = fragment.text || '……';
     fragOverlay.querySelector('.tavern-frag-source').textContent = '✦ ' + (fragment.source || '档案碎片');
+    fragOverlay.querySelector('.tavern-frag-card').classList.toggle('special', !!fragment.special);
     fragOverlay.classList.add('open');
   }
   function closeFragment() {
@@ -328,8 +374,18 @@
     loadJSON: loadJSON,
     openFragment: openFragment,
     closeFragment: closeFragment,
+    v: CORE_VERSION,
+    getStoryFragments: function () { if (!state) loadState(); return (state.storyFragments || []).slice(); },
     getMetrics: function () { if (!state) loadState(); return calcMetrics(); },
     getAchievements: getAchievements,
+    getMixLog: function () { if (!state) loadState(); return (state.mixLog || []).slice(); },
+    getHiddenRecipes: function () { if (!state) loadState(); return (state.hiddenRecipes || []).slice(); },
+    pushMixLog: function (entry) {
+      if (!state) loadState();
+      state.mixLog.unshift({ d: entry.d, n: entry.n, h: entry.h });
+      if (state.mixLog.length > 100) state.mixLog.length = 100;
+      saveState();
+    },
     todaysDrinkIndex: todaysDrinkIndex,
     hasTastedToday: hasTastedToday,
     tastedDrinkIndices: tastedDrinkIndices

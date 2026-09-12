@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>16号螺旋酒馆 · 时间线</title>
-    <link rel="stylesheet" href="../css/tavern.css">
+    <link rel="stylesheet" href="../css/tavern.css?v=v2.3.0">
     <style>
         /* 颜色变量/重置/滚动条见 ../css/tavern.css */
         body {
@@ -128,6 +128,60 @@
             letter-spacing: 0.04em;
         }
 
+        /* 事件关联人物 */
+        .event .people {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 14px;
+            font-size: 12px;
+        }
+        .event .people .person-link {
+            color: var(--gold);
+            text-decoration: none;
+            border-bottom: 1px dotted rgba(214,168,93,.5);
+            padding-bottom: 1px;
+            transition: 0.25s;
+        }
+        .event .people .person-link:hover {
+            text-shadow: 0 0 8px rgba(214,168,93,.45);
+            border-bottom-color: var(--gold);
+        }
+        .event .people .person-unknown {
+            color: var(--muted);
+            opacity: 0.65;
+        }
+
+        /* 人物筛选 */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: -18px 0 30px;
+        }
+        .filter-bar .chip {
+            font-family: inherit;
+            font-size: 12px;
+            letter-spacing: 0.04em;
+            padding: 4px 14px;
+            border-radius: 14px;
+            cursor: pointer;
+            color: var(--muted);
+            background: rgba(26,21,19,.6);
+            border: 1px solid rgba(90,72,59,.45);
+            transition: 0.25s;
+        }
+        .filter-bar .chip:hover {
+            color: var(--gold);
+            border-color: rgba(214,168,93,.5);
+        }
+        .filter-bar .chip.active {
+            color: #1a1513;
+            background: var(--gold);
+            border-color: var(--gold);
+            font-weight: 700;
+        }
+
         /* 空状态 */
         .empty-timeline {
             text-align: center;
@@ -169,6 +223,9 @@
         <a class="back" href="../">← 返回酒馆</a>
     </div>
 
+    <!-- 人物筛选 -->
+    <div class="filter-bar" id="filterBar"></div>
+
     <!-- 时间线 -->
     <div class="timeline" id="timeline">
         <!-- 由 JavaScript 动态渲染 -->
@@ -179,13 +236,14 @@
         <a class="foot-link" href="../">档案袋</a>
         <a class="foot-link" href="../drinker/">旅客档案</a>
         <a class="foot-link" href="../menu/">🍺 酒单</a>
+        <a class="foot-link" href="../bar/">🍸 吧台</a>
         <a class="foot-link" href="../achievements/">🏆 成就</a>
         <span>🕰️ 时间线</span>
         <a class="foot-link" href="../map/">🗺️ 地图</a>
     </div>
 </div>
 
-<script src="../js/tavern-core.js"></script>
+<script src="../js/tavern-core.js?v=v2.3.0"></script>
 <script>
     // 到访统计 + 成就系统
     if (window.Tavern) Tavern.init('..');
@@ -193,53 +251,28 @@
 
 <script>
     // ============================================
-    // 📅 时间线数据（手动维护）
+    // 📅 数据：事件来自 data/events.json，花名册来自 data/people.json
     // ============================================
 
-    const events = [
-        {
-            date: "2026-08-15",
-            title: "酒馆开门",
-            desc: "16号螺旋酒馆在迷雾中第一次亮起灯火。第一个推开门的旅客是举。",
-            tags: ["酒馆", "开业"]
-        },
-        {
-            date: "2026-08-17",
-            title: "初璃到来",
-            desc: "初璃被带进酒馆，带着行李和一封信。她在角落坐了很久才开口说话。",
-            tags: ["旅客", "初璃"]
-        },
-        {
-            date: "2026-08-19",
-            title: "举的第一次委托",
-            desc: "举接下了酒馆的第一份委托，出发前在吧台上留了一枚硬币。",
-            tags: ["委托", "举"]
-        },
-        {
-            date: "2026-08-22",
-            title: "泠钰的档案归档",
-            desc: "泠钰的档案完成录入，编号 TAV-003。备注栏写着：‘注意：此人在酒馆内有多个化名。’",
-            tags: ["档案", "泠钰"]
-        },
-        {
-            date: "2026-08-24",
-            title: "荒泊与白鸢的相遇",
-            desc: "荒泊在酒馆门口捡到了白鸢。他把它带进酒馆，放在壁炉边。",
-            tags: ["旅客", "荒泊", "白鸢"]
-        },
-        {
-            date: "2026-08-26",
-            title: "第一次满座",
-            desc: "酒馆第一次坐满了人。吧台上摆了十六只杯子，每一只都空了。",
-            tags: ["酒馆", "满座"]
-        },
-        {
-            date: "2026-08-27",
-            title: "档案室扩建",
-            desc: "档案室新增了三个文件柜，用于存放旅客的原始卡片。",
-            tags: ["档案", "扩建"]
+    const loadJSON = (window.Tavern && Tavern.loadJSON) ||
+        (p => fetch(p).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }));
+
+    let events = [];        // 全部事件
+    let roster = new Set(); // 花名册（用于判断人名是否可点 / chips 排序）
+    let personOrder = [];   // 花名册顺序（people.json 顺序即档案编号序）
+    let activeName = null;  // 当前筛选人物，null = 全部
+
+    function eventPersonNames(event) {
+        return Array.isArray(event.people) ? event.people : [];
+    }
+
+    function personHTML(name) {
+        if (roster.has(name)) {
+            return `<a class="person-link" href="../drinker/?name=${encodeURIComponent(name)}">${escapeHtml(name)}</a>`;
         }
-    ];
+        // 未登记人名：灰色不可点（数据错误应由校验脚本发现）
+        return `<span class="person-unknown">${escapeHtml(name)}</span>`;
+    }
 
     // ============================================
     // 📜 渲染时间线
@@ -247,8 +280,11 @@
 
     function renderTimeline() {
         const container = document.getElementById('timeline');
+        const list = events
+            .filter(e => !activeName || eventPersonNames(e).includes(activeName))
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        if (events.length === 0) {
+        if (list.length === 0) {
             container.innerHTML = `
                 <div class="empty-timeline">
                     <div style="font-size:32px;margin-bottom:12px;">📭</div>
@@ -259,14 +295,14 @@
             return;
         }
 
-        // 按日期排序（从旧到新）
-        const sorted = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-        container.innerHTML = sorted.map(event => `
+        container.innerHTML = list.map(event => `
             <div class="event">
                 <div class="date">${formatDate(event.date)}</div>
                 <div class="title">${escapeHtml(event.title)}</div>
                 <div class="desc">${escapeHtml(event.desc)}</div>
+                ${eventPersonNames(event).length > 0 ? `
+                    <div class="people">${eventPersonNames(event).map(personHTML).join('')}</div>
+                ` : ''}
                 ${event.tags && event.tags.length > 0 ? `
                     <div class="tags">
                         ${event.tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}
@@ -275,6 +311,37 @@
             </div>
         `).join('');
     }
+
+    // ============================================
+    // 🔎 人物筛选（chips + ?name= 同步）
+    // ============================================
+
+    function renderFilterBar() {
+        const used = new Set();
+        events.forEach(e => eventPersonNames(e).forEach(n => used.add(n)));
+        if (used.size === 0) { document.getElementById('filterBar').innerHTML = ''; return; }
+        // 已登记人物按花名册顺序，未登记的排末尾
+        const names = [
+            ...personOrder.filter(n => used.has(n)),
+            ...[...used].filter(n => !roster.has(n)).sort((a, b) => a.localeCompare(b, 'zh'))
+        ];
+        document.getElementById('filterBar').innerHTML = ['全部', ...names].map(n => {
+            const value = n === '全部' ? '' : n;
+            const isActive = (activeName === null ? '全部' : activeName) === n;
+            return `<button type="button" class="chip${isActive ? ' active' : ''}" data-name="${escapeHtml(value)}">${escapeHtml(n)}</button>`;
+        }).join('');
+    }
+
+    document.getElementById('filterBar').addEventListener('click', e => {
+        const btn = e.target.closest('.chip');
+        if (!btn) return;
+        const name = btn.dataset.name || null;
+        if (name === activeName) return;
+        activeName = name;
+        history.replaceState(null, '', name ? `?name=${encodeURIComponent(name)}` : location.pathname);
+        renderFilterBar();
+        renderTimeline();
+    });
 
     function formatDate(dateStr) {
         const d = new Date(dateStr + 'T00:00:00');
@@ -294,7 +361,21 @@
     // 🚀 启动
     // ============================================
 
-    renderTimeline();
+    Promise.all([
+        loadJSON('../data/events.json').then(d => (d && d.events) || []).catch(() => []),
+        loadJSON('../data/people.json').then(d => d || []).catch(() => [])
+    ]).then(([evs, people]) => {
+        events = Array.isArray(evs) ? evs : [];
+        personOrder = Array.isArray(people) ? people.map(p => p.name) : [];
+        roster = new Set(personOrder);
+        // ?name= 预选：名字不存在或无相关事件时静默回落到「全部」
+        const urlName = new URLSearchParams(location.search).get('name');
+        const used = new Set();
+        events.forEach(e => eventPersonNames(e).forEach(n => used.add(n)));
+        activeName = urlName && used.has(urlName) ? urlName : null;
+        renderFilterBar();
+        renderTimeline();
+    });
 </script>
 
 </body>

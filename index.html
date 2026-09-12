@@ -6,7 +6,7 @@
     <meta name="description" content="16号螺旋酒馆 · 旅客档案封面">
     <title>16号螺旋酒馆 · 档案室</title>
 
-    <link rel="stylesheet" href="css/tavern.css">
+    <link rel="stylesheet" href="css/tavern.css?v=v2.3.0">
     <style>
         /* 琥珀金为封面专属强调色，其余颜色变量/滚动条见 css/tavern.css */
         :root { --amber: #e2a653; }
@@ -824,6 +824,17 @@
     </main>
 
     <!-- ============================================
+    📖 今日手记（每日一篇，人物名可跳档案卡）
+    ============================================ -->
+    <div id="today-note" class="tavern-note-card">
+        <div class="note-head">
+            <span class="note-title">📖 今日手记</span>
+            <button id="note-past" class="note-past">往期 ✎</button>
+        </div>
+        <div id="note-text" class="note-text"></div>
+    </div>
+
+    <!-- ============================================
     📚 档案借阅记录
     ============================================ -->
     <div id="borrow-log" style="
@@ -870,37 +881,46 @@
         <div class="wrap" style="display:flex;gap:20px;justify-content:center;align-items:center;flex-wrap:wrap;padding:14px 16px;">
             <span>资料来源：16号螺旋酒馆</span>
             <a href="menu/" class="foot-link">🍺 酒单</a>
+            <a href="bar/" class="foot-link">🍸 吧台</a>
             <a href="achievements/" class="foot-link">🏆 成就</a>
             <a href="timeline/" class="foot-link">🕰️ 时间线</a>
             <a href="map/" class="foot-link">酒馆地图</a>
         </div>
     </footer>
 
-    <!-- 随机碎片触发器 -->
-    <button id="fragment-trigger" style="
+    <!-- 随机碎片触发器 + 碎片集徽标 -->
+    <div id="fragment-dock" style="
         position: fixed;
         bottom: 80px;
         left: 24px;
         z-index: 10;
-        background: rgba(20, 12, 8, 0.65);
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(214, 168, 93, 0.5);
-        color: var(--gold);
-        padding: 10px 14px;
-        border-radius: 30px;
-        cursor: pointer;
-        font-size: 12px;
-        letter-spacing: 0.06em;
-        transition: 0.3s;
-        font-family: inherit;
-    ">📜 随机碎片</button>
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    ">
+        <button id="fragment-trigger" style="
+            background: rgba(20, 12, 8, 0.65);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(214, 168, 93, 0.5);
+            color: var(--gold);
+            padding: 10px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+            letter-spacing: 0.06em;
+            transition: 0.3s;
+            font-family: inherit;
+        ">📜 随机碎片</button>
+        <button id="fragment-collection" class="tavern-frag-badge" style="display:none;" title="查看碎片集">✦ <span id="frag-count">0</span>/6</button>
+    </div>
 
     <!-- 碎片弹窗由 tavern-core.js 统一注入 -->
 
     <!-- ============================================
     📜 JavaScript：点击档案袋切换 .is-open
     ============================================ -->
-    <script src="js/tavern-core.js"></script>
+    <script src="js/tavern-core.js?v=v2.3.0"></script>
     <script>
         // 到访统计 + 成就系统（根目录页 rootPath 传 ''）
         if (window.Tavern) Tavern.init('');
@@ -968,28 +988,187 @@
         document.addEventListener('DOMContentLoaded', displayWelcome);
 
         // ============================================
-        // 📜 随机档案碎片（封面页：通用氛围文案）
+        // 📖 今日手记（data/notes.json，每日一篇）
         // ============================================
-        const fragmentMessages = [
-            { text: "烛火摇曳时，墙上的影子在讲自己的故事。", source: "酒馆的角落" },
-            { text: "每一张档案背后，都有一扇不知通向何处的门。", source: "档案室" },
-            { text: "有人在这里等了很久，却忘了自己在等谁。", source: "吧台" },
-            { text: "窗外的雾散不开，像某些人的记忆。", source: "酒馆的窗" },
+        let notesPool = [];
+        const NOTE_FALLBACK_HTML = '<span class="note-empty">（手记被风吹走了……）</span>';
+
+        function noteToHtml(note, linkBase) {
+            let html = escapeHtml(note.text || '');
+            (note.person || []).forEach(function (name) {
+                const safe = escapeHtml(name);
+                html = html.split(safe).join(
+                    '<a class="tavern-person-link" href="' + linkBase + '?name=' + encodeURIComponent(name) + '">' + safe + '</a>'
+                );
+            });
+            return html;
+        }
+
+        function todayNote() {
+            if (!notesPool.length || !window.Tavern) return null;
+            return notesPool[Tavern.todaysDrinkIndex(notesPool.length)];
+        }
+
+        function renderTodayNote() {
+            const el = document.getElementById('note-text');
+            const note = todayNote();
+            if (!note) { el.innerHTML = NOTE_FALLBACK_HTML; return; }
+            el.innerHTML = noteToHtml(note, 'drinker/index.html');
+            Tavern.track('notesRead');
+        }
+
+        async function loadNotes() {
+            try {
+                const data = await Tavern.loadJSON('data/notes.json');
+                notesPool = Array.isArray(data) ? data : [];
+            } catch (e) {
+                notesPool = [];
+            }
+            renderTodayNote();
+        }
+
+        // 往期手记弹窗
+        function openPastNotes() {
+            let overlay = document.getElementById('note-past-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'note-past-overlay';
+                overlay.className = 'tavern-modal-overlay';
+                overlay.innerHTML =
+                    '<div class="tavern-modal" role="dialog" aria-modal="true" aria-label="往期手记">' +
+                    '<div class="tavern-modal-title"><span>📖 往期手记</span><button class="tavern-modal-close" aria-label="关闭">×</button></div>' +
+                    '<div id="note-past-list"></div>' +
+                    '</div>';
+                document.body.appendChild(overlay);
+                overlay.addEventListener('click', function (e) {
+                    if (e.target === overlay) overlay.classList.remove('open');
+                });
+                overlay.querySelector('.tavern-modal-close').addEventListener('click', function () {
+                    overlay.classList.remove('open');
+                });
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape') overlay.classList.remove('open');
+                });
+            }
+            const today = todayNote();
+            const list = document.getElementById('note-past-list');
+            list.innerHTML = notesPool.map(function (n) {
+                const isToday = today && n === today;
+                const tag = isToday ? '<span class="note-tag">今日</span>' : '';
+                return '<div class="tavern-note-item"><div class="note-text">' + tag + noteToHtml(n, 'drinker/index.html') + '</div></div>';
+            }).join('');
+            overlay.classList.add('open');
+        }
+
+        document.getElementById('note-past').addEventListener('click', function () {
+            if (window.Tavern && notesPool.length) openPastNotes();
+        });
+
+        // ============================================
+        // 📜 随机碎片 + ✦ 故事碎片收集（data/fragments.json）
+        // 规则：每累计抽 3 次，必出下一枚未收集的故事碎片
+        // ============================================
+        let fragPool = [];
+        let storyPool = [];
+        const FRAG_FALLBACK = [
             { text: "麦酒凉了，但故事还是热的。", source: "吧台" },
-            { text: "你听到的每一个名字，都曾是某个世界的中心。", source: "档案室" },
-            { text: "酒馆的墙会说话，只要你安静下来听。", source: "酒馆的墙" },
-            { text: "酒馆的门永远为你敞开。", source: "门牌" },
             { text: "每一杯酒里都泡着一个秘密。", source: "吧台" },
-            { text: "你选择坐下的位置，会决定你听到什么故事。", source: "酒馆的规则" }
+            { text: "酒馆的门永远为你敞开。", source: "门牌" }
         ];
 
+        async function loadFragments() {
+            try {
+                const data = await Tavern.loadJSON('data/fragments.json');
+                fragPool = data && Array.isArray(data.fragments) && data.fragments.length ? data.fragments : FRAG_FALLBACK;
+                storyPool = data && Array.isArray(data.story) ? data.story : [];
+            } catch (e) {
+                fragPool = FRAG_FALLBACK;
+                storyPool = [];
+            }
+            updateFragBadge();
+        }
+
+        function updateFragBadge() {
+            const badge = document.getElementById('fragment-collection');
+            if (!badge) return;
+            if (!storyPool.length) { badge.style.display = 'none'; return; }
+            badge.style.display = '';
+            const got = Tavern.getStoryFragments().length;
+            document.getElementById('frag-count').textContent = got;
+            badge.classList.toggle('all', got >= storyPool.length);
+        }
+
         function showRandomFragment() {
-            if (window.Tavern) Tavern.track('fragment');
-            const fragment = fragmentMessages[Math.floor(Math.random() * fragmentMessages.length)];
-            if (window.Tavern) Tavern.openFragment(fragment);
+            if (!window.Tavern || !Tavern.openFragment) return;
+            Tavern.track('fragment');
+            const got = Tavern.getStoryFragments();
+            const next = storyPool.find(function (s) { return got.indexOf(s.id) === -1; });
+            if (next && Tavern.getMetrics().fragmentsDrawn % 3 === 0) {
+                Tavern.track('storyFragment', { id: next.id });
+                const n = Tavern.getStoryFragments().length;
+                Tavern.openFragment({ text: next.text, source: '故事碎片 ' + n + '/' + storyPool.length, special: true });
+            } else {
+                Tavern.openFragment(fragPool[Math.floor(Math.random() * fragPool.length)]);
+            }
+            updateFragBadge();
         }
 
         document.getElementById('fragment-trigger').addEventListener('click', showRandomFragment);
+
+        // ✦ 碎片集弹窗
+        function fragGridHtml(got) {
+            return '<div class="tavern-frag-grid">' + storyPool.map(function (s, i) {
+                if (got.indexOf(s.id) !== -1) {
+                    return '<div class="tavern-frag-cell got"><div class="cell-no">✦ ' + (i + 1) + '</div><div class="cell-text">' + escapeHtml(s.text) + '</div></div>';
+                }
+                return '<div class="tavern-frag-cell locked"><div class="cell-no">✦ ' + (i + 1) + '</div><div class="cell-text">？？？</div></div>';
+            }).join('') + '</div>';
+        }
+
+        function openFragmentCollection() {
+            let overlay = document.getElementById('frag-collection-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'frag-collection-overlay';
+                overlay.className = 'tavern-modal-overlay';
+                overlay.innerHTML =
+                    '<div class="tavern-modal" role="dialog" aria-modal="true" aria-label="碎片集">' +
+                    '<div class="tavern-modal-title"><span>✦ 碎片集 <span id="coll-count"></span></span><button class="tavern-modal-close" aria-label="关闭">×</button></div>' +
+                    '<div id="coll-body"></div>' +
+                    '</div>';
+                document.body.appendChild(overlay);
+                overlay.addEventListener('click', function (e) {
+                    if (e.target === overlay) overlay.classList.remove('open');
+                });
+                overlay.querySelector('.tavern-modal-close').addEventListener('click', function () {
+                    overlay.classList.remove('open');
+                });
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape') overlay.classList.remove('open');
+                });
+            }
+            const got = Tavern.getStoryFragments();
+            document.getElementById('coll-count').textContent = got.length + '/' + storyPool.length;
+            const body = document.getElementById('coll-body');
+            if (storyPool.length && got.length >= storyPool.length) {
+                body.innerHTML = '<div class="tavern-frag-story-full">' + escapeHtml(storyPool.map(function (s) { return s.text; }).join('')) + '</div>' + fragGridHtml(got);
+            } else {
+                body.innerHTML = fragGridHtml(got);
+            }
+            overlay.classList.add('open');
+        }
+
+        document.getElementById('fragment-collection').addEventListener('click', function () {
+            if (window.Tavern && storyPool.length) openFragmentCollection();
+        });
+
+        // 📦 初始化：加载手记与碎片
+        if (window.Tavern) {
+            loadNotes();
+            loadFragments();
+        } else {
+            document.getElementById('note-text').innerHTML = NOTE_FALLBACK_HTML;
+        }
 
         // ============================================
         // 📚 档案借阅记录渲染
