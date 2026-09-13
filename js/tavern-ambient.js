@@ -14,9 +14,12 @@
   var isMobile = window.matchMedia('(max-width: 620px)').matches;
   var dpr = window.devicePixelRatio || 1;
 
-  /* 粒子密度分级 */
-  var particleLevel = dpr >= 2 ? 'high' : dpr >= 1.5 ? 'medium' : 'low';
+  /* 粒子密度分级：移动端单独一档（粒子更少）；移动端还隔帧渲染，
+     因为「全屏 canvas 每帧重绘」是移动端滚动卡顿的主要来源之一 */
+  var FRAME_SKIP = isMobile ? 2 : 1;
+  var particleLevel = isMobile ? 'mobile' : (dpr >= 2 ? 'high' : dpr >= 1.5 ? 'medium' : 'low');
   var DENSITY = {
+    mobile: { dust: 8, ember: 2 },
     high:   { dust: 40, ember: 6 },
     medium: { dust: 25, ember: 4 },
     low:    { dust: 15, ember: 3 }
@@ -121,9 +124,14 @@
           var ratio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
           /* 滚动越深，画面越暗（模拟从壁炉走向深处）：
              写 --scroll-tint 交给 .tavern-timelayer 叠加，不再动 body filter
-             （body filter 会让 position:fixed 的弹窗/固定栏失效） */
-          document.documentElement.style.setProperty('--scroll-tint',
-            'rgba(0,0,0,' + (ratio * 0.15).toFixed(3) + ')');
+             （body filter 会让 position:fixed 的弹窗/固定栏失效）。
+             量化到 5% 一档：整屏叠加层每帧改色会导致移动端滚动时反复重绘 */
+          var step = Math.round(ratio * 20) / 20;
+          if (step !== self._lastStep) {
+            self._lastStep = step;
+            document.documentElement.style.setProperty('--scroll-tint',
+              'rgba(0,0,0,' + (step * 0.15).toFixed(3) + ')');
+          }
           /* 触发灰尘 */
           DustMotes.burst(MouseTracker.smoothSpeed);
           ticking = false;
@@ -193,6 +201,12 @@
     },
 
     _loop: function () {
+      /* 移动端隔帧渲染：位置更新照旧，少画一半帧 */
+      this._frame = (this._frame || 0) + 1;
+      if (FRAME_SKIP > 1 && this._frame % FRAME_SKIP !== 0) {
+        this._rafId = requestAnimationFrame(this._loop.bind(this));
+        return;
+      }
       var ctx = this.ctx;
       var w = this.canvas.width;
       var h = this.canvas.height;
@@ -226,23 +240,65 @@
      DeviceTilt：手机倾斜 → 档案袋晃动
      ========================================== */
   var DeviceTilt = {
+    _listening: false,
+    _permissionAsked: false,
+    _pending: null,
+    _rafId: null,
+    _lastTilt: 0,
+
     init: function () {
       if (!isMobile || reduceMotion) return;
       if (!window.DeviceOrientationEvent) return;
       var self = this;
+
+      /* iOS 13+ 必须在用户手势里申请权限，否则事件永远不来 */
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        var ask = function () {
+          if (self._permissionAsked) return;
+          self._permissionAsked = true;
+          DeviceOrientationEvent.requestPermission()
+            .then(function (state) { if (state === 'granted') self._listen(); })
+            .catch(function () {});
+        };
+        document.addEventListener('touchend', ask, { once: true, passive: true });
+        document.addEventListener('click', ask, { once: true });
+        return;
+      }
+      this._listen();
+    },
+
+    _listen: function () {
+      if (this._listening) return;
+      this._listening = true;
+      var self = this;
       window.addEventListener('deviceorientation', function (e) {
         if (e.gamma === null || e.beta === null) return;
-        self._apply(e.gamma, e.beta);
+        self._queue(e.gamma, e.beta);
       }, { passive: true });
+    },
+
+    /* 方向事件来得比帧还密，合并到每帧只处理一次 */
+    _queue: function (gamma, beta) {
+      var self = this;
+      this._pending = { gamma: gamma, beta: beta };
+      if (this._rafId) return;
+      this._rafId = requestAnimationFrame(function () {
+        self._rafId = null;
+        var p = self._pending;
+        self._pending = null;
+        if (p) self._apply(p.gamma, p.beta);
+      });
     },
 
     _apply: function (gamma, beta) {
       var tilt = Math.max(-1, Math.min(1, gamma / 45));
-      var cards = document.querySelectorAll('.portal-card, .tavern-note-card');
-      cards.forEach(function (c, i) {
-        var offset = tilt * 2 * (i % 2 ? -1 : 1);
-        c.style.transform = 'rotate(' + offset + 'deg)';
-      });
+      /* 全站只写一个 CSS 变量：首页卡片与档案页人物卡都读它，
+         避免逐张元素写内联样式（十几张卡每帧改样式会明显掉帧） */
+      var deg = Math.round(tilt * 3 * 10) / 10;   /* 最多 ±3°，微微倾斜 */
+      if (Math.abs(deg - this._lastTilt) >= 0.3) {
+        this._lastTilt = deg;
+        document.documentElement.style.setProperty('--tilt', deg + 'deg');
+      }
     }
   };
 
@@ -501,7 +557,13 @@
       else if (type === 'foggy') this._initFog();
       else return; /* cloudy: no canvas effect */
 
+      var frame = 0;
       function loop() {
+        frame++;
+        if (FRAME_SKIP > 1 && frame % FRAME_SKIP !== 0) {
+          self._rafId = requestAnimationFrame(loop);
+          return;
+        }
         self._update();
         self._draw();
         self._rafId = requestAnimationFrame(loop);
@@ -524,7 +586,7 @@
     },
 
     _initRain: function (withLightning) {
-      var count = isMobile ? 60 : 120;
+      var count = isMobile ? 36 : 120;
       this.particles = [];
       for (var i = 0; i < count; i++) {
         this.particles.push({
@@ -544,7 +606,7 @@
     },
 
     _initSnow: function () {
-      var count = isMobile ? 30 : 60;
+      var count = isMobile ? 18 : 60;
       this.particles = [];
       for (var i = 0; i < count; i++) {
         this.particles.push({

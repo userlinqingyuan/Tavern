@@ -205,7 +205,9 @@
             border: 1px solid rgba(214,168,93,0.18);
             border-radius: 10px;
             color: var(--ink);
-            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            /* 手机倾斜时朝重力方向微微倾斜（--tilt 由 tavern-ambient.js 写入） */
+            transform: rotate(var(--tilt, 0deg));
+            transition: transform 0.18s ease-out, border-color 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
             overflow: hidden;
         }
@@ -221,7 +223,7 @@
         .portal-card:hover,
         .portal-card:focus-visible {
             border-color: rgba(214,168,93,0.5);
-            transform: translateY(-4px);
+            transform: translateY(-4px) rotate(var(--tilt, 0deg));
             box-shadow: 0 14px 34px rgba(0,0,0,0.55);
             outline: none;
         }
@@ -376,6 +378,10 @@
             }
             .main-grid { grid-template-columns: 1fr; }
             .note-wrap { position: static; }
+            /* 移动端背景换成压缩过的小图（原图 3MB，整张解码是滚动卡顿的大头） */
+            .interior {
+                background-image: var(--page-dim), var(--page-vignette), url('images/bar-sm.jpg');
+            }
             /* 移动端：九宫格改成横向滑动的页面卡（吸附对齐 + 可见的细滚动条） */
             .portal-grid {
                 display: flex;

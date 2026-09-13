@@ -79,8 +79,13 @@ html {
 .tavern-note-card.glass { border-left: 3px solid rgba(214,168,93,.55); }
 
 @media (max-width: 620px) {
-  :root { --glass-blur: 9px; }
-  .glass::after { transform: scale(1.04); }
+  /* 移动端背景换成压缩过的小图（原图 3MB / 7.6MB，整张解码是滚动卡顿的大头） */
+  html {
+    background-image: var(--page-dim), var(--page-vignette), var(--page-photo-sm, var(--page-photo));
+  }
+  /* 移动端性能：降低主体模糊，并关掉折射层（每张卡再叠一层 backdrop-filter 太贵） */
+  :root { --glass-blur: 6px; }
+  .glass::after { display: none; }
 }
 /* 不支持 backdrop-filter 时退回半透明底，保证文字可读 */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -154,16 +159,24 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(214, 168, 93, .7); }
   cursor: default;
 }
 @media (max-width: 620px) {
-  :root { --dock-space: 142px; }   /* 移动端短条折成两行，避让高度同步变高 */
-  /* 移动端：短条自动折行，保证 7 个入口全部可见（不再靠横向滚动藏一半） */
+  :root { --dock-space: 100px; }
+  /* 移动端：短条保持单行窄条，靠左右滑动看全部入口；显示一条细滚动条提示可滑。
+     同时去掉毛玻璃——sticky 元素带 backdrop-filter 会在滚动时反复重算，很吃性能。 */
   .tavern-dock {
-    flex-wrap: wrap;
-    justify-content: center;
-    row-gap: 2px;
-    padding: 6px 8px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
     width: auto;
     max-width: calc(100vw - 16px);
+    padding: 6px 8px 3px;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(18, 12, 9, .9);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(200,168,120,.5) transparent;
   }
+  .tavern-dock::-webkit-scrollbar { display: block; height: 3px; }
+  .tavern-dock::-webkit-scrollbar-track { background: transparent; }
+  .tavern-dock::-webkit-scrollbar-thumb { background: rgba(200,168,120,.5); border-radius: 3px; }
   .tavern-dock .dock-link,
   .tavern-dock .dock-current { padding: 6px 8px; font-size: 11.5px; letter-spacing: 0; }
 }
@@ -247,6 +260,9 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(214, 168, 93, .7); }
   max-width: 560px;
   width: 100%;
   margin: 0 auto;
+  /* 手机倾斜时跟着朝重力方向微微倾斜（--tilt 由 tavern-ambient.js 写入） */
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform .18s ease-out;
   background: linear-gradient(165deg, rgba(38, 30, 24, .92), rgba(24, 18, 15, .92));
   border: 1px solid rgba(214, 168, 93, .18);
   border-left: 3px solid rgba(214, 168, 93, .55);
