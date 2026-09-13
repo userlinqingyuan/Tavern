@@ -264,7 +264,8 @@ if (Array.isArray(achievements)) {
     if (!a.id) error(`${tag} 缺少 id`);
     if (ids.has(a.id)) error(`${tag} id 重复`);
     ids.add(a.id);
-    if (!a.metric) error(`${tag} 缺少 metric`);
+    if (!a.metric && !a.egg) error(`${tag} 缺少 metric（彩蛋成就可改用 egg 字段）`);
+    if (a.metric && a.egg) error(`${tag} metric 与 egg 只能二选一`);
     if (a.metric && !KNOWN_METRICS.has(a.metric)) {
       error(`${tag} 未知 metric「${a.metric}」（core 不产出 → 永远无法解锁；新增指标需同步本文件与 tavern-core.js）`);
     }
@@ -441,6 +442,22 @@ if (fragmentsDoc) {
     });
   }
   const story = fragmentsDoc.story;
+  /* 彩蛋奖励碎片：与 story 分开计数（不参与隐藏故事的拼合） */
+  const eggFrags = fragmentsDoc.eggFragments;
+  if (!Array.isArray(eggFrags) || !eggFrags.length) {
+    error('[fragments.json] eggFragments 应为非空数组（彩蛋奖励碎片）');
+  } else {
+    const eggIds = new Set();
+    eggFrags.forEach((f, i) => {
+      const tag = `[eggFragments#${i} ${f.id || '?'}]`;
+      if (!f.id) error(`${tag} 缺少 id`);
+      if (eggIds.has(f.id)) error(`${tag} id 重复`);
+      eggIds.add(f.id);
+      if (!f.name || !String(f.name).trim()) error(`${tag} 缺少 name（彩蛋奖励名）`);
+      if (!f.text || !String(f.text).trim()) error(`${tag} text 为空`);
+    });
+    /* 「彩蛋 fragment 是否存在」的交叉校验放在文件末的交叉校验段（那里 eggs 已加载） */
+  }
   if (!Array.isArray(story) || !story.length) {
     error('[fragments.json] story 应为非空数组（故事碎片按数组顺序拼合）');
   } else {
@@ -631,6 +648,36 @@ if (!weather) {
     });
   }
   if (!weather.hints) error('[weather.json] 缺少 hints');
+  /* 天气更迭方式：month 按月份查表 / daily 按日期随机 / visit 每次打开随机 */
+  var mode = weather.mode || 'month';
+  if (!['month', 'daily', 'visit'].includes(mode)) {
+    error('[weather.json] 非法 mode「' + mode + '」（应为 month / daily / visit）');
+  }
+  var typeKeys = Object.keys(weather.types || {});
+  if (weather.pool !== undefined) {
+    if (!Array.isArray(weather.pool) || !weather.pool.length) {
+      error('[weather.json] pool 应为非空数组（随机天气的候选类型）');
+    } else {
+      weather.pool.forEach(function (t) {
+        if (!typeKeys.includes(t)) error('[weather.json] pool 里的「' + t + '」不在 types 中');
+      });
+      if (mode !== 'month' && weather.pool.length < 2) {
+        warn('[weather.json] 随机模式下 pool 只有一种类型，天气不会有变化');
+      }
+    }
+  }
+  if (weather.weights !== undefined) {
+    if (typeof weather.weights !== 'object' || weather.weights === null) {
+      error('[weather.json] weights 应为对象（类型 → 权重）');
+    } else {
+      Object.keys(weather.weights).forEach(function (t) {
+        if (!typeKeys.includes(t)) error('[weather.json] weights 里的「' + t + '」不在 types 中');
+        if (typeof weather.weights[t] !== 'number' || weather.weights[t] < 0) {
+          error('[weather.json] weights.' + t + ' 应为非负数字');
+        }
+      });
+    }
+  }
 }
 
 /* ---------- easter_eggs.json ---------- */
@@ -648,6 +695,67 @@ if (!eggs) {
     if (!e.selector) error(tag + ' 缺少 selector');
     if (!e.trigger || !validTriggers.has(e.trigger)) error(tag + ' 非法 trigger');
     if (!e.hint) error(tag + ' 缺少 hint');
+    if (e.trigger === 'dice_sum' && typeof e.sum !== 'number') error(tag + ' dice_sum 需要数字 sum');
+    if (e.trigger === 'ingredient_combo' && !e.ingredient) error(tag + ' ingredient_combo 需要 ingredient');
+  });
+}
+
+/* ---------- 成就分组 / 彩蛋交叉校验 ----------
+   这一组规则专门防「写了但永远拿不到」的成就与彩蛋：
+   1. 每枚成就的 group 必须出现在成就墙的 GROUPS 白名单里，否则那枚徽章不上墙；
+   2. 彩蛋成就（egg 字段）引用的彩蛋、彩蛋引用的成就都必须存在；
+   3. 点击类彩蛋的 selector 必须能在它所属页面里选到元素（按 id / class 文本粗查）。 */
+const WALL_FILE = 'achievements/index.html';
+const PAGE_FILES = {
+  index: 'index.html', drinker: 'drinker/index.html', menu: 'menu/index.html', bar: 'bar/index.html',
+  achievements: 'achievements/index.html', timeline: 'timeline/index.html', map: 'map/index.html'
+};
+if (Array.isArray(achievements)) {
+  const wallHtml = exists(WALL_FILE) ? fs.readFileSync(path.join(ROOT, WALL_FILE), 'utf8') : '';
+  const wallGroups = new Set([...wallHtml.matchAll(/key:\s*'([^']+)'/g)].map(m => m[1]));
+  if (!wallGroups.size) warn(`[${WALL_FILE}] 未解析到 GROUPS 白名单，跳过分组校验`);
+  const eggList = Array.isArray(eggs) ? eggs : [];
+  const eggIds = new Set(eggList.map(e => e.id));
+
+  achievements.forEach(a => {
+    const tag = `[achievements:${a.id || '?'}]`;
+    if (!a.group) error(`${tag} 缺少 group（成就墙不会渲染它）`);
+    else if (wallGroups.size && !wallGroups.has(a.group)) {
+      error(`${tag} group「${a.group}」不在成就墙白名单（当前：${[...wallGroups].join(' / ')}）`);
+    }
+    if (a.egg && !eggIds.has(a.egg)) error(`${tag} egg「${a.egg}」在 easter_eggs.json 里不存在`);
+  });
+
+  eggList.forEach((e, i) => {
+    const tag = `[easter_eggs:${e.id || i}]`;
+    if (e.achievement && !achievements.some(a => a.id === e.achievement)) {
+      error(`${tag} achievement「${e.achievement}」在 achievements.json 里不存在`);
+    }
+    /* 奖励碎片必须真实存在（story 或 eggFragments 里能找到） */
+    const fragDoc = fragmentsDoc || {};
+    const knownFrags = new Set([
+      ...((Array.isArray(fragDoc.story) ? fragDoc.story : []).map(s => s.id)),
+      ...((Array.isArray(fragDoc.eggFragments) ? fragDoc.eggFragments : []).map(f => f.id))
+    ]);
+    if (e.fragment && !knownFrags.has(e.fragment)) {
+      error(`${tag} fragment「${e.fragment}」在 fragments.json 里不存在`);
+    }
+    if (e.trigger !== 'click_count') return;   /* 事件类彩蛋不依赖页面元素 */
+    const sel = String(e.selector);
+    const probe = sel.startsWith('#') ? new RegExp('id="' + sel.slice(1) + '"')
+      : sel.startsWith('.') ? new RegExp('class="[^"]*\\b' + sel.slice(1) + '\\b[^"]*"')
+      : new RegExp(sel);
+    const matchesIn = (file) => exists(file) && probe.test(fs.readFileSync(path.join(ROOT, file), 'utf8'));
+    if (e.page === 'any') {
+      /* page: "any" → 任意页面命中即可（例如「任何一个壁炉」） */
+      if (!Object.values(PAGE_FILES).some(matchesIn)) {
+        error(`${tag} selector「${sel}」在任何页面里都找不到对应元素`);
+      }
+      return;
+    }
+    const pageFile = PAGE_FILES[e.page];
+    if (!pageFile) { error(`${tag} 未知 page「${e.page}」（可用：${Object.keys(PAGE_FILES).join(' / ')} / any）`); return; }
+    if (!matchesIn(pageFile)) error(`${tag} selector「${sel}」在 ${pageFile} 里找不到对应元素`);
   });
 }
 

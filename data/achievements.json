@@ -326,85 +326,138 @@
   },
   {
     "id": "spring_first_bloom",
+    "icon": "🌸",
+    "name": "春日初见",
+    "desc": "在春季首次造访酒馆",
+    "group": "ambient",
     "season": "spring",
     "metric": "visitDays",
     "op": ">=",
-    "value": 1,
-    "name": "春日初见",
-    "desc": "在春季首次造访酒馆",
-    "icon": "🌸"
+    "value": 1
   },
   {
     "id": "autumn_harvest",
+    "icon": "🍂",
+    "name": "秋日丰收",
+    "desc": "在秋季首次造访酒馆",
+    "group": "ambient",
     "season": "autumn",
     "metric": "visitDays",
     "op": ">=",
-    "value": 1,
-    "name": "秋日丰收",
-    "desc": "在秋季首次造访酒馆",
-    "icon": "🍂"
+    "value": 1
   },
   {
     "id": "fullmoon_reunion",
-    "metric": "fullMoonVisit",
-    "op": "==",
-    "value": 1,
+    "icon": "🌕",
     "name": "月圆人团圆",
     "desc": "满月之夜造访酒馆",
-    "icon": "🌕"
+    "group": "ambient",
+    "metric": "fullMoonVisit",
+    "op": "==",
+    "value": 1
   },
   {
     "id": "fortune_7day",
-    "metric": "fortuneDays",
-    "op": ">=",
-    "value": 7,
+    "icon": "🔮",
     "name": "七日运签",
     "desc": "连续七天抽取运势签",
-    "icon": "🔮"
+    "group": "ambient",
+    "metric": "fortuneDays",
+    "op": ">=",
+    "value": 7
   },
   {
     "id": "festival_guest",
-    "metric": "festivalVisit",
-    "op": "==",
-    "value": 1,
+    "icon": "🎉",
     "name": "节日访客",
     "desc": "在节日当天造访酒馆",
-    "icon": "🎉"
+    "group": "ambient",
+    "metric": "festivalVisit",
+    "op": "==",
+    "value": 1
   },
   {
     "id": "weather_all",
-    "metric": "weatherTypes",
-    "op": ">=",
-    "value": 4,
+    "icon": "🌦️",
     "name": "风雨同舟",
     "desc": "遇到四种不同天气",
-    "icon": "🌦️"
+    "group": "ambient",
+    "metric": "weatherTypes",
+    "op": ">=",
+    "value": 4
   },
   {
     "id": "egg_collector",
-    "metric": "eggsFound",
-    "op": ">=",
-    "value": 3,
+    "icon": "🥚",
     "name": "寻宝者",
     "desc": "发现三个隐藏彩蛋",
-    "icon": "🥚"
+    "group": "ambient",
+    "metric": "eggsFound",
+    "op": ">=",
+    "value": 3
   },
   {
     "id": "egg_master",
-    "metric": "eggsFound",
-    "op": ">=",
-    "value": 6,
+    "icon": "🗝️",
     "name": "万象皆谜",
     "desc": "发现全部六个隐藏彩蛋",
-    "icon": "🗝️"
+    "group": "ambient",
+    "metric": "eggsFound",
+    "op": ">=",
+    "value": 6
   },
   {
-    "id": "lucky_seven_ach",
-    "metric": "gambleStreak",
-    "op": ">=",
-    "value": 3,
+    "id": "fire_grabber",
+    "icon": "🔥",
+    "name": "火中取栗",
+    "desc": "在壁炉里扒出烧焦的纸条",
+    "group": "secret",
+    "hidden": true,
+    "egg": "ember_click"
+  },
+  {
+    "id": "bookworm",
+    "icon": "📖",
+    "name": "书虫",
+    "desc": "在时间线里翻到未写完的日记",
+    "group": "secret",
+    "hidden": true,
+    "egg": "book_spine"
+  },
+  {
+    "id": "insomniac",
+    "icon": "☕",
+    "name": "失眠的夜",
+    "desc": "连着三杯都选黑咖啡液，收到咖啡师的纸条",
+    "group": "secret",
+    "hidden": true,
+    "egg": "coffee_secret"
+  },
+  {
+    "id": "lucky_seven",
+    "icon": "🎲",
     "name": "幸运七",
-    "desc": "骰子对赌连胜三局",
-    "icon": "🎲"
+    "desc": "对赌时连续三次掷出总和七点",
+    "group": "secret",
+    "hidden": true,
+    "egg": "lucky_seven"
+  },
+  {
+    "id": "tracker",
+    "icon": "👣",
+    "name": "追踪者",
+    "desc": "在地图角落发现陌生的脚印",
+    "group": "secret",
+    "hidden": true,
+    "egg": "footprint"
+  },
+  {
+    "id": "sommelier",
+    "icon": "🍷",
+    "name": "品酒师",
+    "desc": "注意到今日特供杯沿上的淡淡唇印",
+    "group": "secret",
+    "hidden": true,
+    "egg": "rim_kiss"
   }
 ]

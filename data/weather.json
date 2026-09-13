@@ -1,4 +1,7 @@
 {
+  "mode": "daily",
+  "pool": ["sunny", "cloudy", "rainy", "snowy", "foggy", "stormy"],
+  "weights": { "sunny": 4, "cloudy": 3, "rainy": 2, "foggy": 2, "snowy": 1, "stormy": 1 },
   "types": {
     "sunny":   { "label": "晴",   "emoji": "☀️", "desc": "日光穿过酒馆的彩窗，在地板上投下暖斑。",     "filter": "brightness(1.08)" },
     "cloudy":  { "label": "阴",   "emoji": "☁️", "desc": "天色灰蒙，酒馆内点起了所有蜡烛。",             "filter": "brightness(0.92)" },

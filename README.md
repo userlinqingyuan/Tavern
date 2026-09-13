@@ -65,9 +65,13 @@ Tavern/
 
 - **推门入场**：PC 端先播 Canvas 螺旋星系开场动画，底部「跳 过」可随时进店；移动端（≤620px）、二次访问（`tavern_door_opened`）与系统「减少动效」偏好都直接进内景
 - **内景氛围**：`images/bar.jpg` 作为画布背景**钉在屏幕上**（不随内容滚动，等比铺满后裁掉多余部分、不变形）+ 噪点 + 6 枚浮尘粒子；品牌区配随机欢迎语（10 条，淡入）
-- **九宫格入口**：🍺 酒单 / 🍸 吧台 / 🏆 成就 / 📖 酒客档案（主入口）/ 🕰️ 时间线 / 🗺️ 地图
+- **九宫格入口**：🍺 酒单 / 🍸 吧台 / 🏆 成就 / 📖 酒客档案（主入口）/ 🕰️ 时间线 / 🗺️ 地图。**≤620px 时改成横向滑动的页面卡**（scroll-snap 吸附、单卡约 68vw、带细滚动条），不再一路竖着堆六张
 - **今日手记 + 借阅记录同栏**：右栏上下两张卡（320px 列宽一致）——上面是每日手记（年内第 N 天 % 手记数，与今日特供同款算法，来自 `data/notes.json`，人物名渲染成金色链接；「往期 ✎」弹窗翻看全部），下面是档案借阅记录（最近 20 条、可清空）；整列高度与左侧九宫格对齐，借阅列表随卡片拉长并内部滚动
-- **随机碎片**：左下角按钮弹出酒馆氛围语录（弹窗由 `tavern-core.js` 注入）；**每累计抽 3 次必得一枚✦故事碎片，按钮旁「✦ n/6」徽标点开碎片集，集齐 6 枚拼出关于「？？？」的隐藏故事**（金色弹窗，收集进度存 `tavern_state_v1`）
+- **季节欢迎语**：品牌区下方 `#greeting` 由 `Tavern.Ambient` 填充——首次到访 / 同季回归 / 换季回归三种文案（首次淡入，回访直接显示）
+- **每日运势签**：右栏顶部签筒（`#fortuneBox`），按「日期做种子 + 等级加权」抽当日一签；当天抽过则直接显示签文（等级 / 签诗 / 幸运物 / 宜忌），并记 `fortuneDraw` 驱动「七日运签」成就
+- **节日 / 节气卡**：`#festivalCard` 命中 `data/festivals.json` 的公历日期时显示（标题 / 描述 / 推荐酒），平时隐藏
+- **满月事件**：满月夜在今日手记里追加一条 `moonEvents` 文案（`#moonEvent`）；其它页面只解锁「月圆人团圆」成就、不展示事件
+- **随机碎片**：左下角按钮弹出酒馆氛围语录（弹窗由 `tavern-core.js` 注入）；**每累计抽 3 次必得一枚✦故事碎片，按钮旁「✦ n/6」徽标点开碎片集（✦ 故事碎片 + 🥚 彩蛋碎片两个分区），集齐 6 枚故事碎片拼出关于「？？？」的隐藏故事**（金色弹窗，收集进度存 `tavern_state_v1`）
 - **档案借阅记录**：显示来自档案页的借阅流水（最多展示最近 20 条，可清空）
 - **玻璃质感**：九宫格卡片、今日手记、借阅记录、随机碎片按钮、碎片集徽标、跳过按钮统一套 `.glass`（模糊玻璃 + 边缘折射）
 - **无页脚短条**：首页导航就是上方九宫格，故不挂底部的 `.tavern-dock`
@@ -114,7 +118,7 @@ Tavern/
 ### 成就墙（`achievements/index.html`）
 
 - **总进度**：顶部显示「已解锁 n / N」与百分比进度条
-- **分组展示**：按 `visit` 到访 / `archive` 档案 / `drink` 酒单 / `bar` 吧台 / `secret` 彩蛋分组，每组显示获得数
+- **分组展示**：按 `visit` 到访 / `archive` 档案 / `drink` 酒单 / `bar` 吧台 / `ambient` 时节 / `secret` 彩蛋分组，每组显示获得数（共 46 枚：visit 7 / archive 10 / drink 5 / bar 6 / ambient 8 / secret 10）
 - **徽章状态**：已解锁显示解锁日期；未解锁显示进度条或进度文案；`hidden` 成就未解锁时只显示「？？？」
 - **解锁弹窗**：由 `tavern-core.js` 统一提示，右下角弹出徽章，点击可跳到成就墙
 
@@ -140,7 +144,7 @@ Tavern/
 
 - **背景系统**：照片 + 暗化渐变 + 暗角三层叠在 `html` 画布层上，**钉在屏幕上、不随内容滚动**；`background-size: cover` 等比铺满后**裁掉多余部分，不会拉伸变形**（宽屏裁上下、竖屏裁左右）。各页只声明照片：封面 / 酒单 / 时间线 / 成就 / 地图用 `images/bar.jpg`，旅客档案 / 吧台用 `images/bar2.jpg`。封面页的照片写在 `index.html` 自己的 `html` 规则里（不走共享 `--page-photo`，原因见「日常维护」的路径说明）。
 - **玻璃质感 `.glass`**：模糊玻璃（`backdrop-filter: blur + saturate`）+ 上沿高光 + 下沿厚度 + 底部弧光；`::after` 折射层用更强的模糊 + 以底边为原点轻微放大 + 底部遮罩做出玻璃边缘的形变，`z-index:-1` 保证不糊住卡片自己的文字。参数集中在 `:root`（`--glass-blur / --glass-sat / --glass-bg / --glass-border / --glass-edge`），≤620px 自动降到 9px；浏览器不支持 `backdrop-filter` 时退回半透明底。
-- **页脚导航短条 `.tavern-dock`**：6 个子页面共用的**独立玻璃小短条**——圆角胶囊、宽度随内容、居中、当前页高亮且不可点（`<span class="dock-current">`）。`position: sticky` + `bottom: max(18px, env(safe-area-inset-bottom))`：滚动时悬浮在视口底部，内容不足一屏时贴底；窄屏可横向滑动。首页不挂（它的导航是九宫格）。
+- **页脚导航短条 `.tavern-dock`**：6 个子页面共用的**独立玻璃小短条**——圆角胶囊、宽度随内容、居中、当前页高亮且不可点（`<span class="dock-current">`）。`position: sticky` + `bottom: max(18px, env(safe-area-inset-bottom))`：滚动时悬浮在视口底部，内容不足一屏时贴底。**≤620px 自动折行成两排**，保证 7 个入口全部可见（不再靠横向滚动藏一半）；页面里的固定按钮用 `--dock-space`（桌面 96px / 移动 142px）避让，不会被短条挡住。首页不挂（它的导航是九宫格）。
 - **主题化滚动条**：下列容器共用同一套深褐底 / 浅褐滑块皮肤，并带 `overscroll-behavior: contain`（滑到底不会带着背景页一起滚）：全站 `html`、通用弹窗（`.tavern-modal` / `.tavern-modal-body`）、酒单放大窗正文、吧台基酒滚动区、首页借阅记录列表、档案页备注弹窗、档案页翻书双页、地图足迹条。
 - **弹窗**：统一 `.tavern-modal-overlay` + `.tavern-modal` 结构与 `Tavern.openModal/closeModal`（Esc、点遮罩、✕、背景滚动锁、关闭后焦点归还）；随机碎片弹窗由 core 注入 DOM，打开时同样锁背景滚动。
 
@@ -233,8 +237,9 @@ Tavern/
 |------|------|
 | `id` | 唯一标识（解锁状态按它存储，不要改） |
 | `icon / name / desc` | 徽章图标、名称、描述 |
-| `group` | `visit` 到访 / `archive` 档案 / `drink` 酒单 / `bar` 吧台 / `secret` 彩蛋 |
+| `group` | `visit` 到访 / `archive` 档案 / `drink` 酒单 / `bar` 吧台 / `ambient` 时节 / `secret` 彩蛋（必须与成就墙 `GROUPS` 白名单一致，校验器强制） |
 | `hidden` | 可选；`true` 时未解锁显示「？？？」 |
+| `egg`（可选） | **彩蛋成就**：填彩蛋 id（如 `ember_click`），`state.eggsFound` 里出现该彩蛋即解锁；与 `metric` 二选一（校验器强制） |
 | `metric` | 判定指标：`visitDays / visitStreak / lateNightVisit / newYearVisit / peopleViewed / cardFlips / networkOpens / bookReads / diceUses / fragmentsDrawn / favoritesAdded / menuViews / tastingCount / tastingStreak / drinksTasted / borrows / sawBlankCard / notesRead / storyFragments / mixes / hiddenRecipes / diceRolls / encounters / gambleWins / gambleStreak / fullMoonVisit / fortuneDays / festivalVisit / weatherTypes / eggsFound` |
 | `op / value` | `">=" 数字` 或 `"==" true/false` |
 
@@ -251,10 +256,11 @@ Tavern/
 
 ### `data/fragments.json`
 
-`{ "fragments": [...], "story": [...] }`：
+`{ "fragments": [...], "story": [...], "eggFragments": [...] }`：
 
 - `fragments`：普通氛围碎片 `[{ text, source }]`，封面与档案页的随机抽取池
 - `story`：✦ 故事碎片 `[{ id, text }]`，**数组顺序即拼合顺序**；每累计抽 3 次普通碎片必出下一枚未收集的，集齐后在封面碎片集弹窗拼出完整段落；条数必须与 `achievements.json` 中 `story-complete` 的 `value` 一致（校验器强制）
+- `eggFragments`：🥚 **彩蛋奖励碎片** `[{ id, name, text }]`，`id` 必须与 `easter_eggs.json` 里对应彩蛋的 `fragment` 一致；不参与隐藏故事拼合，只在碎片集弹窗的「🥚 彩蛋碎片 n/6」分区里按「已找到 / ？？？」展示
 
 ### `data/ambient.json`
 
@@ -270,7 +276,17 @@ Tavern/
 
 ### `data/weather.json`
 
-`{ types, hints }`：`types` 是天气类型表（`sunny / cloudy / rainy / snowy / foggy / stormy`，含 `label / emoji / desc / filter`）；`hints` 是「月份 → 天气类型」提示表（`"1"`~`"12"` + `default`）。`js/tavern-ambient.js` 按当月取类型，并渲染对应 Canvas 粒子层（阳光光束 / 雨 / 雪 / 雾，暴雨带闪电）。
+`{ mode, pool, weights, types, hints }`：
+
+| 字段 | 说明 |
+|------|------|
+| `mode` | 天气怎么更迭：`daily` **按日期随机**（当前值，一天一换、同一天各页面与刷新一致）/ `visit` 每次打开随机 / `month` 按月份查表（旧行为） |
+| `pool` | 随机候选类型数组（只有这里的类型会被抽到，可用来做「夏天不下雪」这类限制） |
+| `weights` | 各类型权重（当前：晴 4 / 阴 3 / 雨 2 / 雾 2 / 雪 1 / 暴 1） |
+| `types` | 类型定义：`sunny / cloudy / rainy / snowy / foggy / stormy`，含 `label / emoji / desc / filter` |
+| `hints` | 「月份 → 类型」查表（`"1"`~`"12"` + `default`），仅 `mode: "month"` 时使用 |
+
+**天气怎么运作**：`js/tavern-ambient.js` 的 `_determineWeather()` 按 `mode` 决定类型——`daily` 时用当天日期串做 FNV-1a 散列（所以同一天结果稳定、相邻两天也不会总抽到同一种），`visit` 时直接 `Math.random()`，`month` 时查 `hints`；随后按类型渲染 Canvas 粒子层（`sunny` 光束 / `rainy` 雨 / `stormy` 暴雨+闪电 / `snowy` 雪 / `foggy` 雾；`cloudy` 不出粒子）。**不接任何真实天气接口**，改 `weather.json` 即可换行为。遇到新类型会记进 `state.weatherTypes`（成就「风雨同舟」要 4 种，随机模式下几天就能达成）。
 
 ### `data/fortune.json`
 
@@ -282,8 +298,13 @@ Tavern/
 
 ### `data/easter_eggs.json`
 
-隐藏彩蛋数组（`{ id, page, selector, trigger: "click_count", count, fragment, achievement, hint }`）：对 `selector` 指定元素点击 `count` 次即触发，弹出 `hint` 并记 `eggFound`。**其中 4 条的选择器目前指不到页面元素，见文末「已知待办」**。
+隐藏彩蛋数组（`{ id, page, selector, trigger, count, fragment, achievement, hint }`）。命中后弹出 `hint`、记 `eggFound`（写入 `state.eggsFound`，同时驱动 `egg_collector` / `egg_master`，并按 `achievement` 解锁对应的彩蛋成就）。三种触发方式：
 
+| `trigger` | 额外字段 | 触发方式 |
+|-----------|----------|----------|
+| `click_count` | `selector` | 点击 `selector` 指定元素 `count` 次（选择器必须能在 `page` 对应页面里选到，校验器会查；`page: "any"` 表示任意页面命中即可，如「任何一个壁炉」） |
+| `ingredient_combo` | `ingredient`（配料名） | 连续 `count` 杯都用到该配料；吧台页调酒结束时派发 `tavern:mix`，中断即归零 |
+| `dice_sum` | `sum`（点数） | 连续 `count` 次掷出该点数；吧台页「🎭 遇客」掷骰结束时派发 `tavern:dice`，中断即归零 |
 ### `data/update_log.json`
 
 版本日志数组，`renderChangelog` 读取，展示最近 5 条。**顶部的 `version` 同时是全站静态资源 `?v=` 参数的唯一来源**。
@@ -301,7 +322,7 @@ Tavern/
 ## 🔧 共享模块
 
 - **`css/tavern.css`**：颜色变量（`--ink / --muted / --gold / --line / --panel`，页面背景 `--page-*`，玻璃 `--glass-*`）、基础重置、**页面背景层**（`html` 上的照片 + 暗化 + 暗角，附着方式取 `--page-attach`）、**玻璃质感**（`.glass` + `::after` 折射层）、**页脚短条**（`.tavern-dock`）、全局与局部滚动条皮肤、页脚链接、通用弹窗（`.tavern-modal-overlay / .tavern-modal / .tavern-modal-body`）、随机碎片弹窗样式、吧台组件（选料 chips / 结果卡 / 骰子 / 模式胶囊 / 调酒日志列表）。页面自己的 `<style>` 在其后加载，可覆盖变量。
-- **`js/tavern-ambient.js`**：环境交互层（自动探测页面元素，有则启用，无则跳过）。包含：鼠标速度与空闲检测（30s 无操作进入打盹 `body.tavern-doze`）、滚动越深画面越暗并触发浮尘、浮尘 Canvas 粒子（按 DPR 分高/中/低三档密度）、手机倾斜轻晃卡片、每日运势签、节日卡、天气 Canvas 粒子层、隐藏彩蛋。配合 core 里的 `Tavern.Ambient`（季节 / 时段 / 月相 / 欢迎语）使用。
+- **`js/tavern-ambient.js`**：环境交互层（自动探测页面元素，有则启用，无则跳过；**7 个页面均已引用**）。包含：鼠标速度与空闲检测（30s 无操作进入打盹 `body.tavern-doze`）、滚动越深画面越暗并触发浮尘、浮尘 Canvas 粒子（按 DPR 分高/中/低三档密度）、手机倾斜轻晃卡片、每日运势签（`#fortuneBox`）、节日卡（`#festivalCard`）、天气 Canvas 粒子层、隐藏彩蛋。配合 core 里的 `Tavern.Ambient`（季节 / 时段 / 月相 / 欢迎语，`#greeting` / `#moonEvent`）使用。
 - **`js/tavern-core.js`**：所有页面共用的核心脚本。用法：
 
   ```html
@@ -342,7 +363,7 @@ Tavern/
 
 ### 数据校验器（`tools/check-data.cjs`）
 
-- **ERROR（必须修）**：JSON 解析失败、必填字段缺失、重名、`links/relations/events.people` 引用不存在的人或别称错字（冷钰/拉提菩/桃子）、relations 指向 links 之外、座位号不符 `A-3`/`B-10`/`未登记`、引用图片不存在、`map.floor/x/y` 非法、事件日期/必填字段问题、drinks 数量或顺序与档案页 `FALLBACK_SPECIALS` 不一致、成就 metric 不在 core 的指标表内或 op/value 非法、`notes.json` 的 `person` 引用不存在的人、`fragments.json` 的 story id 重复或条数与 `story-complete.value` 不一致、`raw.json` 的字段缺失/标签越界/隐藏配方组合重复、`dice.json` 的遇客点数缺漏重复或 `person` 不在花名册、各页面 `?v=` 缺失/不一致/与 update_log 最新版本不符
+- **ERROR（必须修）**：JSON 解析失败、必填字段缺失、重名、`links/relations/events.people` 引用不存在的人或别称错字（冷钰/拉提菩/桃子）、relations 指向 links 之外、座位号不符 `A-3`/`B-10`/`未登记`、引用图片不存在、`map.floor/x/y` 非法、事件日期/必填字段问题、drinks 数量或顺序与档案页 `FALLBACK_SPECIALS` 不一致、成就 metric 不在 core 的指标表内或 op/value 非法、**成就 `group` 缺失或不在成就墙 `GROUPS` 白名单**、**成就 `egg` 指向不存在的彩蛋（或与 `metric` 同时填）**、**彩蛋的 `achievement` 指向不存在的成就**、**点击类彩蛋的 `selector` 在对应页面里选不到元素**、`dice_sum` 缺 `sum` / `ingredient_combo` 缺 `ingredient`、`notes.json` 的 `person` 引用不存在的人、`fragments.json` 的 story id 重复或条数与 `story-complete.value` 不一致、`raw.json` 的字段缺失/标签越界/隐藏配方组合重复、`dice.json` 的遇客点数缺漏重复或 `person` 不在花名册、各页面 `?v=` 缺失/不一致/与 update_log 最新版本不符
 - **WARNING（提醒，可能是有意的）**：未登记的单向 `links`（对方没写回；关系网中会画成箭头，若为有意在 `data/oneway_links.json` 登记）、同日多条事件
 - 新增 core 指标时，同步把名字加进校验器的 `KNOWN_METRICS` 列表
 
@@ -362,11 +383,9 @@ Tavern/
 
 ---
 
-## 🚧 已知待办（2026-09-13 收工记录）
+## 🚧 已知待办（2026-09-13）
 
-- **环境感知只接线了一半**：`data/fortune.json`、节日卡、欢迎语、满月事件的数据与 JS/CSS 都在，但页面**还没有挂载点**——`#fortuneBox` / `#festivalCard` / `#greeting` / `#moonEvent` 在任何页面都找不到，所以运势签、节日卡、欢迎语、满月事件目前不会显示。已生效的是：季节配色（30% 叠加层）、时段亮度、天气粒子层、浮尘、打盹、滚动变暗、设备倾斜、部分彩蛋。
-- **4 条彩蛋的选择器失效**：`data/easter_eggs.json` 里 `book_spine`（`.timeline-container`）、`coffee_secret`（`#mixButton`）、`lucky_seven`（`#diceRollBtn`）、`footprint`（`#mapCanvas`）选不到元素（实际分别是 `.timeline`、`#mixBtn`、`#rollBtn` / `#gambleBtn`、地图页的 canvas id），需要改选择器或在页面补 id。
-- **9 枚成就缺 `group`**：`spring_first_bloom / autumn_harvest / fullmoon_reunion / fortune_7day / festival_guest / weather_all / egg_collector / egg_master / lucky_seven_ach` 没有 `group` 字段，而成就墙只渲染 `visit / archive / drink / bar / secret` 五组，这 9 枚不会上墙（共 41 枚，墙上只显示 32 枚）。校验器目前不查 `group`，建议顺手加一条校验。
 - **农历节日未实现**：`festivals.json` 里 `dateType: "lunar"` 的条目需要真实农历换算，代码里留了 TODO。
 - **页脚短条里的「资料来源」那句**：暂时以注释形式保留在 `drinker/index.html` 短条上方，文案定了再放回 `<nav>` 里。
-- **首页壁炉已停用（2026-09-13）**：按需求把 `index.html` 的小火苗 HTML/CSS **整段注释保留**（其它页面：酒单、时间线页的壁炉不受影响），日后想恢复删掉那对注释标记即可。停用期间 `data/easter_eggs.json` 里首页的 `ember_click`（连点壁炉 3 次 → 成就 `fire_grabber`）选不到元素，暂时无法触发。
+- **首页壁炉处于停用状态**：`index.html` 的小火苗 HTML/CSS 整段注释保留（酒单页、时间线页的壁炉照常生效）。彩蛋 `ember_click` 已改成 `page: "any"`，在任意有壁炉的页面连点 3 次都能拿「火中取栗」；想让首页也能点，删掉那对注释标记即可。
+- **天气季节感**：现在 `mode: "daily"` 是**全年随机**，九月也可能抽到雪或暴雨。想让它符合季节，最省事的做法是限制 `pool`（例如夏天只留 `sunny / cloudy / rainy / stormy`），或者把 `mode` 改回 `month` 用 `hints` 查表。

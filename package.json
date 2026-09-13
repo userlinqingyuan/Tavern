@@ -1,6 +1,6 @@
 {
   "name": "tavern-archive",
-  "version": "1.0.0",
+  "version": "2.3.0",
   "private": true,
   "description": "16号螺旋酒馆 · 纯静态角色档案站（无构建、无依赖）",
   "scripts": {

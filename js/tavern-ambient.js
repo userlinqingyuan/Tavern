@@ -119,13 +119,11 @@
         requestAnimationFrame(function () {
           var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
           var ratio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
-          /* 滚动越深，画面越暗（模拟从壁炉走向深处） */
-          var brightness = 1 - ratio * 0.15;
-          var ambient = window.Tavern && Tavern.Ambient;
-          var baseBrightness = (ambient && ambient.config && ambient.config.timeSlots &&
-            ambient.config.timeSlots[ambient.timeSlot])
-            ? ambient.config.timeSlots[ambient.timeSlot].brightness : 1.0;
-          document.body.style.filter = 'brightness(' + (baseBrightness * brightness) + ')';
+          /* 滚动越深，画面越暗（模拟从壁炉走向深处）：
+             写 --scroll-tint 交给 .tavern-timelayer 叠加，不再动 body filter
+             （body filter 会让 position:fixed 的弹窗/固定栏失效） */
+          document.documentElement.style.setProperty('--scroll-tint',
+            'rgba(0,0,0,' + (ratio * 0.15).toFixed(3) + ')');
           /* 触发灰尘 */
           DustMotes.burst(MouseTracker.smoothSpeed);
           ticking = false;
@@ -265,12 +263,9 @@
 
     _loadConfig: function (root) {
       var self = this;
-      return new Promise(function (resolve, reject) {
-        var url = root + 'data/fortune.json';
-        fetch(url).then(function (r) { return r.json(); }).then(function (data) {
-          self.config = data;
-          resolve();
-        }).catch(reject);
+      /* 同样走 Tavern.loadJSON（自动带 ?v= + 同页缓存） */
+      return Tavern.loadJSON(root + 'data/fortune.json').then(function (data) {
+        self.config = data;
       });
     },
 
@@ -356,7 +351,8 @@
     init: function () {
       var self = this;
       var root = (window.Tavern && Tavern._root) || '';
-      fetch(root + 'data/festivals.json').then(function (r) { return r.json(); }).then(function (data) {
+      /* 走 Tavern.loadJSON：自动带 ?v= 版本号并做同页缓存，避免改完数据被浏览器缓存住 */
+      Tavern.loadJSON(root + 'data/festivals.json').then(function (data) {
         self.config = data;
         self._checkAndRender();
       }).catch(function () {});
@@ -422,7 +418,7 @@
       if (reduceMotion) return;
       var self = this;
       var root = (window.Tavern && Tavern._root) || '';
-      fetch(root + 'data/weather.json').then(function (r) { return r.json(); }).then(function (cfg) {
+      Tavern.loadJSON(root + 'data/weather.json').then(function (cfg) {
         self.config = cfg;
         self._determineWeather();
         self._createCanvas();
@@ -434,9 +430,50 @@
     },
 
     _determineWeather: function () {
-      var month = new Date().getMonth() + 1;
-      var hints = this.config.hints || {};
-      this.weatherType = hints[String(month)] || hints['default'] || 'cloudy';
+      var cfg = this.config || {};
+      var hints = cfg.hints || {};
+      var types = cfg.types || {};
+      var mode = cfg.mode || 'month';
+      var pool = (Array.isArray(cfg.pool) && cfg.pool.length ? cfg.pool : Object.keys(types))
+        .filter(function (t) { return !!types[t]; });
+
+      /* month：按月份查表（旧行为）；daily：按日期随机（一天一换，同一天各页面一致）；
+         visit：每次打开随机。随机模式下权重取自 weather.json 的 weights。 */
+      if (mode === 'month' || !pool.length) {
+        this.weatherType = hints[String(new Date().getMonth() + 1)] || hints['default'] || 'cloudy';
+        return;
+      }
+      /* daily 传日期字符串做种子（同一天一致）；visit 传 null 表示每次真随机 */
+      var seed = mode === 'visit' ? null : WeatherLayer._dateSeed();
+      this.weatherType = WeatherLayer._pickWeighted(pool, cfg.weights, seed);
+    },
+
+    /* 日期种子：YYYY-MM-DD（同一天 → 同一个种子 → 各页面天气一致） */
+    _dateSeed: function (d) {
+      d = d || new Date();
+      var p = function (n) { return (n < 10 ? '0' : '') + n; };
+      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    },
+
+    /* 带权重的挑选：seedText 为空则真随机；否则用 FNV-1a 散列，
+       同一个 seedText 得到同一结果，且相邻日期也会被充分打散 */
+    _pickWeighted: function (pool, weights, seed) {
+      var list = [];
+      pool.forEach(function (t) {
+        var w = weights && typeof weights[t] === 'number' ? Math.max(0, Math.round(weights[t])) : 1;
+        for (var i = 0; i < w; i++) list.push(t);
+      });
+      if (!list.length) return pool[0];
+      if (seed === null || seed === undefined) {
+        return list[Math.floor(Math.random() * list.length)];
+      }
+      var s = String(seed);
+      var h = 2166136261 >>> 0;
+      for (var i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 16777619) >>> 0;
+      }
+      return list[h % list.length];
     },
 
     _createCanvas: function () {
@@ -628,28 +665,42 @@
   var EasterEggs = {
     config: null,
     clickCounts: {},
+    seq: {},          /* 连续类触发（dice_sum / ingredient_combo）的连击计数 */
+    _eventsBound: false,
 
     init: function () {
       var self = this;
       var root = (window.Tavern && Tavern._root) || '';
-      fetch(root + 'data/easter_eggs.json').then(function (r) { return r.json(); }).then(function (data) {
+      Tavern.loadJSON(root + 'data/easter_eggs.json').then(function (data) {
         self.config = data;
         self._bind();
+        self.bindEventTriggers();
       }).catch(function () {});
     },
 
     _bind: function () {
       if (!this.config) return;
+      var self = this;
       var state = (window.Tavern && Tavern._state) || {};
       var eggsFound = state.eggsFound || [];
 
+      /* 顺手给已存在的目标加上手型光标 */
       this.config.forEach(function (egg) {
-        if (eggsFound.indexOf(egg.id) !== -1) return;
+        if (egg.trigger !== 'click_count' || eggsFound.indexOf(egg.id) !== -1) return;
         var el = document.querySelector(egg.selector);
-        if (!el) return;
-        el.style.cursor = 'pointer';
-        el.addEventListener('click', function () {
-          self._handleClick(egg);
+        if (el) el.style.cursor = 'pointer';
+      });
+
+      /* 点击类彩蛋统一用事件委托：地图足迹、动态渲染的卡片在初始化时还不存在，
+         逐个 querySelector 绑定会漏掉它们（2026-09-13 修复） */
+      document.addEventListener('click', function (e) {
+        if (!e.target || !e.target.closest) return;
+        var foundNow = ((window.Tavern && Tavern._state) || {}).eggsFound || [];
+        self.config.forEach(function (egg) {
+          if (egg.trigger !== 'click_count' || foundNow.indexOf(egg.id) !== -1) return;
+          var hit = false;
+          try { hit = !!e.target.closest(egg.selector); } catch (err) { hit = false; }
+          if (hit) self._handleClick(egg);
         });
       });
     },
@@ -662,6 +713,35 @@
       if (egg.trigger === 'click_count' && this.clickCounts[key] >= egg.count) {
         this._trigger(egg);
       }
+    },
+
+    /* ---------- 非点击类彩蛋 ----------
+       bar 页在掷骰 / 调酒结束时派发 tavern:dice / tavern:mix，
+       这里按「连续」计数（与彩蛋 hint 的「连续三次」一致，中途断了归零）。 */
+    bindEventTriggers: function () {
+      if (this._eventsBound) return;
+      this._eventsBound = true;
+      var self = this;
+      document.addEventListener('tavern:dice', function (e) {
+        self._trackSequence('dice_sum', (e.detail || {}).sum, function (egg) { return egg.sum; });
+      });
+      document.addEventListener('tavern:mix', function (e) {
+        self._trackSequence('ingredient_combo', (e.detail || {}).ingredients || [], function (egg) { return egg.ingredient; });
+      });
+    },
+
+    _trackSequence: function (trigger, value, expected) {
+      if (!this.config) return;
+      var self = this;
+      var found = ((window.Tavern && Tavern._state) || {}).eggsFound || [];
+      this.config.forEach(function (egg) {
+        if (egg.trigger !== trigger || found.indexOf(egg.id) !== -1) return;
+        var want = expected(egg);
+        var hit = Array.isArray(value) ? value.indexOf(want) !== -1 : value === want;
+        var next = hit ? (self.seq[egg.id] || 0) + 1 : 0;
+        self.seq[egg.id] = next;
+        if (next >= egg.count) self._trigger(egg);
+      });
     },
 
     _trigger: function (egg) {

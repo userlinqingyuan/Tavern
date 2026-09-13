@@ -168,6 +168,8 @@
 
   /* ---------- 成就判定 ---------- */
   function conditionMet(def, m) {
+    /* 彩蛋成就（def.egg）：按彩蛋 id 解锁，来源是 ambient 的 eggFound 埋点 */
+    if (def.egg) return (state.eggsFound || []).indexOf(def.egg) !== -1;
     var cur = m[def.metric];
     if (def.op === '>=') return typeof cur === 'number' && cur >= def.value;
     if (def.op === '==') return cur === def.value;
@@ -408,6 +410,25 @@
   /* ==========================================
      Ambient 模块：季节 / 时段 / 月相 / 欢迎语
      ========================================== */
+  /* ---------- 🕯️ 明暗叠加层（替代 body filter） ----------
+     body 上挂 filter 会让内部所有 position:fixed 失效（弹窗被居中到整篇文档中间、
+     固定栏跟着滚），所以改成往 body 注入一层固定覆盖层，由「时段亮度 / 滚动深度 /
+     打盹」分别提供颜色变量，CSS 叠成几层半透明色。 */
+  function timeTint(brightness) {
+    var b = typeof brightness === 'number' ? brightness : 1;
+    if (b === 1) return 'transparent';
+    if (b < 1) return 'rgba(0,0,0,' + Math.min(0.8, (1 - b) * 0.9).toFixed(3) + ')';
+    return 'rgba(255,238,210,' + Math.min(0.4, (b - 1) * 0.6).toFixed(3) + ')';
+  }
+
+  function ensureTimeLayer() {
+    if (!document.body || document.querySelector('.tavern-timelayer')) return;
+    var layer = document.createElement('div');
+    layer.className = 'tavern-timelayer';
+    layer.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(layer);
+  }
+
   var Ambient = {
     season: null,
     timeSlot: null,
@@ -485,13 +506,13 @@
       if (!this.timeSlot || !this.config || !this.config.timeSlots) return;
       var ts = this.config.timeSlots[this.timeSlot];
       if (!ts) return;
-      var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var isMobile = window.matchMedia('(max-width: 620px)').matches;
-      if (!reduceMotion && !isMobile) {
-        document.body.style.filter = 'brightness(' + ts.brightness + ')';
-      }
       var root = document.documentElement;
       root.style.setProperty('--bg-tint', ts.bgTint);
+      /* 时段亮度改为「叠加层」而不是 body 滤镜：
+         body 上只要挂了 filter，内部所有 position:fixed（弹窗、固定栏）都会改成
+         相对 body 定位 —— 弹窗会被居中到整篇文档中间、固定栏会跟着滚（2026-09-13 修复） */
+      root.style.setProperty('--time-tint', timeTint(ts.brightness));
+      ensureTimeLayer();
       /* 夜晚 class */
       if (this.timeSlot === 'night') document.body.classList.add('time-night');
       else document.body.classList.remove('time-night');
@@ -614,11 +635,17 @@
     var m = calcMetrics();
     return defs.map(function (def) {
       var unlockedAt = state.unlocked[def.id] || null;
-      var target = def.op === '>=' ? def.value : 1;
-      var cur = m[def.metric];
-      var current = def.op === '>='
-        ? (typeof cur === 'number' ? cur : 0)
-        : (cur === def.value ? 1 : 0);
+      var current, target;
+      if (def.egg) {
+        current = (state.eggsFound || []).indexOf(def.egg) !== -1 ? 1 : 0;
+        target = 1;
+      } else {
+        target = def.op === '>=' ? def.value : 1;
+        var cur = m[def.metric];
+        current = def.op === '>='
+          ? (typeof cur === 'number' ? cur : 0)
+          : (cur === def.value ? 1 : 0);
+      }
       return { def: def, unlocked: !!unlockedAt, unlockedAt: unlockedAt, current: current, target: target };
     });
   }

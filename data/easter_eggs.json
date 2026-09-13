@@ -1,7 +1,7 @@
 [
   {
     "id": "ember_click",
-    "page": "index",
+    "page": "any",
     "selector": ".fireplace",
     "trigger": "click_count",
     "count": 3,
@@ -12,7 +12,7 @@
   {
     "id": "book_spine",
     "page": "timeline",
-    "selector": ".timeline-container",
+    "selector": ".timeline",
     "trigger": "click_count",
     "count": 1,
     "fragment": "unfinished_diary",
@@ -22,7 +22,7 @@
   {
     "id": "coffee_secret",
     "page": "bar",
-    "selector": "#mixButton",
+    "selector": "#mixBtn",
     "trigger": "ingredient_combo",
     "ingredient": "黑咖啡液",
     "count": 3,
@@ -33,7 +33,7 @@
   {
     "id": "lucky_seven",
     "page": "bar",
-    "selector": "#diceRollBtn",
+    "selector": "#rollBtn",
     "trigger": "dice_sum",
     "sum": 7,
     "count": 3,
@@ -44,7 +44,7 @@
   {
     "id": "footprint",
     "page": "map",
-    "selector": "#mapCanvas",
+    "selector": ".footprint",
     "trigger": "click_count",
     "count": 2,
     "fragment": "visitor_trace",

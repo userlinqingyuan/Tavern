@@ -376,16 +376,30 @@
             }
             .main-grid { grid-template-columns: 1fr; }
             .note-wrap { position: static; }
+            /* 移动端：九宫格改成横向滑动的页面卡（吸附对齐 + 可见的细滚动条） */
             .portal-grid {
-                grid-template-columns: 1fr;
-                grid-auto-rows: auto;
+                display: flex;
+                gap: 12px;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                padding: 2px 2px 12px;
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior: contain;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(200,168,120,.45) rgba(72,50,28,.25);
             }
+            .portal-grid::-webkit-scrollbar { height: 6px; }
+            .portal-grid::-webkit-scrollbar-track { background: rgba(72,50,28,.25); border-radius: 3px; }
+            .portal-grid::-webkit-scrollbar-thumb { background: rgba(200,168,120,.5); border-radius: 3px; }
+            .portal-card,
             .portal-card.primary {
-                grid-row: auto;
-                grid-column: auto;
-                padding: 28px 14px;
+                flex: 0 0 min(68vw, 240px);
+                scroll-snap-align: center;
+                padding: 18px 14px;
+                min-height: 126px;
             }
-            .portal-card { padding: 20px 14px; }
+            .portal-card.primary .icon { font-size: 40px; }
+            .portal-card.primary .title { font-size: 17px; }
             /* .fireplace 首页已停用（2026-09-13）：
             .fireplace {
                 transform: scale(0.55);
@@ -467,7 +481,12 @@
                 <h1>16号螺旋酒馆</h1>
                 <div class="subtitle">TAVERN NO.16 SPIRAL</div>
                 <div class="welcome" id="welcome"></div>
+                <!-- 🌙 环境感知：季节欢迎语（由 tavern-core.js 的 Ambient 填充） -->
+                <div id="greeting"></div>
             </header>
+
+            <!-- 🎉 节日/节气卡片：tavern-ambient.js 命中公历节日时显示，平时 display:none -->
+            <div id="festivalCard" role="status"></div>
 
             <!-- 主区域：九宫格 + 手记 -->
             <div class="main-grid">
@@ -506,12 +525,17 @@
 
                 <!-- 今日手记 + 借阅记录：同一栏，宽度一致，整列底部与左侧九宫格对齐 -->
                 <aside class="note-wrap">
+                    <!-- 🔮 每日运势签：tavern-ambient.js 渲染签筒，抽过当天则直接显示签文 -->
+                    <div id="fortuneBox"></div>
+
                     <div id="today-note" class="tavern-note-card glass">
                         <div class="note-head">
                             <span class="note-title">📖 今日手记</span>
                             <button id="note-past" class="note-past">往期 ✎</button>
                         </div>
                         <div id="note-text" class="note-text"></div>
+                        <!-- 🌕 满月事件：满月夜由 Ambient 追加一条（平时 display:none） -->
+                        <div id="moonEvent" role="status"></div>
                     </div>
 
                     <!-- 借阅记录 -->
@@ -590,6 +614,7 @@
     <!-- 碎片弹窗由 tavern-core.js 统一注入 -->
 
     <script src="js/tavern-core.js?v=v2.3.0"></script>
+    <script src="js/tavern-ambient.js?v=v2.3.0"></script>
     <script>
         // 到访统计 + 成就系统（根目录页 rootPath 传 ''）
         if (window.Tavern) Tavern.init('');
@@ -1037,15 +1062,6 @@
                     '<div id="note-past-list"></div>' +
                     '</div>';
                 document.body.appendChild(overlay);
-                overlay.addEventListener('click', function (e) {
-                    if (e.target === overlay) overlay.classList.remove('open');
-                });
-                overlay.querySelector('.tavern-modal-close').addEventListener('click', function () {
-                    overlay.classList.remove('open');
-                });
-                document.addEventListener('keydown', function (e) {
-                    if (e.key === 'Escape') overlay.classList.remove('open');
-                });
             }
             const today = todayNote();
             const list = document.getElementById('note-past-list');
@@ -1054,7 +1070,8 @@
                 const tag = isToday ? '<span class="note-tag">今日</span>' : '';
                 return '<div class="tavern-note-item"><div class="note-text">' + tag + noteToHtml(n, 'drinker/index.html') + '</div></div>';
             }).join('');
-            overlay.classList.add('open');
+            /* 统一走 core：Esc / 点遮罩 / ✕ / 背景滚动锁 / 焦点归还 */
+            Tavern.openModal(overlay);
         }
         document.getElementById('note-past').addEventListener('click', function () {
             if (window.Tavern && notesPool.length) openPastNotes();
@@ -1065,6 +1082,7 @@
            ============================================ */
         let fragPool = [];
         let storyPool = [];
+        let eggPool = [];   /* 彩蛋奖励碎片：只有找到对应隐藏彩蛋才会点亮 */
         const FRAG_FALLBACK = [
             { text: "麦酒凉了，但故事还是热的。", source: "吧台" },
             { text: "每一杯酒里都泡着一个秘密。", source: "吧台" },
@@ -1075,9 +1093,11 @@
                 const data = await Tavern.loadJSON('data/fragments.json');
                 fragPool = data && Array.isArray(data.fragments) && data.fragments.length ? data.fragments : FRAG_FALLBACK;
                 storyPool = data && Array.isArray(data.story) ? data.story : [];
+                eggPool = data && Array.isArray(data.eggFragments) ? data.eggFragments : [];
             } catch (e) {
                 fragPool = FRAG_FALLBACK;
                 storyPool = [];
+                eggPool = [];
             }
             updateFragBadge();
         }
@@ -1086,9 +1106,11 @@
             if (!badge) return;
             if (!storyPool.length) { badge.style.display = 'none'; return; }
             badge.style.display = '';
-            const got = Tavern.getStoryFragments().length;
-            document.getElementById('frag-count').textContent = got;
-            badge.classList.toggle('all', got >= storyPool.length);
+            const got = Tavern.getStoryFragments();
+            /* 徽标只统计「故事碎片」；彩蛋碎片在碎片集弹窗里单独计数 */
+            const gotStory = storyPool.filter(function (s) { return got.indexOf(s.id) !== -1; }).length;
+            document.getElementById('frag-count').textContent = gotStory;
+            badge.classList.toggle('all', gotStory >= storyPool.length);
         }
         function showRandomFragment() {
             if (!window.Tavern || !Tavern.openFragment) return;
@@ -1114,6 +1136,15 @@
                 return '<div class="tavern-frag-cell locked"><div class="cell-no">✦ ' + (i + 1) + '</div><div class="cell-text">？？？</div></div>';
             }).join('') + '</div>';
         }
+        /* 彩蛋碎片：找到对应隐藏彩蛋才点亮，显示奖励名与原文 */
+        function eggGridHtml(got) {
+            return '<div class="tavern-frag-grid">' + eggPool.map(function (s, i) {
+                if (got.indexOf(s.id) !== -1) {
+                    return '<div class="tavern-frag-cell got"><div class="cell-no">🥚 ' + (i + 1) + '</div><div class="cell-text"><b>' + escapeHtml(s.name) + '</b><br>' + escapeHtml(s.text) + '</div></div>';
+                }
+                return '<div class="tavern-frag-cell locked"><div class="cell-no">🥚 ' + (i + 1) + '</div><div class="cell-text">？？？</div></div>';
+            }).join('') + '</div>';
+        }
         function openFragmentCollection() {
             let overlay = document.getElementById('frag-collection-overlay');
             if (!overlay) {
@@ -1126,28 +1157,26 @@
                     '<div id="coll-body"></div>' +
                     '</div>';
                 document.body.appendChild(overlay);
-                overlay.addEventListener('click', function (e) {
-                    if (e.target === overlay) overlay.classList.remove('open');
-                });
-                overlay.querySelector('.tavern-modal-close').addEventListener('click', function () {
-                    overlay.classList.remove('open');
-                });
-                document.addEventListener('keydown', function (e) {
-                    if (e.key === 'Escape') overlay.classList.remove('open');
-                });
             }
             const got = Tavern.getStoryFragments();
-            document.getElementById('coll-count').textContent = got.length + '/' + storyPool.length;
+            const gotStory = storyPool.filter(function (s) { return got.indexOf(s.id) !== -1; }).length;
+            const gotEgg = eggPool.filter(function (s) { return got.indexOf(s.id) !== -1; }).length;
+            document.getElementById('coll-count').textContent = gotStory + '/' + storyPool.length;
             const body = document.getElementById('coll-body');
-            if (storyPool.length && got.length >= storyPool.length) {
-                body.innerHTML = '<div class="tavern-frag-story-full">' + escapeHtml(storyPool.map(function (s) { return s.text; }).join('')) + '</div>' + fragGridHtml(got);
-            } else {
-                body.innerHTML = fragGridHtml(got);
+            let html = '';
+            if (storyPool.length && gotStory >= storyPool.length) {
+                html += '<div class="tavern-frag-story-full">' + escapeHtml(storyPool.map(function (s) { return s.text; }).join('')) + '</div>';
             }
-            overlay.classList.add('open');
+            html += fragGridHtml(got);
+            if (eggPool.length) {
+                html += '<div class="tavern-frag-subhead">🥚 彩蛋碎片 · ' + gotEgg + '/' + eggPool.length + '</div>' + eggGridHtml(got);
+            }
+            body.innerHTML = html;
+            /* 统一走 core：Esc / 点遮罩 / ✕ / 背景滚动锁 / 焦点归还 */
+            Tavern.openModal(overlay);
         }
         document.getElementById('fragment-collection').addEventListener('click', function () {
-            if (window.Tavern && storyPool.length) openFragmentCollection();
+            if (window.Tavern && (storyPool.length || eggPool.length)) openFragmentCollection();
         });
 
         /* ============================================

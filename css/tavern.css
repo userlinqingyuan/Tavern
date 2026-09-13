@@ -26,6 +26,8 @@
   --glass-bg: linear-gradient(158deg, rgba(48,35,25,.40), rgba(17,12,9,.52));
   --glass-border: rgba(214,168,93,.24);
   --glass-edge: rgba(255,238,205,.16);
+  /* 页脚短条占用的底部高度：页面里的固定按钮（关系网、碎片）靠它避让，别被短条挡住 */
+  --dock-space: 96px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -152,9 +154,18 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(214, 168, 93, .7); }
   cursor: default;
 }
 @media (max-width: 620px) {
-  .tavern-dock { gap: 0; padding: 5px 8px; }
+  :root { --dock-space: 142px; }   /* 移动端短条折成两行，避让高度同步变高 */
+  /* 移动端：短条自动折行，保证 7 个入口全部可见（不再靠横向滚动藏一半） */
+  .tavern-dock {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 2px;
+    padding: 6px 8px;
+    width: auto;
+    max-width: calc(100vw - 16px);
+  }
   .tavern-dock .dock-link,
-  .tavern-dock .dock-current { padding: 6px 9px; font-size: 12px; letter-spacing: 0; }
+  .tavern-dock .dock-current { padding: 6px 8px; font-size: 11.5px; letter-spacing: 0; }
 }
 
 /* ---------- 📜 随机碎片弹窗（由 tavern-core.js 注入 DOM） ---------- */
@@ -444,6 +455,15 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(214, 168, 93, .7); }
 }
 
 /* ---------- 碎片集网格 ---------- */
+.tavern-frag-subhead {
+  margin: 18px 0 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(160, 141, 114, .12);
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: .14em;
+  font-family: 'Arial Narrow', sans-serif;
+}
 .tavern-frag-story-full {
   color: var(--ink);
   font-size: 14px;
@@ -792,9 +812,18 @@ html::-webkit-scrollbar-thumb:hover { background: rgba(214, 168, 93, .7); }
    🌙 Ambient 模块样式（季节/时段/欢迎语）
    ============================================ */
 
-/* body 时段过渡 */
-body {
-  transition: filter 0.8s ease;
+/* 明暗叠加层：时段亮度 / 滚动深度 / 打盹 / 时段色调（变量由 tavern-core.js 与
+   tavern-ambient.js 写入；用它替代 body filter，避免 body 成为 fixed 定位的包含块） */
+.tavern-timelayer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--doze-tint, transparent), var(--doze-tint, transparent)),
+    linear-gradient(var(--scroll-tint, transparent), var(--scroll-tint, transparent)),
+    linear-gradient(var(--time-tint, transparent), var(--time-tint, transparent)),
+    linear-gradient(var(--bg-tint, transparent), var(--bg-tint, transparent));
 }
 
 /* 季节叠加层：压在页面自己的背景（如档案页的 bar2.jpg）之上，四季统一 30% 不透明度。
@@ -860,10 +889,9 @@ body {
   to   { opacity: 1; }
 }
 
-/* 打盹模式 */
+/* 打盹模式：压暗交给叠加层（不再用 body filter） */
 body.tavern-doze {
-  filter: brightness(0.85) saturate(0.8) !important;
-  transition: filter 1.5s ease;
+  --doze-tint: rgba(0,0,0,.18);
 }
 body.tavern-doze .fireplace {
   filter: brightness(0.6);
